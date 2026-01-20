@@ -1,0 +1,46 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1769166985230-2
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: image
+                  type: VARCHAR(255)
+            tableName: product
+  - changeSet:
+      id: 1769166985230-3
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: logo
+                  type: VARCHAR(255)
+            tableName: store
+  - changeSet:
+      id: 1769166985230-4
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropColumn:
+            columnName: data
+            tableName: product
+        - dropColumn:
+            columnName: externalurl
+            tableName: product
+  - changeSet:
+      id: 1769166985230-5
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropColumn:
+            columnName: data
+            tableName: store
+        - dropColumn:
+            columnName: externalurl
+            tableName: store
+

@@ -1,0 +1,139 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1768984072671-1
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_pricelisting
+                  name: uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: product_uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: store_uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: valid_from
+                  type: timestamp
+              - column:
+                  constraints:
+                    nullable: false
+                  name: valid_to
+                  type: timestamp
+              - column:
+                  constraints:
+                    nullable: false
+                  name: price
+                  type: DECIMAL
+            tableName: price_listing
+  - changeSet:
+      id: 1768984072671-2
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_product
+                  name: uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  name: ean
+                  type: VARCHAR(255)
+              - column:
+                  name: externalurl
+                  type: VARCHAR(255)
+              - column:
+                  name: data
+                  type: BLOB
+            tableName: product
+  - changeSet:
+      id: 1768984072671-3
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_store
+                  name: uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: currency
+                  type: VARCHAR(255)
+              - column:
+                  name: country
+                  type: VARCHAR(255)
+              - column:
+                  name: city
+                  type: VARCHAR(255)
+              - column:
+                  name: zip
+                  type: VARCHAR(255)
+              - column:
+                  name: street
+                  type: VARCHAR(255)
+              - column:
+                  name: number
+                  type: VARCHAR(255)
+              - column:
+                  name: externalurl
+                  type: VARCHAR(255)
+              - column:
+                  name: data
+                  type: BLOB
+            tableName: store
+  - changeSet:
+      id: 1768984072671-4
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: product_uuid
+            baseTableName: price_listing
+            constraintName: FK_PRICELISTING_ON_PRODUCT_UUID
+            referencedColumnNames: uuid
+            referencedTableName: product
+  - changeSet:
+      id: 1768984072671-5
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: store_uuid
+            baseTableName: price_listing
+            constraintName: FK_PRICELISTING_ON_STORE_UUID
+            referencedColumnNames: uuid
+            referencedTableName: store
+

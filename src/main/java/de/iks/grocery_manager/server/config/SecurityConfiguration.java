@@ -1,0 +1,54 @@
+package de.iks.grocery_manager.server.config;
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+
+import static org.springframework.security.config.Customizer.withDefaults;
+import static org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.pathPattern;
+
+@Configuration
+@EnableWebSecurity
+@ConditionalOnBooleanProperty(
+    name = "secured",
+    matchIfMissing = true
+)
+public class SecurityConfiguration {
+    public static final String AUTHORITY_MASTERDATA = "MASTERDATA";
+    @Bean
+    @Order(1)
+    public SecurityFilterChain publicFilterChain(HttpSecurity http) {
+        return http
+            .securityMatcher(pathPattern(HttpMethod.GET, "/**"))
+            .cors(withDefaults())
+            .authorizeHttpRequests(r -> r
+                .anyRequest()
+                .permitAll()
+            )
+            .build();
+    }
+
+    @Bean
+    @Order(2)
+    public SecurityFilterChain masterDataFilterChain(HttpSecurity http) {
+        return http
+            .securityMatcher("/**")
+            .cors(withDefaults())
+            .csrf(withDefaults())
+            .oauth2ResourceServer(o -> o
+                .jwt(withDefaults())
+            )
+            .authorizeHttpRequests(r -> r
+                .requestMatchers("/store/**", "/store", "/product/**", "/product", "/price/**", "/price", "/image/**", "/image")
+                .hasAuthority(AUTHORITY_MASTERDATA)
+                .anyRequest()
+                .denyAll()
+            )
+            .build();
+    }
+}
