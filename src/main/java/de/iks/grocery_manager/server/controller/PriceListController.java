@@ -100,9 +100,27 @@ public class PriceListController {
 
     @GetMapping
     @Transactional(readOnly = true)
-    public Page<ListPriceDTO> getPrices(@PageableDefault Pageable page) {
-        return priceList.findAll(page)
-            .map(dtoMapper::map);
+    public Page<ListPriceDTO> getPrices(
+        @RequestParam(required = false) UUID store,
+        @RequestParam(required = false) UUID product,
+        @PageableDefault Pageable page) {
+        if(store == null && product == null) {
+            return priceList
+                .findAll(page)
+                .map(dtoMapper::map);
+        } else if(store == null) {
+            return priceList
+                .findByProduct_Uuid(product, page)
+                .map(dtoMapper::map);
+        } else if(product == null) {
+            return priceList
+                .findByStore_Uuid(store, page)
+                .map(dtoMapper::map);
+        } else {
+            return priceList
+                .findByProduct_UuidAndStore_Uuid(product, store, page)
+                .map(dtoMapper::map);
+        }
     }
 
     @GetMapping(
