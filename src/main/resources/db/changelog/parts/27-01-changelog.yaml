@@ -1,0 +1,67 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1769511834515-1
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_productgroup
+                  name: uuid
+                  type: UUID
+              - column:
+                  name: owner
+                  type: VARCHAR(255)
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+            tableName: product_group
+  - changeSet:
+      id: 1769511834515-2
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_productgroup_products
+                  name: product_group_uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_productgroup_products
+                  name: products_uuid
+                  type: UUID
+            tableName: product_group_products
+  - changeSet:
+      id: 1769511834515-3
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: products_uuid
+            baseTableName: product_group_products
+            constraintName: fk_progropro_on_product
+            referencedColumnNames: uuid
+            referencedTableName: product
+  - changeSet:
+      id: 1769511834515-4
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: product_group_uuid
+            baseTableName: product_group_products
+            constraintName: fk_progropro_on_product_group
+            referencedColumnNames: uuid
+            referencedTableName: product_group
+

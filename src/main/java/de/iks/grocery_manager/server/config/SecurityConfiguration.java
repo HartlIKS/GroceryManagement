@@ -24,7 +24,7 @@ public class SecurityConfiguration {
     @Order(1)
     public SecurityFilterChain publicFilterChain(HttpSecurity http) {
         return http
-            .securityMatcher(pathPattern(HttpMethod.GET, "/**"))
+            .securityMatcher(pathPattern(HttpMethod.GET, "/masterdata/**"))
             .cors(withDefaults())
             .authorizeHttpRequests(r -> r
                 .anyRequest()
@@ -44,8 +44,10 @@ public class SecurityConfiguration {
                 .jwt(withDefaults())
             )
             .authorizeHttpRequests(r -> r
-                .requestMatchers("/store/**", "/store", "/product/**", "/product", "/price/**", "/price", "/image/**", "/image")
+                .requestMatchers("/masterdata/**")
                 .hasAuthority(AUTHORITY_MASTERDATA)
+                .requestMatchers("/productGroups/**", "/productGroups")
+                .authenticated()
                 .anyRequest()
                 .denyAll()
             )

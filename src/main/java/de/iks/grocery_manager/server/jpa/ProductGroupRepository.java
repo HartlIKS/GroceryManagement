@@ -1,11 +1,15 @@
 package de.iks.grocery_manager.server.jpa;
 
 import de.iks.grocery_manager.server.model.ProductGroup;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 public interface ProductGroupRepository extends JpaRepository<ProductGroup, UUID> {
-    Stream<? extends ProductGroup> findAllByOwner(String owner);
+    Optional<? extends ProductGroup> findByUuidAndOwner(UUID uuid, String owner);
+    void deleteByUuidAndOwner(UUID uuid, String owner);
+    Page<? extends ProductGroup> findAllByOwnerAndNameContainingIgnoreCase(String owner, String name, Pageable pageable);
 }

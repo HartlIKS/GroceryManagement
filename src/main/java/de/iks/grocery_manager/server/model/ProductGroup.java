@@ -3,7 +3,7 @@ package de.iks.grocery_manager.server.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -20,6 +20,5 @@ public class ProductGroup {
 
     @ManyToMany
     @JoinTable
-    @MapKey
-    private Map<UUID, Product> products;
+    private List<Product> products;
 }

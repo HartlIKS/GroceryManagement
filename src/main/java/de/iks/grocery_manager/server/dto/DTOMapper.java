@@ -1,9 +1,6 @@
 package de.iks.grocery_manager.server.dto;
 
-import de.iks.grocery_manager.server.model.Address;
-import de.iks.grocery_manager.server.model.PriceListing;
-import de.iks.grocery_manager.server.model.Product;
-import de.iks.grocery_manager.server.model.Store;
+import de.iks.grocery_manager.server.model.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants.ComponentModel;
@@ -63,4 +60,16 @@ public interface DTOMapper {
     Address map(AddressDTO addressDTO);
 
     void update(@MappingTarget Address target, AddressDTO update);
+
+    ListProductGroupDTO map(ProductGroup group);
+
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "products", expression = "java(new ArrayList<>())")
+    @Mapping(target = "owner", source = "owner")
+    ProductGroup create(CreateProductGroupDTO groupDTO, String owner);
+
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "products", ignore = true)
+    @Mapping(target = "owner", ignore = true)
+    void update(@MappingTarget ProductGroup target, CreateProductGroupDTO update);
 }

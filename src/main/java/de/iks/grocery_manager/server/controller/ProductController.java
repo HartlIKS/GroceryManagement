@@ -20,7 +20,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping(
-    path = "/product", produces = MediaType.APPLICATION_JSON_VALUE
+    path = "/masterdata/product",
+    produces = MediaType.APPLICATION_JSON_VALUE
 )
 @CrossOrigin("*")
 @Transactional
