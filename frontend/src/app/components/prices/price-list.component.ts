@@ -5,9 +5,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { CommonModule } from '@angular/common';
 import { PriceService, ProductService, StoreService } from '../../services';
-import { ListPriceDTO } from '../../models';
+import { ListPriceDTO, ListProductDTO, ListStoreDTO } from '../../models';
 
 @Component({
   selector: 'app-price-list',
@@ -18,7 +20,9 @@ import { ListPriceDTO } from '../../models';
     MatButtonModule,
     MatIconModule,
     MatPaginatorModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSelectModule,
+    MatFormFieldModule
   ],
   templateUrl: './price-list.component.html',
   styleUrls: ['./price-list.component.css']
@@ -35,6 +39,8 @@ export class PriceListComponent implements OnInit {
   public readonly pageSize = computed(() => this.priceService.pageSize());
   public readonly loading = computed(() => this.priceService.loading());
   public readonly error = computed(() => this.priceService.error());
+  public readonly selectedStore = computed(() => this.priceService.selectedStore());
+  public readonly selectedProduct = computed(() => this.priceService.selectedProduct());
 
   // Create MatTableDataSource from prices signal
   public readonly dataSource = computed(() => {
@@ -69,6 +75,29 @@ export class PriceListComponent implements OnInit {
 
   onPageChange(event: any): void {
     this.priceService.getPrices(event.pageIndex, event.pageSize);
+  }
+
+  onStoreFilterChange(storeUuid: string): void {
+    if (storeUuid === 'all') {
+      this.priceService.setStoreFilter(null);
+    } else {
+      this.priceService.setStoreFilter(storeUuid);
+    }
+    this.priceService.getPrices(0, this.pageSize());
+  }
+
+  onProductFilterChange(productUuid: string): void {
+    if (productUuid === 'all') {
+      this.priceService.setProductFilter(null);
+    } else {
+      this.priceService.setProductFilter(productUuid);
+    }
+    this.priceService.getPrices(0, this.pageSize());
+  }
+
+  onClearFilters(): void {
+    this.priceService.clearFilters();
+    this.priceService.getPrices(0, this.pageSize());
   }
 
   onAddPrice(): void {

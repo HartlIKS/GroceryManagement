@@ -1,9 +1,56 @@
 <div class="container">
   <div class="header">
     <h1>Price Lists</h1>
-    <button mat-raised-button color="primary" (click)="onAddPrice()">
-      <mat-icon>add</mat-icon>
-      Add Price
+    <div class="header-actions">
+      <button mat-raised-button color="accent" (click)="loadPrices()" class="refresh-btn">
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+      <button mat-raised-button color="primary" (click)="onAddPrice()">
+        <mat-icon>add</mat-icon>
+        Add Price
+      </button>
+    </div>
+  </div>
+
+  <div class="filters-section">
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Product</mat-label>
+      <mat-select (selectionChange)="onProductFilterChange($event.value)" [value]="selectedProduct() || 'all'">
+        <mat-option value="all">All Products</mat-option>
+        @for (product of products(); track product.uuid) {
+          <mat-option [value]="product.uuid">
+            <div class="filter-option">
+              @if (product.image) {
+                <img [src]="product.image" [alt]="product.name" class="filter-image">
+              }
+              <span>{{ product.name }}</span>
+            </div>
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Store</mat-label>
+      <mat-select (selectionChange)="onStoreFilterChange($event.value)" [value]="selectedStore() || 'all'">
+        <mat-option value="all">All Stores</mat-option>
+        @for (store of stores(); track store.uuid) {
+          <mat-option [value]="store.uuid">
+            <div class="filter-option">
+              @if (store.logo) {
+                <img [src]="store.logo" [alt]="store.name" class="filter-image">
+              }
+              <span>{{ store.name }}</span>
+            </div>
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <button mat-raised-button color="accent" (click)="onClearFilters()" class="clear-filters-btn">
+      <mat-icon>clear</mat-icon>
+      Clear Filters
     </button>
   </div>
 

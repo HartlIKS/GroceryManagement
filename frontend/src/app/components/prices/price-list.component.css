@@ -9,7 +9,17 @@
   margin-bottom: 20px;
 }
 
-.filter-section {
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.refresh-btn {
+  min-width: 120px;
+}
+
+.filters-section {
   display: flex;
   gap: 16px;
   margin-bottom: 20px;
@@ -19,6 +29,23 @@
 
 .filter-field {
   min-width: 200px;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-image {
+  width: 24px;
+  height: 24px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.clear-filters-btn {
+  height: 56px;
 }
 
 .table-container {

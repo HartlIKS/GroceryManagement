@@ -9,6 +9,8 @@ interface PriceState {
   currentPage: number;
   pageSize: number;
   searchTerm: string;
+  selectedStore: string | null;
+  selectedProduct: string | null;
 }
 
 @Injectable({
@@ -23,7 +25,9 @@ export class PriceService {
     totalElements: 0,
     currentPage: 0,
     pageSize: 20,
-    searchTerm: ''
+    searchTerm: '',
+    selectedStore: null,
+    selectedProduct: null
   });
 
   // Public computed signals
@@ -32,30 +36,38 @@ export class PriceService {
   public readonly currentPage = computed(() => this.state().currentPage);
   public readonly pageSize = computed(() => this.state().pageSize);
   public readonly searchTerm = computed(() => this.state().searchTerm);
+  public readonly selectedStore = computed(() => this.state().selectedStore);
+  public readonly selectedProduct = computed(() => this.state().selectedProduct);
   public readonly loading = computed(() => this.apiService.loading());
   public readonly error = computed(() => this.apiService.error());
 
   constructor(private apiService: ApiService) {}
 
-  // Get prices with pagination
+  // Get prices with pagination and filtering
   getPrices(page: number = 0, size: number = 20): void {
     const currentState = this.state();
 
-    // Only fetch if parameters have changed or cache is empty
-    if (currentState.currentPage === page &&
-        currentState.pageSize === size &&
-        currentState.prices.length > 0) {
-      return;
+    // Build query parameters based on filters
+    const params: any = { page, size };
+    
+    if (currentState.selectedStore) {
+      params.store = currentState.selectedStore;
+    }
+    
+    if (currentState.selectedProduct) {
+      params.product = currentState.selectedProduct;
     }
 
-    this.apiService.get<Page<ListPriceDTO>>(this.endpoint, { page, size }).subscribe({
+    this.apiService.get<Page<ListPriceDTO>>(this.endpoint, params).subscribe({
       next: (response: Page<ListPriceDTO>) => {
         this.state.set({
           prices: response.content || [],
           totalElements: response.page.totalElements || 0,
           currentPage: response.page.number || 0,
           pageSize: response.page.size || size,
-          searchTerm: currentState.searchTerm
+          searchTerm: currentState.searchTerm,
+          selectedStore: currentState.selectedStore,
+          selectedProduct: currentState.selectedProduct
         });
       },
       error: (error: any) => {
@@ -97,7 +109,40 @@ export class PriceService {
       totalElements: 0,
       currentPage: 0,
       pageSize: 20,
-      searchTerm: ''
+      searchTerm: '',
+      selectedStore: null,
+      selectedProduct: null
+    });
+  }
+
+  // Set store filter
+  setStoreFilter(storeUuid: string | null): void {
+    const currentState = this.state();
+    this.state.set({
+      ...currentState,
+      selectedStore: storeUuid,
+      currentPage: 0 // Reset to first page when filter changes
+    });
+  }
+
+  // Set product filter
+  setProductFilter(productUuid: string | null): void {
+    const currentState = this.state();
+    this.state.set({
+      ...currentState,
+      selectedProduct: productUuid,
+      currentPage: 0 // Reset to first page when filter changes
+    });
+  }
+
+  // Clear all filters
+  clearFilters(): void {
+    const currentState = this.state();
+    this.state.set({
+      ...currentState,
+      selectedStore: null,
+      selectedProduct: null,
+      currentPage: 0 // Reset to first page when filters are cleared
     });
   }
 
