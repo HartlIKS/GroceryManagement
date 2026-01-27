@@ -43,7 +43,7 @@
       <ng-container matColumnDef="address">
         <mat-header-cell *matHeaderCellDef>Address</mat-header-cell>
         <mat-cell *matCellDef="let store">
-          {{ store.address.street }} {{ store.address.number }}, {{ store.address.zip }} {{ store.address.city }}, {{ store.address.country }}
+          {{ formatAddress(store.address) }}
         </mat-cell>
       </ng-container>
 
