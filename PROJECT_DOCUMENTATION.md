@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a full-stack grocery management system consisting of a Spring Boot REST API backend and an Angular frontend. The system manages grocery products, stores, price listings, and images with comprehensive CRUD operations.
+This is a full-stack grocery management system consisting of a Spring Boot REST API backend and an Angular frontend. The system manages grocery products, stores, price listings, and product groups with comprehensive CRUD operations.
 
 ## Architecture
 
@@ -77,6 +77,14 @@ GroceryManagement/
 - **validTo**: Date when price expires (ZonedDateTime, required)
 - **price**: Monetary value (BigDecimal, required)
 
+### ProductGroup
+- **uuid**: Primary identifier (UUID)
+- **name**: Group name (required, String)
+- **owner**: User who owns the group (required, String)
+- **products**: List of products in the group (List<Product>)
+
+Product groups allow users to group similar products together that can be substituted for one another. For example, different brands of milk or various types of pasta could be grouped together, allowing users to choose any product within the same group as a substitute.
+
 ### Address
 - **country**: Country name (String)
 - **city**: City name (String)
@@ -86,30 +94,36 @@ GroceryManagement/
 
 ## API Endpoints
 
-### Products (`/product`)
-- `GET /product/{uuid}` - Get product by UUID
-- `PUT /product/{uuid}` - Update product
-- `POST /product` - Create new product
-- `DELETE /product/{uuid}` - Delete product
-- `GET /product` - Search products (with optional name parameter, paginated)
+### Products (`/masterdata/product`)
+- `GET /masterdata/product/{uuid}` - Get product by UUID
+- `PUT /masterdata/product/{uuid}` - Update product
+- `POST /masterdata/product` - Create new product
+- `DELETE /masterdata/product/{uuid}` - Delete product
+- `GET /masterdata/product` - Search products (with optional name parameter, paginated)
 
-### Stores (`/store`)
-- `GET /store/{uuid}` - Get store by UUID
-- `PUT /store/{uuid}` - Update store
-- `POST /store` - Create new store
-- `DELETE /store/{uuid}` - Delete store
-- `GET /store` - Search stores (with optional name parameter, paginated)
+### Stores (`/masterdata/store`)
+- `GET /masterdata/store/{uuid}` - Get store by UUID
+- `PUT /masterdata/store/{uuid}` - Update store
+- `POST /masterdata/store` - Create new store
+- `DELETE /masterdata/store/{uuid}` - Delete store
+- `GET /masterdata/store` - Search stores (with optional name parameter, paginated)
 
-### Price Listings (`/price`)
-- `GET /price/{uuid}` - Get price listing by UUID
-- `PUT /price/{uuid}` - Update price listing
-- `POST /price/` - Create new price listing
-- `DELETE /price/{uuid}` - Delete price listing
-- `GET /price` - Get prices by products, stores, and timestamp (returns nested map structure)
+### Price Listings (`/masterdata/price`)
+- `GET /masterdata/price/{uuid}` - Get price listing by UUID
+- `PUT /masterdata/price/{uuid}` - Update price listing
+- `POST /masterdata/price` - Create new price listing
+- `DELETE /masterdata/price/{uuid}` - Delete price listing
+- `GET /masterdata/price` - Get paginated price listings
+- `GET /masterdata/price?at={timestamp}&products={product_uuids}&stores={store_uuids}` - Get prices by products, stores, and timestamp (returns nested map structure)
 
-### Images (`/image`)
-- `POST /image` - Upload image (consumes image/*)
-- `GET /image/{uuid}` - Get image by UUID (produces image/*)
+### Product Groups (`/productGroups`)
+- `GET /productGroups/{uuid}` - Get product group by UUID
+- `PUT /productGroups/{uuid}` - Update product group
+- `POST /productGroups` - Create new product group
+- `DELETE /productGroups/{uuid}` - Delete product group
+- `GET /productGroups` - Search product groups (with optional name parameter, paginated)
+- `PUT /productGroups/{group}/{product}` - Add product to group
+- `DELETE /productGroups/{group}/{product}` - Remove product from group
 
 ## Development Setup
 

@@ -44,7 +44,7 @@ class StoreControllerTest {
         void shouldReturnStoreWhenFound() throws Exception {
             mockMvc
                 .perform(
-                    get("/store/{uuid}", Testdata.STORE_1_UUID)
+                    get("/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -55,7 +55,7 @@ class StoreControllerTest {
         void shouldReturn404WhenStoreNotFound() throws Exception {
             mockMvc
                 .perform(
-                    get("/store/{uuid}", Testdata.BAD_UUID)
+                    get("/masterdata/store/{uuid}", Testdata.BAD_UUID)
                 )
                 .andExpect(status().isNotFound());
         }
@@ -67,7 +67,7 @@ class StoreControllerTest {
         void shouldUpdateStoreWhenAuthorizedAndFound() throws Exception {
             mockMvc
                 .perform(
-                    put("/store/{uuid}", Testdata.STORE_1_UUID)
+                    put("/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
                         .content(Testdata.STORE_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
@@ -81,7 +81,7 @@ class StoreControllerTest {
         void shouldReturn404WhenUpdatingNonExistentStore() throws Exception {
             mockMvc
                 .perform(
-                    put("/store/{uuid}", Testdata.BAD_UUID)
+                    put("/masterdata/store/{uuid}", Testdata.BAD_UUID)
                         .content(Testdata.STORE_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
@@ -90,14 +90,14 @@ class StoreControllerTest {
         }
 
         @Test
-        void shouldReturn403WhenUpdatingStoreWithoutAuthorization() throws Exception {
+        void shouldReturn401WhenUpdatingStoreWithoutAuthorization() throws Exception {
             mockMvc
                 .perform(
-                    put("/store/{uuid}", Testdata.STORE_1_UUID)
+                    put("/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
                         .content(Testdata.STORE_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
         }
     }
 
@@ -107,7 +107,7 @@ class StoreControllerTest {
         void shouldCreateStoreWhenAuthorized() throws Exception {
             mockMvc
                 .perform(
-                    post("/store")
+                    post("/masterdata/store")
                         .content(Testdata.STORE_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
@@ -119,14 +119,14 @@ class StoreControllerTest {
         }
 
         @Test
-        void shouldReturn403WhenCreatingStoreWithoutAuthorization() throws Exception {
+        void shouldReturn401WhenCreatingStoreWithoutAuthorization() throws Exception {
             mockMvc
                 .perform(
-                    post("/store")
+                    post("/masterdata/store")
                         .content(Testdata.STORE_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
         }
     }
 
@@ -136,19 +136,19 @@ class StoreControllerTest {
         void shouldDeleteStoreWhenAuthorized() throws Exception {
             mockMvc
                 .perform(
-                    delete("/store/{uuid}", Testdata.STORE_1_UUID)
+                    delete("/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
                         .with(admin_jwt)
                 )
                 .andExpect(status().isOk());
         }
 
         @Test
-        void shouldReturn403WhenDeletingStoreWithoutAuthorization() throws Exception {
+        void shouldReturn401WhenDeletingStoreWithoutAuthorization() throws Exception {
             mockMvc
                 .perform(
-                    delete("/store/{uuid}", Testdata.STORE_1_UUID)
+                    delete("/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
                 )
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
         }
     }
 
@@ -158,7 +158,7 @@ class StoreControllerTest {
         void shouldReturnStoresWhenSearchingByName() throws Exception {
             mockMvc
                 .perform(
-                    get("/store")
+                    get("/masterdata/store")
                         .queryParam("name", "Store")
                 )
                 .andExpect(status().isOk())

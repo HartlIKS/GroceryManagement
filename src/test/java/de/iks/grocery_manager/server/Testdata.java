@@ -106,22 +106,100 @@ public class Testdata {
           "name": "Product 3",
           "EAN": "654321"
         }""";
+    
+    public static final UUID PRODUCT_GROUP_TEST_1_UUID = UUID.fromString("30000000-0000-0000-0000-000000000000");
+    public static final UUID PRODUCT_GROUP_TEST_2_UUID = UUID.fromString("30000000-0000-0000-0000-000000000001");
+
     public static final String PRODUCT_3_JSON = """
         {
           "name": "Product 3",
           "EAN": "654321"
         }""";
+
+    public static final String PRODUCT_GROUP_TEST_1_JSON = String.format("""
+        {
+          "uuid": "%s",
+          "name": "Product Group Test 1"
+        }""", PRODUCT_GROUP_TEST_1_UUID);
+    
+    public static final String PRODUCT_GROUP_TEST_2_JSON = String.format("""
+        {
+          "uuid": "%s",
+          "name": "Product Group Test 2"
+        }""", PRODUCT_GROUP_TEST_2_UUID);
+
     public static final String PRODUCT_SEARCH_RESULT_JSON = String.format("""
         {
           "page": {
             "number": 0,
             "size": 10,
-            "totalElements": 2,
+            "totalElements": 4,
             "totalPages": 1
           },
           "content": [
             %s,
+            %s,
+            %s,
             %s
           ]
-        }""", PRODUCT_1_JSON, PRODUCT_2_JSON);
+        }""", PRODUCT_1_JSON, PRODUCT_2_JSON, PRODUCT_GROUP_TEST_1_JSON, PRODUCT_GROUP_TEST_2_JSON);
+
+    public static final UUID PRODUCT_GROUP_1_UUID = UUID.fromString("20000000-0000-0000-0000-000000000000");
+    public static final String PRODUCT_GROUP_1_JSON = String.format("""
+        {
+          "uuid": "%s",
+          "name": "Group 1",
+          "products": ["30000000-0000-0000-0000-000000000000"]
+        }""", PRODUCT_GROUP_1_UUID);
+    public static final String PRODUCT_GROUP_1_UPDATE_JSON = """
+        {
+          "name": "Group 1b"
+        }""";
+    public static final String PRODUCT_GROUP_1_JSON2 = String.format("""
+        {
+          "uuid": "%s",
+          "name": "Group 1b",
+          "products": ["30000000-0000-0000-0000-000000000000"]
+        }""", PRODUCT_GROUP_1_UUID);
+    public static final UUID PRODUCT_GROUP_2_UUID = UUID.fromString("20000000-0000-0000-0000-000000000001");
+    public static final String PRODUCT_GROUP_2_JSON = String.format("""
+        {
+          "uuid": "%s",
+          "name": "Group 2",
+          "products": []
+        }""", PRODUCT_GROUP_2_UUID);
+    public static final String PRODUCT_GROUP_3_CREATE_JSON = """
+        {
+          "name": "Group 3"
+        }""";
+    public static final String PRODUCT_GROUP_3_JSON = """
+        {
+          "name": "Group 3",
+          "products": []
+        }""";
+    public static final String PRODUCT_GROUP_SEARCH_RESULT_JSON = String.format("""
+        {
+          "page": {
+            "number": 0,
+            "size": 10,
+            "totalElements": 1,
+            "totalPages": 1
+          },
+          "content": [
+            %s
+          ]
+        }""", PRODUCT_GROUP_1_JSON);
+
+    public static final String PRODUCT_GROUP_SEARCH_RESULT_USER2_JSON = String.format("""
+        {
+          "page": {
+            "number": 0,
+            "size": 10,
+            "totalElements": 1,
+            "totalPages": 1
+          },
+          "content": [
+            %s
+          ]
+        }""", PRODUCT_GROUP_2_JSON);
 }

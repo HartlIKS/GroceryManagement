@@ -44,7 +44,7 @@ class ProductControllerTest {
         void shouldReturnProductWhenFound() throws Exception {
             mockMvc
                 .perform(
-                    get("/product/{uuid}", Testdata.PRODUCT_1_UUID)
+                    get("/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -55,7 +55,7 @@ class ProductControllerTest {
         void shouldReturn404WhenProductNotFound() throws Exception {
             mockMvc
                 .perform(
-                    get("/product/{uuid}", Testdata.BAD_UUID)
+                    get("/masterdata/product/{uuid}", Testdata.BAD_UUID)
                 )
                 .andExpect(status().isNotFound());
         }
@@ -67,7 +67,7 @@ class ProductControllerTest {
         void shouldUpdateProductWhenAuthorizedAndFound() throws Exception {
             mockMvc
                 .perform(
-                    put("/product/{uuid}", Testdata.PRODUCT_1_UUID)
+                    put("/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
                         .content(Testdata.PRODUCT_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
@@ -81,7 +81,7 @@ class ProductControllerTest {
         void shouldReturn404WhenUpdatingNonExistentProduct() throws Exception {
             mockMvc
                 .perform(
-                    put("/product/{uuid}", Testdata.BAD_UUID)
+                    put("/masterdata/product/{uuid}", Testdata.BAD_UUID)
                         .content(Testdata.PRODUCT_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
@@ -90,14 +90,14 @@ class ProductControllerTest {
         }
 
         @Test
-        void shouldReturn403WhenUpdatingProductWithoutAuthorization() throws Exception {
+        void shouldReturn401WhenUpdatingProductWithoutAuthorization() throws Exception {
             mockMvc
                 .perform(
-                    put("/product/{uuid}", Testdata.PRODUCT_1_UUID)
+                    put("/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
                         .content(Testdata.PRODUCT_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
         }
     }
 
@@ -107,7 +107,7 @@ class ProductControllerTest {
         void shouldCreateProductWhenAuthorized() throws Exception {
             mockMvc
                 .perform(
-                    post("/product")
+                    post("/masterdata/product")
                         .content(Testdata.PRODUCT_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
@@ -119,14 +119,14 @@ class ProductControllerTest {
         }
 
         @Test
-        void shouldReturn403WhenCreatingProductWithoutAuthorization() throws Exception {
+        void shouldReturn401WhenCreatingProductWithoutAuthorization() throws Exception {
             mockMvc
                 .perform(
-                    post("/product")
+                    post("/masterdata/product")
                         .content(Testdata.PRODUCT_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
         }
     }
 
@@ -136,19 +136,19 @@ class ProductControllerTest {
         void shouldDeleteProductWhenAuthorized() throws Exception {
             mockMvc
                 .perform(
-                    delete("/product/{uuid}", Testdata.PRODUCT_1_UUID)
+                    delete("/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
                         .with(admin_jwt)
                 )
                 .andExpect(status().isOk());
         }
 
         @Test
-        void shouldReturn403WhenDeletingProductWithoutAuthorization() throws Exception {
+        void shouldReturn401WhenDeletingProductWithoutAuthorization() throws Exception {
             mockMvc
                 .perform(
-                    delete("/product/{uuid}", Testdata.PRODUCT_1_UUID)
+                    delete("/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
                 )
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
         }
     }
 
@@ -158,7 +158,7 @@ class ProductControllerTest {
         void shouldReturnAllProductsWhenSearching() throws Exception {
             mockMvc
                 .perform(
-                    get("/product")
+                    get("/masterdata/product")
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
