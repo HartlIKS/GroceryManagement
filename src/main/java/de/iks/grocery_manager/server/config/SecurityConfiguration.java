@@ -7,6 +7,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 
 import static org.springframework.security.config.Customizer.withDefaults;
@@ -15,8 +16,7 @@ import static org.springframework.security.web.servlet.util.matcher.PathPatternR
 @Configuration
 @EnableWebSecurity
 @ConditionalOnBooleanProperty(
-    name = "secured",
-    matchIfMissing = true
+    name = "secured"
 )
 public class SecurityConfiguration {
     public static final String AUTHORITY_MASTERDATA = "MASTERDATA";
@@ -39,7 +39,7 @@ public class SecurityConfiguration {
         return http
             .securityMatcher("/**")
             .cors(withDefaults())
-            .csrf(withDefaults())
+            .csrf(CsrfConfigurer::disable)
             .oauth2ResourceServer(o -> o
                 .jwt(withDefaults())
             )

@@ -5,6 +5,7 @@ import java.util.UUID;
 public record ListProductDTO(
     UUID uuid,
     String name,
+    String image,
     String EAN
 ) {
 }

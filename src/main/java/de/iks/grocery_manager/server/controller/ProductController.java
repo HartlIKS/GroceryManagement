@@ -22,6 +22,7 @@ import java.util.UUID;
 @RequestMapping(
     path = "/product", produces = MediaType.APPLICATION_JSON_VALUE
 )
+@CrossOrigin("*")
 @Transactional
 public class ProductController {
     private final ProductRepository products;

@@ -6,6 +6,7 @@ import java.util.UUID;
 public record ListStoreDTO(
     UUID uuid,
     String name,
+    String logo,
     AddressDTO address,
     Currency currency
 ) {
