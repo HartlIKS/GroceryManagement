@@ -9,6 +9,16 @@
   margin-bottom: 20px;
 }
 
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.refresh-btn {
+  min-width: 120px;
+}
+
 .search-section {
   display: flex;
   gap: 10px;

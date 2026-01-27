@@ -1,10 +1,16 @@
 <div class="container">
   <div class="header">
     <h1>Products</h1>
-    <button mat-raised-button color="primary" (click)="onAddProduct()">
-      <mat-icon>add</mat-icon>
-      Add Product
-    </button>
+    <div class="header-actions">
+      <button mat-raised-button color="accent" (click)="loadProducts()" class="refresh-btn">
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+      <button mat-raised-button color="primary" (click)="onAddProduct()">
+        <mat-icon>add</mat-icon>
+        Add Product
+      </button>
+    </div>
   </div>
 
   <div class="search-section">

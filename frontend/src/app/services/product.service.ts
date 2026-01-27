@@ -39,16 +39,6 @@ export class ProductService {
 
   // Get products with caching
   getProducts(name: string = '', page: number = 0, size: number = 20): void {
-    const currentState = this.state();
-
-    // Only fetch if parameters have changed or cache is empty
-    if (currentState.searchTerm === name &&
-        currentState.currentPage === page &&
-        currentState.pageSize === size &&
-        currentState.products.length > 0) {
-      return;
-    }
-
     this.apiService.get<Page<ListProductDTO>>(this.endpoint, { name, page, size }).subscribe({
       next: (response: Page<ListProductDTO>) => {
         this.state.set({

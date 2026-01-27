@@ -9,7 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { CommonModule } from '@angular/common';
 import { PriceService, ProductService, StoreService } from '../../services';
-import { ListPriceDTO, ListProductDTO, ListStoreDTO } from '../../models';
+import { ListPriceDTO } from '../../models';
 
 @Component({
   selector: 'app-price-list',
