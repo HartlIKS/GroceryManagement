@@ -15,7 +15,7 @@ interface StoreState {
   providedIn: 'root'
 })
 export class StoreService {
-  private readonly endpoint = '/store';
+  private readonly endpoint = '/masterdata/store';
 
   // Private state signal
   private readonly state = signal<StoreState>({

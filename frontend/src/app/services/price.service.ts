@@ -15,7 +15,7 @@ interface PriceState {
   providedIn: 'root'
 })
 export class PriceService {
-  private readonly endpoint = '/price';
+  private readonly endpoint = '/masterdata/price';
 
   // Private state signal
   private readonly state = signal<PriceState>({

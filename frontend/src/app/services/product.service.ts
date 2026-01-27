@@ -15,7 +15,7 @@ interface ProductState {
   providedIn: 'root'
 })
 export class ProductService {
-  private readonly endpoint = '/product';
+  private readonly endpoint = '/masterdata/product';
 
   // Private state signal
   private readonly state = signal<ProductState>({
