@@ -1,0 +1,246 @@
+/* You can add global styles to this file, and also import other style files */
+
+/* Design System Variables */
+:root {
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 20px;
+  --spacing-xl: 24px;
+  --spacing-xxl: 40px;
+  
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  
+  --color-primary: #3f51b5;
+  --color-text-primary: #333;
+  --color-text-secondary: #666;
+  --color-error: #f44336;
+  --color-error-bg: #ffebee;
+  --color-surface: white;
+  --color-shadow: rgba(0, 0, 0, 0.1);
+  
+  --shadow-sm: 0 2px 4px var(--color-shadow);
+  --shadow-md: 0 8px 16px var(--color-shadow);
+}
+
+/* Layout Components */
+.container {
+  padding: var(--spacing-lg);
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Responsive container sizing */
+@media (min-width: 768px) {
+  .container {
+    max-width: 750px;
+  }
+}
+
+@media (min-width: 992px) {
+  .container {
+    max-width: 970px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1170px;
+  }
+}
+
+/* Header Components */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+  .header {
+    flex-direction: row;
+    gap: 0;
+  }
+}
+
+.header-centered {
+  text-align: center;
+}
+
+.header-margin-bottom-20 {
+  margin-bottom: var(--spacing-lg);
+}
+
+.header-margin-bottom-40 {
+  margin-bottom: var(--spacing-xxl);
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .header-actions {
+    justify-content: flex-start;
+  }
+}
+
+/* Search Components */
+.search-section {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  align-items: center;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .search-section {
+    flex-direction: row;
+  }
+}
+
+.search-field {
+  flex: 1;
+  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .search-field {
+    max-width: 400px;
+  }
+}
+
+.refresh-btn {
+  min-width: 120px;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .refresh-btn {
+    width: auto;
+  }
+}
+
+/* Table Components */
+.table-container {
+  position: relative;
+}
+
+.table {
+  width: 100%;
+  background: var(--color-surface);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+/* State Components */
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-xxl);
+}
+
+.no-data {
+  text-align: center;
+  padding: var(--spacing-xxl);
+  color: var(--color-text-secondary);
+}
+
+.error {
+  text-align: center;
+  padding: var(--spacing-lg);
+  color: var(--color-error);
+  background-color: var(--color-error-bg);
+  border-radius: var(--border-radius-sm);
+  margin-top: var(--spacing-md);
+}
+
+/* Form Components */
+.form-container {
+  background: var(--color-surface);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-row {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .form-row {
+    flex-direction: row;
+  }
+}
+
+.full-width {
+  width: 100%;
+}
+
+.half-width {
+  flex: 1;
+}
+
+@media (max-width: 767px) {
+  .half-width {
+    width: 100%;
+  }
+}
+
+/* Image Components */
+.image-large {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  border-radius: var(--border-radius-sm);
+}
+
+.image-small {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border-radius: var(--border-radius-sm);
+}
+
+/* Material Design Overrides */
+mat-header-cell {
+  font-weight: 600;
+}
+
+mat-cell {
+  padding: var(--spacing-md) var(--spacing-sm);
+}
+
+mat-card {
+  padding: var(--spacing-lg);
+}
+
+mat-card-actions {
+  padding: var(--spacing-md) 0 0 0;
+  margin: 0;
+}
+
+mat-card-actions button {
+  margin-left: var(--spacing-sm);
+}
+
+mat-card-title {
+  color: var(--color-text-primary);
+}
+
+mat-card-subtitle {
+  color: var(--color-text-secondary);
+}
+

@@ -22,7 +22,7 @@
           <mat-option [value]="product.uuid">
             <div class="filter-option">
               @if (product.image) {
-                <img [src]="product.image" [alt]="product.name" class="filter-image">
+                <img [src]="product.image" [alt]="product.name" class="image-small">
               }
               <span>{{ product.name }}</span>
             </div>
@@ -55,7 +55,7 @@
   </div>
 
   <div class="table-container">
-    <mat-table [dataSource]="dataSource()" class="price-table">
+    <mat-table [dataSource]="dataSource()" class="table">
       <ng-container matColumnDef="product">
         <mat-header-cell *matHeaderCellDef>Product</mat-header-cell>
         <mat-cell *matCellDef="let price">{{ getProductName(price.product) }}</mat-cell>

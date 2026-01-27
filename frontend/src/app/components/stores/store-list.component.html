@@ -23,7 +23,7 @@
   </div>
 
   <div class="table-container">
-    <mat-table [dataSource]="dataSource()" class="store-table">
+    <mat-table [dataSource]="dataSource()" class="table">
       <ng-container matColumnDef="name">
         <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
         <mat-cell *matCellDef="let store">{{ store.name }}</mat-cell>
@@ -33,7 +33,7 @@
         <mat-header-cell *matHeaderCellDef>Logo</mat-header-cell>
         <mat-cell *matCellDef="let store">
           @if (store.logo) {
-            <img [src]="store.logo" [alt]="store.name" class="store-logo">
+            <img [src]="store.logo" [alt]="store.name" class="image-large">
           } @else {
             <span>-</span>
           }

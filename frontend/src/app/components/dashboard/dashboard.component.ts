@@ -66,4 +66,16 @@ export class DashboardComponent implements OnInit {
   navigateToPrices(): void {
     this.router.navigate(['/prices']);
   }
+
+  addProduct(): void {
+    this.router.navigate(['/products/new']);
+  }
+
+  addStore(): void {
+    this.router.navigate(['/stores/new']);
+  }
+
+  addPrice(): void {
+    this.router.navigate(['/prices/new']);
+  }
 }
