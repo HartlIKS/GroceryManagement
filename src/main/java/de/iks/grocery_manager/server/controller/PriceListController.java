@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
     path = "/price",
     produces = MediaType.APPLICATION_JSON_VALUE
 )
+@Transactional
 public class PriceListController {
     private final ProductRepository products;
     private final StoreRepository stores;
@@ -33,6 +34,7 @@ public class PriceListController {
     private final UriBuilderFactory uriBuilderFactory;
 
     @GetMapping("/{uuid}")
+    @Transactional(readOnly = true)
     public ResponseEntity<ListPriceDTO> getPrice(@PathVariable UUID uuid) {
         return ResponseEntity.of(
             priceList
@@ -57,7 +59,7 @@ public class PriceListController {
         );
     }
 
-    @PostMapping("/")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ListPriceDTO> postPrice(@RequestBody CreatePriceListingDTO createPriceListingDTO) {
         return products

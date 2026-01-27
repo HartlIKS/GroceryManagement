@@ -11,6 +11,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriBuilderFactory;
 
@@ -21,12 +22,14 @@ import java.util.UUID;
 @RequestMapping(
     path = "/product", produces = MediaType.APPLICATION_JSON_VALUE
 )
+@Transactional
 public class ProductController {
     private final ProductRepository products;
     private final DTOMapper dtoMapper;
     private final UriBuilderFactory uriBuilderFactory;
 
     @GetMapping("/{uuid}")
+    @Transactional(readOnly = true)
     public ResponseEntity<ListProductDTO> getProduct(@PathVariable UUID uuid) {
         return ResponseEntity.of(
             products
@@ -77,6 +80,7 @@ public class ProductController {
     }
 
     @GetMapping
+    @Transactional(readOnly = true)
     public ResponseEntity<Page<ListProductDTO>> search(
         @RequestParam(defaultValue = "") String name,
         @PageableDefault Pageable pageable
