@@ -1,0 +1,58 @@
+<div class="container">
+  <div class="header">
+    <h1>{{ isEditing ? 'Edit Product' : 'Add New Product' }}</h1>
+  </div>
+
+  @if (!loading()) {
+    <div class="form-container">
+      <form [formGroup]="productForm" (ngSubmit)="onSave()">
+        <mat-card>
+          <mat-card-content>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Product Name *</mat-label>
+                <input matInput formControlName="name" placeholder="Enter product name">
+              @if (productForm.get('name')?.hasError('required')) {
+                <mat-error>
+                  Product name is required
+                </mat-error>
+              }
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Image URL</mat-label>
+                <input matInput formControlName="image" placeholder="Enter product image URL">
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>EAN</mat-label>
+                <input matInput formControlName="EAN" placeholder="Enter product EAN">
+              </mat-form-field>
+            </div>
+          </mat-card-content>
+
+          <mat-card-actions align="end">
+            <button mat-raised-button type="button" (click)="onCancel()">Cancel</button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="productForm.invalid">
+              {{ isEditing ? 'Update' : 'Create' }}
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </form>
+
+      @if (error()) {
+        <div class="error">
+          <p>{{ error() }}</p>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="loading">
+      <mat-spinner></mat-spinner>
+    </div>
+  }
+</div>

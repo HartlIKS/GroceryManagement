@@ -1,0 +1,79 @@
+<div class="container">
+  <div class="header">
+    <h1>Price Lists</h1>
+    <button mat-raised-button color="primary" (click)="onAddPrice()">
+      <mat-icon>add</mat-icon>
+      Add Price
+    </button>
+  </div>
+
+  <div class="table-container">
+    <mat-table [dataSource]="dataSource()" class="price-table">
+      <ng-container matColumnDef="product">
+        <mat-header-cell *matHeaderCellDef>Product</mat-header-cell>
+        <mat-cell *matCellDef="let price">{{ getProductName(price.product) }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="store">
+        <mat-header-cell *matHeaderCellDef>Store</mat-header-cell>
+        <mat-cell *matCellDef="let price">{{ getStoreName(price.store) }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="price">
+        <mat-header-cell *matHeaderCellDef>Price</mat-header-cell>
+        <mat-cell *matCellDef="let price">{{ price.price | currency:'EUR' }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="validFrom">
+        <mat-header-cell *matHeaderCellDef>Valid From</mat-header-cell>
+        <mat-cell *matCellDef="let price">{{ price.validFrom | date:'mediumDate' }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="validTo">
+        <mat-header-cell *matHeaderCellDef>Valid To</mat-header-cell>
+        <mat-cell *matCellDef="let price">{{ price.validTo ? (price.validTo | date:'mediumDate') : 'No end date' }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+        <mat-cell *matCellDef="let price">
+          <button mat-icon-button color="primary" (click)="onEditPrice(price.uuid)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="onDeletePrice(price.uuid)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </mat-cell>
+      </ng-container>
+
+      <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+      <mat-row *matRowDef="let _; columns: displayedColumns;"></mat-row>
+    </mat-table>
+
+    @if (loading()) {
+      <div class="loading">
+        <mat-spinner></mat-spinner>
+      </div>
+    } @else if (prices().length === 0) {
+      <div class="no-data">
+        <p>No prices found</p>
+      </div>
+    }
+
+    @if (error()) {
+      <div class="error">
+        <p>{{ error() }}</p>
+      </div>
+    }
+
+    @if (totalElements() > 0) {
+      <mat-paginator
+        [length]="totalElements()"
+        [pageIndex]="currentPage()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="onPageChange($event)">
+      </mat-paginator>
+    }
+  </div>
+</div>

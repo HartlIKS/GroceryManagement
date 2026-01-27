@@ -1,0 +1,74 @@
+<div class="container">
+  <div class="header">
+    <h1>Master Data Dashboard</h1>
+    <p>Manage your grocery store master data</p>
+  </div>
+
+  @if (!loading()) {
+    <div class="dashboard-content">
+      <div class="stats-grid">
+        <mat-card class="stat-card" (click)="navigateToProducts()">
+          <mat-card-header>
+            <mat-card-title>Products</mat-card-title>
+            <mat-card-subtitle>Total products in system</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="stat-number">{{ totalProducts() }}</div>
+          </mat-card-content>
+          <mat-card-actions>
+            <button mat-button color="primary">Manage Products</button>
+          </mat-card-actions>
+        </mat-card>
+
+        <mat-card class="stat-card" (click)="navigateToStores()">
+          <mat-card-header>
+            <mat-card-title>Stores</mat-card-title>
+            <mat-card-subtitle>Total stores in system</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="stat-number">{{ totalStores() }}</div>
+          </mat-card-content>
+          <mat-card-actions>
+            <button mat-button color="primary">Manage Stores</button>
+          </mat-card-actions>
+        </mat-card>
+
+        <mat-card class="stat-card" (click)="navigateToPrices()">
+          <mat-card-header>
+            <mat-card-title>Price Lists</mat-card-title>
+            <mat-card-subtitle>Total price entries</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="stat-number">{{ totalPrices() }}</div>
+          </mat-card-content>
+          <mat-card-actions>
+            <button mat-button color="primary">Manage Prices</button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+
+      <div class="quick-actions">
+        <h2>Quick Actions</h2>
+        <div class="action-buttons">
+          <button mat-raised-button color="primary" (click)="navigateToProducts()">
+            <mat-icon>add</mat-icon>
+            Add Product
+          </button>
+          <button mat-raised-button color="primary" (click)="navigateToStores()">
+            <mat-icon>add</mat-icon>
+            Add Store
+          </button>
+          <button mat-raised-button color="primary" (click)="navigateToPrices()">
+            <mat-icon>add</mat-icon>
+            Add Price
+          </button>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="loading">
+      <mat-spinner></mat-spinner>
+      <p>Loading dashboard data...</p>
+    </div>
+  }
+</div>

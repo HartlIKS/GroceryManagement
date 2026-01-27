@@ -5,6 +5,9 @@ import de.iks.grocery_manager.server.jpa.PriceRepository;
 import de.iks.grocery_manager.server.jpa.ProductRepository;
 import de.iks.grocery_manager.server.jpa.StoreRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 @RestController
@@ -97,7 +101,16 @@ public class PriceListController {
 
     @GetMapping
     @Transactional(readOnly = true)
-    public ResponseEntity<Map<UUID, Map<UUID, List<PriceListingDTO>>>> getPrices(
+    public Page<ListPriceDTO> getPrices(@PageableDefault Pageable page) {
+        return priceList.findAll(page)
+            .map(dtoMapper::map);
+    }
+
+    @GetMapping(
+        params = {"at", "products", "stores"}
+    )
+    @Transactional(readOnly = true)
+    public ResponseEntity<Map<UUID, Map<UUID, List<PriceListingDTO>>>> searchPrices(
         ZonedDateTime at,
         UUID[] products,
         UUID[] stores
