@@ -1,4 +1,1 @@
 export * from './api.service';
-export * from './product.service';
-export * from './store.service';
-export * from './price.service';

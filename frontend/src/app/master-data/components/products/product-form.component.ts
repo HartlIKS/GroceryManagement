@@ -57,7 +57,7 @@ export class ProductFormComponent implements OnInit {
 
   loadProduct(): void {
     if (!this.productId) return;
-    
+
     this.productService.getProduct(this.productId).subscribe({
       next: (product: ListProductDTO) => {
         this.productForm.patchValue({

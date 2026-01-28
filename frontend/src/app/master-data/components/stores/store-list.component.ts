@@ -71,7 +71,7 @@ export class StoreListComponent implements OnInit {
     if (confirm('Are you sure you want to delete this store?')) {
       // Optimistic update
       this.storeService.removeStoreFromCache(uuid);
-      
+
       this.storeService.deleteStore(uuid).subscribe({
         error: (error) => {
           console.error('Error deleting store:', error);
@@ -86,9 +86,9 @@ export class StoreListComponent implements OnInit {
     if (!address) {
       return '-';
     }
-    
+
     const parts: string[] = [];
-    
+
     if (address.street && address.number) {
       parts.push(`${address.street} ${address.number}`);
     } else if (address.street) {
@@ -96,7 +96,7 @@ export class StoreListComponent implements OnInit {
     } else if (address.number) {
       parts.push(address.number);
     }
-    
+
     if (address.zip && address.city) {
       parts.push(`${address.zip} ${address.city}`);
     } else if (address.zip) {
@@ -104,11 +104,11 @@ export class StoreListComponent implements OnInit {
     } else if (address.city) {
       parts.push(address.city);
     }
-    
+
     if (address.country) {
       parts.push(address.country);
     }
-    
+
     return parts.join(', ');
   }
 }

@@ -1,16 +1,16 @@
 import { Routes } from '@angular/router';
 import {
-  PriceFormComponent,
-  PriceListComponent,
-  ProductFormComponent,
-  ProductListComponent,
-  StoreFormComponent,
-  StoreListComponent,
   UserInterfaceComponent
 } from './components';
 import { NavigationComponent } from './components/navigation/navigation.component';
 import { MainNavItemsComponent } from './components/navigation/main-nav-items/main-nav-items.component';
 import { MasterDataNavItemsComponent } from './components/navigation/master-data-nav-items/master-data-nav-items.component';
+import {
+  DashboardComponent, PriceFormComponent, PriceListComponent,
+  ProductFormComponent,
+  ProductListComponent, StoreFormComponent,
+  StoreListComponent
+} from './master-data/components';
 
 export const routes: Routes = [
   {
@@ -44,7 +44,7 @@ export const routes: Routes = [
       },
       {
         path: 'dashboard',
-        loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
+        component: DashboardComponent
       },
       {
         path: 'products',

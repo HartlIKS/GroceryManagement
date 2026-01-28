@@ -71,7 +71,7 @@ export class ProductListComponent implements OnInit {
     if (confirm('Are you sure you want to delete this product?')) {
       // Optimistic update
       this.productService.removeProductFromCache(uuid);
-      
+
       this.productService.deleteProduct(uuid).subscribe({
         error: (error) => {
           console.error('Error deleting product:', error);

@@ -1,7 +1,8 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiService } from './api.service';
-import { CreateProductDTO, ListProductDTO, Page } from '../models';
+import { ApiService } from '../../services';
+import { CreateProductDTO, ListProductDTO } from '../models';
+import { Page } from '../../models';
 
 interface ProductState {
   products: ListProductDTO[];

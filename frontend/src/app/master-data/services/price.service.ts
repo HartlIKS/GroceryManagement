@@ -1,7 +1,8 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiService } from './api.service';
-import { CreatePriceListingDTO, ListPriceDTO, Page, UpdatePriceDTO } from '../models';
+import { ApiService } from '../../services';
+import { CreatePriceListingDTO, ListPriceDTO, UpdatePriceDTO } from '../models';
+import { Page } from '../../models';
 
 interface PriceState {
   prices: ListPriceDTO[];
@@ -49,11 +50,11 @@ export class PriceService {
 
     // Build query parameters based on filters
     const params: any = { page, size };
-    
+
     if (currentState.selectedStore) {
       params.store = currentState.selectedStore;
     }
-    
+
     if (currentState.selectedProduct) {
       params.product = currentState.selectedProduct;
     }
