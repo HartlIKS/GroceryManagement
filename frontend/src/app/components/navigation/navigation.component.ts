@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
@@ -7,14 +7,19 @@ import { CommonModule } from '@angular/common';
 @Component({
   selector: 'app-navigation',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, MatButtonModule, MatIconModule, RouterOutlet],
   templateUrl: './navigation.component.html',
   styleUrls: ['./navigation.component.css']
 })
 export class NavigationComponent {
   isMenuOpen = false;
+  isMasterDataRoute = false;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router) {
+    this.router.events.subscribe(() => {
+      this.isMasterDataRoute = this.router.url.startsWith('/master-data');
+    });
+  }
 
   toggleMenu(): void {
     this.isMenuOpen = !this.isMenuOpen;
@@ -22,14 +27,5 @@ export class NavigationComponent {
 
   closeMenu(): void {
     this.isMenuOpen = false;
-  }
-
-  navigateTo(path: string): void {
-    this.router.navigate([path]);
-    this.closeMenu();
-  }
-
-  isActive(path: string): boolean {
-    return this.router.url === path || this.router.url.startsWith(path + '/');
   }
 }
