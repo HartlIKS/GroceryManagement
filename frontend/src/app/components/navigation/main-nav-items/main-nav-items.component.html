@@ -1,15 +1,15 @@
 <div class="nav-container">
-  <a class="nav-item" routerLinkActive routerLink="/">
+  <a class="nav-item" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
     <mat-icon>home</mat-icon>
     <span>Home</span>
   </a>
 
-  <a class="nav-item" routerLinkActive routerLink="/product-groups">
+  <a class="nav-item" routerLink="/product-groups" routerLinkActive="active">
     <mat-icon>category</mat-icon>
     <span>Product Groups</span>
   </a>
 
-  <a class="nav-item master-data-link" routerLinkActive routerLink="/master-data">
+  <a class="nav-item master-data-link" routerLink="/master-data" routerLinkActive="active">
     <mat-icon>admin_panel_settings</mat-icon>
     <span>Master Data</span>
   </a>

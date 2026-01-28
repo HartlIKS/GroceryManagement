@@ -21,24 +21,36 @@
 
       <mat-card class="dashboard-card">
         <mat-card-header>
-          <mat-card-title>Price Comparison</mat-card-title>
-          <mat-card-subtitle>Compare prices across stores</mat-card-subtitle>
+          <mat-card-title>Product Groups</mat-card-title>
+          <mat-card-subtitle>Organize similar products</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <p>Find the best deals for your favorite products</p>
+          <p>Grouped products that can be substituted for one another</p>
+          @if (!loading()) {
+            <div class="dashboard-stats">
+              <div class="stat-number">{{ totalGroups() }}</div>
+              <p>groups containing</p>
+              <div class="stat-number">{{ totalProductsInGroups() }}</div>
+              <p>products</p>
+            </div>
+          } @else {
+            <div class="loading">
+              <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+            </div>
+          }
         </mat-card-content>
         <mat-card-actions>
-          <button mat-button color="primary">Coming Soon</button>
+          <button mat-button color="primary" routerLink="/product-groups">Manage Groups</button>
         </mat-card-actions>
       </mat-card>
 
       <mat-card class="dashboard-card">
         <mat-card-header>
-          <mat-card-title>Inventory Tracker</mat-card-title>
-          <mat-card-subtitle>Track your grocery inventory</mat-card-subtitle>
+          <mat-card-title>Shopping Trip Planning</mat-card-title>
+          <mat-card-subtitle>Optimize your shopping routes</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <p>Keep track of what you have at home</p>
+          <p>Plan which products to buy from which stores based on your shopping lists and current prices</p>
         </mat-card-content>
         <mat-card-actions>
           <button mat-button color="primary">Coming Soon</button>

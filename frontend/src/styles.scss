@@ -402,10 +402,15 @@
   transform: translateY(-4px);
 }
 
+.dashboard-stats>* {
+  display: inline;
+}
+
 .stat-number {
   font-size: 48px;
   font-weight: bold;
   margin: var(--spacing-lg) 0;
+  color: var(--color-primary);
 }
 
 .quick-actions {
