@@ -5,12 +5,12 @@ import { MatCardModule } from '@angular/material/card';
 import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-user-interface',
+  selector: 'app-user-dashboard',
   standalone: true,
   imports: [CommonModule, MatButtonModule, MatIconModule, MatCardModule],
-  templateUrl: './user-interface.component.html',
-  styleUrls: ['./user-interface.component.css']
+  templateUrl: './user-dashboard.component.html',
+  styleUrls: ['./user-dashboard.component.css']
 })
-export class UserInterfaceComponent {
+export class UserDashboardComponent {
 
 }

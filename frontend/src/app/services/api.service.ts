@@ -135,4 +135,22 @@ export class ApiService {
       })
     );
   }
+
+  deleteWithData<T>(endpoint: string, id: string): Observable<T> {
+    this.setLoading(true);
+    this.setError(null);
+    
+    return this.http.delete<T>(this.getUrl(`${endpoint}/${id}`)).pipe(
+      tap({
+        next: () => {
+          this.setLoading(false);
+          this.setError(null);
+        },
+        error: (error: any) => {
+          this.setLoading(false);
+          this.setError(error.message || 'An error occurred');
+        }
+      })
+    );
+  }
 }

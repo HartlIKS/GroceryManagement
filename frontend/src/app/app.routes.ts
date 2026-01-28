@@ -1,7 +1,4 @@
 import { Routes } from '@angular/router';
-import {
-  UserInterfaceComponent
-} from './components';
 import { NavigationComponent } from './components/navigation/navigation.component';
 import { MainNavItemsComponent } from './components/navigation/main-nav-items/main-nav-items.component';
 import { MasterDataNavItemsComponent } from './components/navigation/master-data-nav-items/master-data-nav-items.component';
@@ -11,6 +8,7 @@ import {
   ProductListComponent, StoreFormComponent,
   StoreListComponent
 } from './master-data/components';
+import { UserDashboardComponent, ProductGroupListComponent, ProductGroupFormComponent } from './user-interface/components';
 
 export const routes: Routes = [
   {
@@ -24,7 +22,19 @@ export const routes: Routes = [
       },
       {
         path: '',
-        component: UserInterfaceComponent,
+        component: UserDashboardComponent,
+      },
+      {
+        path: 'product-groups',
+        component: ProductGroupListComponent
+      },
+      {
+        path: 'product-groups/new',
+        component: ProductGroupFormComponent
+      },
+      {
+        path: 'product-groups/:id',
+        component: ProductGroupFormComponent
       }
     ],
   },

@@ -1,0 +1,76 @@
+<div class="container">
+  <div class="header">
+    <h2>Product Groups</h2>
+    <button mat-raised-button color="primary" (click)="onAddProductGroup()">
+      <mat-icon>add</mat-icon>
+      Add Product Group
+    </button>
+  </div>
+
+  <div class="search-section">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search product groups</mat-label>
+      <input matInput
+             [(ngModel)]="searchTerm"
+             (keyup.enter)="onSearch()"
+             placeholder="Enter product group name">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+    <button mat-raised-button (click)="onSearch()">Search</button>
+  </div>
+
+  <div class="content" *ngIf="!loading(); else loadingTemplate">
+    <div class="table-container">
+      <mat-table [dataSource]="dataSource()" class="table">
+        <!-- Name Column -->
+        <ng-container matColumnDef="name">
+          <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
+          <mat-cell *matCellDef="let productGroup">
+            {{ productGroup.name }}
+          </mat-cell>
+        </ng-container>
+
+        <!-- Product Count Column -->
+        <ng-container matColumnDef="productCount">
+          <mat-header-cell *matHeaderCellDef>Products</mat-header-cell>
+          <mat-cell *matCellDef="let productGroup">
+            {{ getProductCount(productGroup.products) }}
+          </mat-cell>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+          <mat-cell *matCellDef="let productGroup">
+            <button mat-icon-button color="primary" (click)="onEditProductGroup(productGroup.uuid)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="onDeleteProductGroup(productGroup.uuid)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </mat-cell>
+        </ng-container>
+
+        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+        <mat-row *matRowDef="let _; columns: displayedColumns;"></mat-row>
+      </mat-table>
+
+      @if (dataSource().data.length === 0) {
+        <div class="no-data">
+          <p>No product groups found.</p>
+        </div>
+      }
+    </div>
+  </div>
+
+  <ng-template #loadingTemplate>
+    <div class="loading">
+      <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+      <p>Loading product groups...</p>
+    </div>
+  </ng-template>
+
+  <div class="error" *ngIf="error()">
+    <p>Error loading product groups: {{ error() }}</p>
+  </div>
+</div>

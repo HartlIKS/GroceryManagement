@@ -1,0 +1,139 @@
+<div class="container">
+  <mat-card class="form-container">
+    <mat-card-header>
+      <mat-card-title>
+        <h2>{{ isEditMode ? 'Edit Product Group' : 'Create Product Group' }}</h2>
+      </mat-card-title>
+      <mat-card-subtitle>
+        {{ isEditMode ? 'Update the product group information' : 'Add a new product group to organize similar products' }}
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (!loading()) {
+        <form [formGroup]="productGroupForm" (ngSubmit)="onSubmit()">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Product Group Name</mat-label>
+              <input matInput
+                     formControlName="name"
+                     placeholder="e.g., Pasta, Beverages, Snacks">
+              <mat-error>{{ getErrorMessage('name') }}</mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Product Management Section (only in edit mode) -->
+          @if (isEditMode) {
+            <div class="section-header">
+              <h3>Products in this Group</h3>
+            </div>
+
+            <div class="form-row-spaced">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Add Product to Group</mat-label>
+                <mat-select [(value)]="selectedProductUuid" placeholder="Select a product">
+                  @for (product of availableProducts(); track product.uuid) {
+                    <mat-option [value]="product.uuid">
+                      <div class="filter-option">
+                        @if (product.image) {
+                          <img [src]="product.image" [alt]="product.name" class="image-small">
+                        }
+                        <span>{{ product.name }}</span>
+                      </div>
+                    </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <button mat-raised-button
+                      color="primary"
+                      type="button"
+                      (click)="addProductToGroup()"
+                      [disabled]="!selectedProductUuid">
+                <mat-icon>add</mat-icon>
+                Add Product
+              </button>
+            </div>
+
+            <div class="table-container">
+              @if (currentProducts().length > 0) {
+                <mat-table [dataSource]="productsDataSource()" class="table">
+                  <ng-container matColumnDef="name">
+                    <mat-header-cell *matHeaderCellDef>Product Name</mat-header-cell>
+                    <mat-cell *matCellDef="let product">{{ product.name }}</mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="image">
+                    <mat-header-cell *matHeaderCellDef>Image</mat-header-cell>
+                    <mat-cell *matCellDef="let product">
+                      @if (product.image) {
+                        <img [src]="product.image" [alt]="product.name" class="image-large">
+                      } @else {
+                        <span>-</span>
+                      }
+                    </mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="EAN">
+                    <mat-header-cell *matHeaderCellDef>EAN</mat-header-cell>
+                    <mat-cell *matCellDef="let product">{{ product.EAN || '-' }}</mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="actions">
+                    <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+                    <mat-cell *matCellDef="let product">
+                      <button mat-icon-button
+                              color="warn"
+                              type="button"
+                              (click)="removeProductFromGroup(product.uuid)"
+                              matTooltip="Remove from group">
+                        <mat-icon>remove_circle</mat-icon>
+                      </button>
+                    </mat-cell>
+                  </ng-container>
+
+                  <mat-header-row *matHeaderRowDef="['name', 'image', 'EAN', 'actions']"></mat-header-row>
+                  <mat-row *matRowDef="let _; columns: ['name', 'image', 'EAN', 'actions'];"></mat-row>
+                </mat-table>
+              }
+
+              @if (currentProducts().length === 0) {
+                <div class="no-data">
+                  <p>No products in this group yet. Add products using the dropdown above.</p>
+                </div>
+              }
+            </div>
+          }
+
+          <div class="header header-margin-bottom-20">
+            <div class="header-actions">
+              <button mat-raised-button
+                      type="submit"
+                      color="primary"
+                      [disabled]="productGroupForm.invalid">
+                <mat-icon>{{ isEditMode ? 'save' : 'add' }}</mat-icon>
+                {{ isEditMode ? 'Update Product Group' : 'Create Product Group' }}
+              </button>
+              <button mat-button
+                      type="button"
+                      (click)="onCancel()">
+                <mat-icon>cancel</mat-icon>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </form>
+      } @else {
+        <div class="loading">
+          <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+          <p>{{ isEditMode ? 'Loading product group...' : 'Creating product group...' }}</p>
+        </div>
+      }
+    </mat-card-content>
+
+    @if (error()) {
+      <div class="error">
+        <p>{{ isEditMode ? 'Error updating product group:' : 'Error creating product group:' }} {{ error() }}</p>
+      </div>
+    }
+  </mat-card>
+</div>
