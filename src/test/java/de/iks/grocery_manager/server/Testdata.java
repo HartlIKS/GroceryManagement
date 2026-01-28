@@ -43,12 +43,13 @@ public class Testdata {
           },
           "currency": "USD"
         }""", STORE_2_UUID);
+    public static final UUID STORE_3_UUID = UUID.fromString("00000000-0000-0000-0000-000000000002");
     public static final String STORE_3_CREATE_JSON = """
         {
           "name": "Store 3",
           "address": {
             "country": "DE",
-            "city": "Neuss"
+            "city": "Munich"
           },
           "currency": "EUR"
         }""";
@@ -57,10 +58,22 @@ public class Testdata {
           "name": "Store 3",
           "address": {
             "country": "DE",
-            "city": "Neuss"
+            "city": "Munich"
           },
           "currency": "EUR"
         }""";
+    
+    public static final UUID STORE_4_UUID = UUID.fromString("00000000-0000-0000-0000-000000000003");
+    public static final String STORE_4_JSON = String.format("""
+        {
+          "uuid": "%s",
+          "name": "Store 4",
+          "address": {
+            "country": "DE",
+            "city": "Berlin"
+          },
+          "currency": "USD"
+        }""", STORE_4_UUID);
 
     public static final UUID BAD_UUID = UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff");
 
@@ -69,14 +82,16 @@ public class Testdata {
           "page": {
             "number": 0,
             "size": 10,
-            "totalElements": 2,
+            "totalElements": 4,
             "totalPages": 1
           },
           "content": [
             %s,
+            %s,
+            %s,
             %s
           ]
-        }""", STORE_1_JSON, STORE_2_JSON);
+        }""", STORE_1_JSON, STORE_2_JSON, STORE_3_JSON, STORE_4_JSON);
 
     public static final UUID PRODUCT_1_UUID = UUID.fromString("10000000-0000-0000-0000-000000000000");
     public static final String PRODUCT_1_JSON = String.format("""
@@ -107,8 +122,8 @@ public class Testdata {
           "EAN": "654321"
         }""";
     
-    public static final UUID PRODUCT_GROUP_TEST_1_UUID = UUID.fromString("30000000-0000-0000-0000-000000000000");
-    public static final UUID PRODUCT_GROUP_TEST_2_UUID = UUID.fromString("30000000-0000-0000-0000-000000000001");
+    public static final UUID PRODUCT_GROUP_TEST_1_UUID = UUID.fromString("10000000-0000-0000-0000-000000000002");
+    public static final UUID PRODUCT_GROUP_TEST_2_UUID = UUID.fromString("10000000-0000-0000-0000-000000000003");
 
     public static final String PRODUCT_3_JSON = """
         {
@@ -149,8 +164,8 @@ public class Testdata {
         {
           "uuid": "%s",
           "name": "Group 1",
-          "products": ["30000000-0000-0000-0000-000000000000"]
-        }""", PRODUCT_GROUP_1_UUID);
+          "products": ["%s"]
+        }""", PRODUCT_GROUP_1_UUID, PRODUCT_GROUP_TEST_1_UUID);
     public static final String PRODUCT_GROUP_1_UPDATE_JSON = """
         {
           "name": "Group 1b"
@@ -159,8 +174,8 @@ public class Testdata {
         {
           "uuid": "%s",
           "name": "Group 1b",
-          "products": ["30000000-0000-0000-0000-000000000000"]
-        }""", PRODUCT_GROUP_1_UUID);
+          "products": ["%s"]
+        }""", PRODUCT_GROUP_1_UUID, PRODUCT_GROUP_TEST_1_UUID);
     public static final UUID PRODUCT_GROUP_2_UUID = UUID.fromString("20000000-0000-0000-0000-000000000001");
     public static final String PRODUCT_GROUP_2_JSON = String.format("""
         {
@@ -202,4 +217,73 @@ public class Testdata {
             %s
           ]
         }""", PRODUCT_GROUP_2_JSON);
+
+    public static final UUID PRICE_1_UUID = UUID.fromString("40000000-0000-0000-0000-000000000000");
+    public static final String PRICE_1_JSON = String.format("""
+        {
+          "uuid": "%s",
+          "store": "%s",
+          "product": "%s",
+          "validFrom": "2024-01-01T01:00:00+01:00",
+          "validTo": "2025-01-01T00:59:59+01:00",
+          "price": 11
+        }""", PRICE_1_UUID, STORE_3_UUID, PRODUCT_GROUP_TEST_1_UUID);
+    public static final String PRICE_1_UPDATE_JSON = """
+        {
+          "validFrom": "2024-02-01T00:00:00Z",
+          "validTo": "2024-11-30T23:59:59Z",
+          "price": 12.99
+        }""";
+    public static final String PRICE_1_JSON2 = String.format("""
+        {
+          "uuid": "%s",
+          "store": "%s",
+          "product": "%s",
+          "validFrom": "2024-02-01T00:00:00Z",
+          "validTo": "2024-11-30T23:59:59Z",
+          "price": 12.99
+        }""", PRICE_1_UUID, STORE_3_UUID, PRODUCT_GROUP_TEST_1_UUID);
+    
+    public static final UUID PRICE_2_UUID = UUID.fromString("40000000-0000-0000-0000-000000000001");
+    public static final String PRICE_2_JSON = String.format("""
+        {
+          "uuid": "%s",
+          "store": "%s",
+          "product": "%s",
+          "validFrom": "2024-01-01T01:00:00+01:00",
+          "validTo": "2025-01-01T00:59:59+01:00",
+          "price": 5
+        }""", PRICE_2_UUID, STORE_4_UUID, PRODUCT_GROUP_TEST_2_UUID);
+
+    public static final String PRICE_3_CREATE_JSON = String.format("""
+        {
+          "store": "%s",
+          "product": "%s",
+          "validFrom": "2024-03-01T00:00:00Z",
+          "validTo": "2024-12-31T23:59:59Z",
+          "price": 8.99
+        }""", STORE_1_UUID, PRODUCT_GROUP_TEST_2_UUID);
+    
+    public static final String PRICE_3_JSON = String.format("""
+        {
+          "store": "%s",
+          "product": "%s",
+          "validFrom": "2024-03-01T00:00:00Z",
+          "validTo": "2024-12-31T23:59:59Z",
+          "price": 8.99
+        }""", STORE_1_UUID, PRODUCT_GROUP_TEST_2_UUID);
+
+    public static final String PRICE_SEARCH_RESULT_JSON = String.format("""
+        {
+          "page": {
+            "number": 0,
+            "size": 10,
+            "totalElements": 2,
+            "totalPages": 1
+          },
+          "content": [
+            %s,
+            %s
+          ]
+        }""", PRICE_1_JSON, PRICE_2_JSON);
 }
