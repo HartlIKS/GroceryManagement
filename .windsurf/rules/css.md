@@ -1,6 +1,5 @@
 ---
-trigger: model_decision
-description: This rule applies whenever the frontend (angular app) is being worked on.
+trigger: always_on
 ---
 
 Global CSS Styles are defined in the styles.scss file.
