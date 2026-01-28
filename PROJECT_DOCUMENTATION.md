@@ -47,7 +47,19 @@ GroceryManagement/
     │   ├── app/                     # Angular application
     │   │   ├── app.config.ts        # Application configuration
     │   │   ├── app.routes.ts        # Routing configuration
-    │   │   └── components/          # Angular components
+    │   │   ├── components/          # Shared components
+    │   │   │   ├── navigation/      # Navigation components
+    │   │   │   └── user-interface/  # UI components
+    │   │   ├── master-data/        # Master data interface
+    │   │   │   ├── components/      # Master data components
+    │   │   │   │   ├── dashboard/   # Dashboard component
+    │   │   │   │   ├── products/    # Product management
+    │   │   │   │   ├── stores/      # Store management
+    │   │   │   │   └── prices/      # Price management
+    │   │   │   ├── models/          # Master data models
+    │   │   │   └── services/        # Master data services
+    │   │   ├── models/              # Global models
+    │   │   └── services/            # Global services
     │   ├── index.html               # Entry HTML
     │   ├── main.ts                  # Application bootstrap
     │   └── styles/                  # Global styles
