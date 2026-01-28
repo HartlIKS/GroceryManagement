@@ -24,7 +24,7 @@
   --shadow-md: 0 8px 16px var(--color-shadow);
 }
 
-/* Navigation Base Styles */
+/* Navigation */
 .navbar {
   color: white;
   background: #3f51b5;
@@ -102,7 +102,7 @@
   display: none;
 }
 
-/* Navigation Mobile Styles */
+/* Navigation - Mobile */
 @media (max-width: 768px) {
   .menu-toggle {
     display: flex;
@@ -154,7 +154,7 @@
   }
 }
 
-/* Layout Components */
+/* Layout */
 .container {
   padding: var(--spacing-lg);
   max-width: 100%;
@@ -189,7 +189,7 @@
   }
 }
 
-/* Header Components */
+/* Headers */
 .header {
   display: flex;
   justify-content: space-between;
@@ -232,7 +232,7 @@
   }
 }
 
-/* Search Components */
+/* Search */
 .search-section {
   display: flex;
   gap: var(--spacing-sm);
@@ -269,7 +269,7 @@
   }
 }
 
-/* Table Components */
+/* Tables */
 .table-container {
   position: relative;
 }
@@ -282,7 +282,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* State Components */
+/* Loading & Empty States */
 .loading {
   display: flex;
   justify-content: center;
@@ -304,7 +304,7 @@
   margin-top: var(--spacing-md);
 }
 
-/* Form Components */
+/* Forms */
 .form-container {
   background: var(--color-surface);
   border-radius: var(--border-radius-md);
@@ -338,7 +338,7 @@
   }
 }
 
-/* Image Components */
+/* Images */
 .image-large {
   width: 50px;
   height: 50px;
@@ -351,6 +351,54 @@
   height: 24px;
   object-fit: contain;
   border-radius: var(--border-radius-sm);
+}
+
+/* Dashboard */
+.dashboard-content {
+  min-height: 400px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-xxl);
+}
+
+.dashboard-card {
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-4px);
+}
+
+.stat-number {
+  font-size: 48px;
+  font-weight: bold;
+  margin: var(--spacing-lg) 0;
+}
+
+.quick-actions {
+  text-align: center;
+}
+
+.quick-actions h2 {
+  margin-bottom: var(--spacing-xl);
+}
+
+.action-buttons {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.action-buttons button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 /* Material Design Overrides */

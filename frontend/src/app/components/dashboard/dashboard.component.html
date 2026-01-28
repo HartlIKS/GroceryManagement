@@ -6,8 +6,8 @@
 
   @if (!loading()) {
     <div class="dashboard-content">
-      <div class="stats-grid">
-        <mat-card class="stat-card" (click)="navigateToProducts()">
+      <div class="dashboard-grid">
+        <mat-card class="dashboard-card" (click)="navigateToProducts()">
           <mat-card-header>
             <mat-card-title>Products</mat-card-title>
             <mat-card-subtitle>Total products in system</mat-card-subtitle>
@@ -20,7 +20,7 @@
           </mat-card-actions>
         </mat-card>
 
-        <mat-card class="stat-card" (click)="navigateToStores()">
+        <mat-card class="dashboard-card" (click)="navigateToStores()">
           <mat-card-header>
             <mat-card-title>Stores</mat-card-title>
             <mat-card-subtitle>Total stores in system</mat-card-subtitle>
@@ -33,7 +33,7 @@
           </mat-card-actions>
         </mat-card>
 
-        <mat-card class="stat-card" (click)="navigateToPrices()">
+        <mat-card class="dashboard-card" (click)="navigateToPrices()">
           <mat-card-header>
             <mat-card-title>Price Lists</mat-card-title>
             <mat-card-subtitle>Total price entries</mat-card-subtitle>
