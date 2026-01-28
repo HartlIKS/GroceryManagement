@@ -1,7 +1,9 @@
 ---
-trigger: glob
-description: 
-globs: *.css
+trigger: model_decision
+description: This rule applies whenever the frontend (angular app) is being worked on.
 ---
 
-Global Styles are defined in the styles.scss file. They should only be overwritten on a per component basis if necessary.
+Global CSS Styles are defined in the styles.scss file.
+Components should use global styles whenever possible to ensure consistent theming.
+
+Most of the detailed theming is done using angular material. Don't overwrite angular material styling unless explicitly asked to.
