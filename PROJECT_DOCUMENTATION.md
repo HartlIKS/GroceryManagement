@@ -49,7 +49,6 @@ GroceryManagement/
     │   │   ├── app.routes.ts        # Routing configuration
     │   │   ├── components/          # Shared components
     │   │   │   ├── navigation/      # Navigation components
-    │   │   │   └── user-interface/  # UI components
     │   │   ├── master-data/        # Master data interface
     │   │   │   ├── components/      # Master data components
     │   │   │   │   ├── dashboard/   # Dashboard component
@@ -58,6 +57,20 @@ GroceryManagement/
     │   │   │   │   └── prices/      # Price management
     │   │   │   ├── models/          # Master data models
     │   │   │   └── services/        # Master data services
+    │   │   ├── user-interface/     # User interface
+    │   │   │   ├── components/      # User interface components
+    │   │   │   │   ├── product-groups/  # Product group management
+    │   │   │   │   │   ├── product-group-form.component.*  # Product group form
+    │   │   │   │   │   ├── product-group-list.component.*  # Product group list
+    │   │   │   │   │   └── index.ts  # Component exports
+    │   │   │   │   ├── user-dashboard.component.*  # User dashboard
+    │   │   │   │   └── index.ts  # Component exports
+    │   │   │   ├── models/          # User interface models
+    │   │   │   │   ├── product-group.model.ts  # Product group models
+    │   │   │   │   └── index.ts  # Model exports
+    │   │   │   ├── services/        # User interface services
+    │   │   │   │   ├── product-group.service.ts  # Product group service
+    │   │   │   │   └── index.ts  # Service exports
     │   │   ├── models/              # Global models
     │   │   └── services/            # Global services
     │   ├── index.html               # Entry HTML
@@ -96,6 +109,27 @@ GroceryManagement/
 - **products**: List of products in the group (List<Product>)
 
 Product groups allow users to group similar products together that can be substituted for one another. For example, different brands of milk or various types of pasta could be grouped together, allowing users to choose any product within the same group as a substitute.
+
+## User Interface Features
+
+### User Dashboard
+- **Main landing page** for regular users
+- **Navigation** to product groups and other features
+- **Modern Angular Material design** with responsive layout
+
+### Product Groups Management
+- **Complete CRUD operations** for product groups
+- **Product assignment** - Add/remove products from groups
+- **Visual product selection** with images in dropdowns
+- **Real-time updates** with optimistic UI changes
+- **Responsive table design** with proper column widths
+
+### Key Features
+- **Product Images**: Displayed in dropdowns and tables when available
+- **Signal-based State Management**: Using Angular 17+ signals for reactive updates
+- **Consistent Styling**: Matches master data interface patterns
+- **Modern Control Flow**: Uses `@if` and `@for` instead of deprecated `*ngIf` and `*ngFor`
+- **Global Design System**: Centralized styling with CSS custom properties
 
 ### Address
 - **country**: Country name (String)
@@ -204,9 +238,10 @@ This will:
 ### Frontend Dependencies
 - Angular 21
 - Angular Material 21
-- NgRx Store (state management)
+- Angular Signals (state management)
 - RxJS (reactive programming)
 - TypeScript 5.9
+- Modern Control Flow (`@if`, `@for`)
 
 ## Security Configuration
 - OAuth2 Resource Server configuration
@@ -234,5 +269,9 @@ This will:
 - The project uses MapStruct for DTO-to-entity mapping
 - Lombok reduces boilerplate code in entities and DTOs
 - Frontend uses Angular Material for consistent UI components
-- NgRx Store manages application state on the frontend
+- Angular Signals manage reactive state in the frontend
+- Modern control flow (`@if`, `@for`) replaces deprecated structural directives
+- Global design system with CSS custom properties for consistent styling
+- Separated architecture: `master-data` for admin functions, `user-interface` for user-facing features
 - The build process integrates both backend and frontend into a single deployment artifact
+- Product groups feature includes visual product selection and real-time updates
