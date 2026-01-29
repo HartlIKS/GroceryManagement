@@ -27,9 +27,9 @@ VALUES
     (UUID '20000000-0000-0000-0000-000000000000', 'Group 1', 'user1'),
     (UUID '20000000-0000-0000-0000-000000000001', 'Group 2', 'user2');
 
-INSERT INTO product_group_products(product_group_uuid, products_uuid)
+INSERT INTO product_group_products(product_group_uuid, products_uuid, amount)
 VALUES
-    (UUID '20000000-0000-0000-0000-000000000000', UUID '10000000-0000-0000-0000-000000000002');
+    (UUID '20000000-0000-0000-0000-000000000000', UUID '10000000-0000-0000-0000-000000000002', 1);
 
 INSERT INTO price_listing(uuid, store_uuid, product_uuid, valid_from, valid_to, price)
 VALUES
