@@ -107,10 +107,10 @@
                              [formControl]="getItemAmountControl(item)"
                              min="0.01"
                              step="0.01">
-                      @if (getItemAmountControl(item)?.hasError('required')) {
+                      @if (getItemAmountControl(item).hasError('required')) {
                         <mat-error>Amount is required</mat-error>
                       }
-                      @if (getItemAmountControl(item)?.hasError('min')) {
+                      @if (getItemAmountControl(item).hasError('min')) {
                         <mat-error>Minimum amount is 0.01</mat-error>
                       }
                     </mat-form-field>
