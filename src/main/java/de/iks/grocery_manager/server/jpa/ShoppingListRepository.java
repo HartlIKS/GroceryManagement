@@ -1,0 +1,15 @@
+package de.iks.grocery_manager.server.jpa;
+
+import de.iks.grocery_manager.server.model.ShoppingList;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+import java.util.UUID;
+
+public interface ShoppingListRepository extends JpaRepository<ShoppingList, UUID> {
+    Optional<? extends ShoppingList> findByUuidAndOwner(UUID uuid, String owner);
+    void deleteByUuidAndOwner(UUID uuid, String owner);
+    Page<? extends ShoppingList> findAllByOwnerAndNameContainingIgnoreCase(String owner, String name, Pageable pageable);
+}

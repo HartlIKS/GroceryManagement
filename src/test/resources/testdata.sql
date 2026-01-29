@@ -27,7 +27,7 @@ VALUES
     (UUID '20000000-0000-0000-0000-000000000000', 'Group 1', 'user1'),
     (UUID '20000000-0000-0000-0000-000000000001', 'Group 2', 'user2');
 
-INSERT INTO product_group_products(product_group_uuid, products_uuid, amount)
+INSERT INTO product_group_products(product_group_uuid, product_uuid, amount)
 VALUES
     (UUID '20000000-0000-0000-0000-000000000000', UUID '10000000-0000-0000-0000-000000000002', 1);
 

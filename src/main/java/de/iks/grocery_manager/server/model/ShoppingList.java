@@ -11,7 +11,7 @@ import java.util.UUID;
 @Data
 @Entity
 @Table
-public class ProductGroup {
+public class ShoppingList {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;
@@ -26,4 +26,9 @@ public class ProductGroup {
     @MapKeyJoinColumn(name = "product_uuid")
     @Column(name = "amount", nullable = false)
     private Map<Product, BigDecimal> products;
+
+    @ElementCollection
+    @MapKeyJoinColumn(name = "group_uuid")
+    @Column(name = "amount", nullable = false)
+    private Map<ProductGroup, BigDecimal> productGroups;
 }

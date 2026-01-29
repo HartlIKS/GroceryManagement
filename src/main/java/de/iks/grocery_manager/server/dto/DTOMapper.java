@@ -1,6 +1,7 @@
 package de.iks.grocery_manager.server.dto;
 
 import de.iks.grocery_manager.server.dto.masterdata.*;
+import de.iks.grocery_manager.server.jpa.ProductGroupRepository;
 import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
 import de.iks.grocery_manager.server.model.*;
 import de.iks.grocery_manager.server.model.masterdata.Address;
@@ -40,7 +41,8 @@ public interface DTOMapper {
     }
 
     default Product toProduct(UUID uuid, @Context ProductRepository repository) {
-        return repository.findById(uuid)
+        return repository
+            .findById(uuid)
             .orElseThrow(() -> new NoSuchElementException(uuid.toString()));
     }
 
@@ -49,6 +51,10 @@ public interface DTOMapper {
 
     @Mapping(target = "uuid", ignore = true)
     void update(@MappingTarget Product target, CreateProductDTO update);
+
+    Map<UUID, BigDecimal> toProductUUIDs(Map<Product, BigDecimal> map);
+
+    Map<Product, BigDecimal> toProducts(Map<UUID, BigDecimal> map, @Context ProductRepository repository);
 
     ListPriceDTO map(PriceListing price);
 
@@ -74,14 +80,48 @@ public interface DTOMapper {
 
     ListProductGroupDTO map(ProductGroup group);
 
+    default UUID toUUID(ProductGroup group) {
+        return group.getUuid();
+    }
+
+    default ProductGroup toProductGroup(UUID uuid, @Context ProductGroupRepository repository) {
+        return repository.findById(uuid)
+            .orElseThrow(() -> new NoSuchElementException(uuid.toString()));
+    }
+
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "owner", source = "owner")
     ProductGroup create(CreateProductGroupDTO groupDTO, String owner, @Context ProductRepository repository);
 
-    Map<UUID, BigDecimal> toUUIDs(Map<Product, BigDecimal> map);
-    Map<Product, BigDecimal> toProducts(Map<UUID, BigDecimal> map, @Context ProductRepository repository);
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "owner", ignore = true)
+    void update(
+        @MappingTarget ProductGroup target,
+        CreateProductGroupDTO update,
+        @Context ProductRepository repository
+    );
+
+    Map<UUID, BigDecimal> toGroupUUIDs(Map<ProductGroup, BigDecimal> map);
+
+    Map<ProductGroup, BigDecimal> toGroups(Map<UUID, BigDecimal> map, @Context ProductGroupRepository repository);
+
+    ShoppingListDTO map(ShoppingList list);
+
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "owner", source = "owner")
+    ShoppingList create(
+        CreateShoppingListDTO listDTO,
+        String owner,
+        @Context ProductRepository products,
+        @Context ProductGroupRepository groups
+    );
 
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "owner", ignore = true)
-    void update(@MappingTarget ProductGroup target, CreateProductGroupDTO update, @Context ProductRepository repository);
+    void update(
+        @MappingTarget ShoppingList target,
+        CreateShoppingListDTO update,
+        @Context ProductRepository products,
+        @Context ProductGroupRepository groups
+    );
 }

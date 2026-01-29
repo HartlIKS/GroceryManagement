@@ -1,0 +1,134 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1769693379596-1
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - renameColumn:
+            oldColumnName: products_uuid
+            newColumnName: product_uuid
+            tableName: product_group_products
+  - changeSet:
+      id: 1769693176814-3
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_shoppinglist
+                  name: uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: owner
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+            tableName: shopping_list
+  - changeSet:
+      id: 1769693176814-4
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_shoppinglist_productgroups
+                  name: shopping_list_uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: amount
+                  type: DECIMAL
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_shoppinglist_productgroups
+                  name: group_uuid
+                  type: UUID
+            tableName: shopping_list_product_groups
+  - changeSet:
+      id: 1769693176814-5
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_shoppinglist_products
+                  name: shopping_list_uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: amount
+                  type: DECIMAL
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_shoppinglist_products
+                  name: product_uuid
+                  type: UUID
+            tableName: shopping_list_products
+  - changeSet:
+      id: 1769693176814-8
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: group_uuid
+            baseTableName: shopping_list_product_groups
+            constraintName: fk_shoppinglist_productgroups_on_product_group
+            referencedColumnNames: uuid
+            referencedTableName: product_group
+  - changeSet:
+      id: 1769693176814-9
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: shopping_list_uuid
+            baseTableName: shopping_list_product_groups
+            constraintName: fk_shoppinglist_productgroups_on_shopping_list
+            referencedColumnNames: uuid
+            referencedTableName: shopping_list
+  - changeSet:
+      id: 1769693176814-10
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: product_uuid
+            baseTableName: shopping_list_products
+            constraintName: fk_shoppinglist_products_on_product
+            referencedColumnNames: uuid
+            referencedTableName: product
+  - changeSet:
+      id: 1769693176814-11
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: shopping_list_uuid
+            baseTableName: shopping_list_products
+            constraintName: fk_shoppinglist_products_on_shopping_list
+            referencedColumnNames: uuid
+            referencedTableName: shopping_list
+
