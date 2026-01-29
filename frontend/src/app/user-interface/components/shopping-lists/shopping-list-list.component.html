@@ -1,19 +1,19 @@
 <div class="container">
   <div class="header">
-    <h2>Product Groups</h2>
-    <button mat-raised-button color="primary" (click)="onAddProductGroup()">
+    <h2>Shopping Lists</h2>
+    <button mat-raised-button color="primary" (click)="onAddShoppingList()">
       <mat-icon>add</mat-icon>
-      Add Product Group
+      Add Shopping List
     </button>
   </div>
 
   <div class="search-section">
     <mat-form-field appearance="outline" class="search-field">
-      <mat-label>Search product groups</mat-label>
+      <mat-label>Search shopping lists</mat-label>
       <input matInput
              [(ngModel)]="searchTerm"
              (keyup.enter)="onSearch()"
-             placeholder="Enter product group name">
+             placeholder="Enter shopping list name">
       <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
     <button mat-raised-button (click)="onSearch()">Search</button>
@@ -26,27 +26,35 @@
           <!-- Name Column -->
           <ng-container matColumnDef="name">
             <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
-            <mat-cell *matCellDef="let productGroup">
-              {{ productGroup.name }}
+            <mat-cell *matCellDef="let shoppingList">
+              {{ shoppingList.name }}
             </mat-cell>
           </ng-container>
 
           <!-- Product Count Column -->
           <ng-container matColumnDef="productCount">
             <mat-header-cell *matHeaderCellDef>Products</mat-header-cell>
-            <mat-cell *matCellDef="let productGroup">
-              {{ getProductCount(productGroup.products) }}
+            <mat-cell *matCellDef="let shoppingList">
+              {{ getProductCount(shoppingList.products) }}
+            </mat-cell>
+          </ng-container>
+
+          <!-- Group Count Column -->
+          <ng-container matColumnDef="groupCount">
+            <mat-header-cell *matHeaderCellDef>Groups</mat-header-cell>
+            <mat-cell *matCellDef="let shoppingList">
+              {{ getGroupCount(shoppingList.productGroups) }}
             </mat-cell>
           </ng-container>
 
           <!-- Actions Column -->
           <ng-container matColumnDef="actions">
             <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
-            <mat-cell *matCellDef="let productGroup">
-              <button mat-icon-button color="primary" (click)="onEditProductGroup(productGroup.uuid)">
+            <mat-cell *matCellDef="let shoppingList">
+              <button mat-icon-button color="primary" (click)="onEditShoppingList(shoppingList.uuid)">
                 <mat-icon>edit</mat-icon>
               </button>
-              <button mat-icon-button color="warn" (click)="onDeleteProductGroup(productGroup.uuid)">
+              <button mat-icon-button color="warn" (click)="onDeleteShoppingList(shoppingList.uuid)">
                 <mat-icon>delete</mat-icon>
               </button>
             </mat-cell>
@@ -58,7 +66,7 @@
 
         @if (dataSource().data.length === 0) {
           <div class="no-data">
-            <p>No product groups found.</p>
+            <p>No shopping lists found.</p>
           </div>
         }
       </div>
@@ -66,12 +74,13 @@
   } @else {
     <div class="loading">
       <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
-      <p>Loading product groups...</p>
+      <p>Loading shopping lists...</p>
     </div>
   }
+
   @if (error()) {
     <div class="error">
-      <p>Error loading product groups: {{ error() }}</p>
+      <p>Error loading shopping lists: {{ error() }}</p>
     </div>
   }
 </div>

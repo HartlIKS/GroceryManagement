@@ -1,0 +1,32 @@
+/* Component-specific styles only - global styles are used from styles.scss */
+
+/* Common item type styling */
+.item-type {
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-xs);
+}
+
+/* Item type styling - unique to this component */
+.product {
+  background-color: #3f51b526; /* Primary color with 10% alpha (3f51b5 + 26) */
+}
+
+.productGroup {
+  background-color: #4caf5026; /* Green with 10% alpha (4caf50 + 26) */
+}
+
+/* Future item types can be added here following the same pattern:
+   .recipe {
+     background-color: #ff980026; // Orange with 10% alpha (ff9800 + 26)
+   }
+*/
+
+/* Component-specific layout styles */
+.sample-images-dropdown {
+  margin-right: var(--spacing-sm);
+}
+
+.sample-images .image-small,
+.sample-images-dropdown .image-small {
+  border: 1px solid var(--color-shadow);
+}
