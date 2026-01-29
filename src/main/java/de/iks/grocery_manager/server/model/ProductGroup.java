@@ -3,7 +3,7 @@ package de.iks.grocery_manager.server.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Data
@@ -14,11 +14,14 @@ public class ProductGroup {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;
 
+    @Column(nullable = false)
     private String owner;
 
+    @Column(nullable = false)
     private String name;
 
     @ManyToMany
     @JoinTable
-    private List<Product> products;
+    @MapKey(name = "uuid")
+    private Map<UUID, Product> products;
 }

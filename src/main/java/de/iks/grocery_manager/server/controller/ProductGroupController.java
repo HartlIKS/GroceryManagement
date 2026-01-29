@@ -115,9 +115,9 @@ public class ProductGroupController {
             groups
                 .findByUuidAndOwner(group, getOwner(principal))
                 .map(g -> {
-                    products
-                        .findById(product)
-                        .ifPresent(g.getProducts()::add);
+                    g
+                        .getProducts()
+                        .computeIfAbsent(product, p -> products.findById(p).orElseThrow());
                     return g;
                 })
                 .map(groups::saveAndFlush)
@@ -137,7 +137,7 @@ public class ProductGroupController {
                 .map(g -> {
                     g
                         .getProducts()
-                        .removeIf(p -> p.getUuid().equals(product));
+                        .remove(product);
                     return g;
                 })
                 .map(groups::saveAndFlush)

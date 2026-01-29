@@ -6,7 +6,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants.ComponentModel;
 import org.mapstruct.MappingTarget;
 
-import java.util.UUID;
+import java.util.*;
 
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
@@ -63,8 +63,13 @@ public interface DTOMapper {
 
     ListProductGroupDTO map(ProductGroup group);
 
+    default Set<UUID> keys(Map<UUID, ?> map) {
+        if(map == null) return null;
+        return new LinkedHashSet<>(map.keySet());
+    }
+
     @Mapping(target = "uuid", ignore = true)
-    @Mapping(target = "products", expression = "java(new ArrayList<>())")
+    @Mapping(target = "products", expression = "java(new java.util.LinkedHashMap<>())")
     @Mapping(target = "owner", source = "owner")
     ProductGroup create(CreateProductGroupDTO groupDTO, String owner);
 
