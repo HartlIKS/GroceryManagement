@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1769684094698-1
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: amount
+                  type: DECIMAL
+                  defaultValueNumeric: "1"
+            tableName: product_group_products
+  - changeSet:
+      id: 1769684094698-2
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropDefaultValue:
+            columnName: amount
+            tableName: product_group_products
+

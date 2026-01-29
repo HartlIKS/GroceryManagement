@@ -3,6 +3,7 @@ package de.iks.grocery_manager.server.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.UUID;
 
@@ -20,8 +21,8 @@ public class ProductGroup {
     @Column(nullable = false)
     private String name;
 
-    @ManyToMany
-    @JoinTable
-    @MapKey(name = "uuid")
-    private Map<UUID, Product> products;
+    @ElementCollection
+    @MapKeyJoinColumn(name = "products_uuid")
+    @Column(name = "amount", nullable = false)
+    private Map<Product, BigDecimal> products;
 }

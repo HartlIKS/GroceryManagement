@@ -1,11 +1,12 @@
 package de.iks.grocery_manager.server.dto;
 
+import de.iks.grocery_manager.server.jpa.ProductRepository;
 import de.iks.grocery_manager.server.model.*;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import org.mapstruct.*;
 import org.mapstruct.MappingConstants.ComponentModel;
 import org.mapstruct.MappingTarget;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
@@ -31,6 +32,11 @@ public interface DTOMapper {
 
     default UUID toUUID(Product product) {
         return product.getUuid();
+    }
+
+    default Product toProduct(UUID uuid, @Context ProductRepository repository) {
+        return repository.findById(uuid)
+            .orElseThrow(() -> new NoSuchElementException(uuid.toString()));
     }
 
     @Mapping(target = "uuid", ignore = true)
@@ -63,18 +69,14 @@ public interface DTOMapper {
 
     ListProductGroupDTO map(ProductGroup group);
 
-    default Set<UUID> keys(Map<UUID, ?> map) {
-        if(map == null) return null;
-        return new LinkedHashSet<>(map.keySet());
-    }
-
     @Mapping(target = "uuid", ignore = true)
-    @Mapping(target = "products", expression = "java(new java.util.LinkedHashMap<>())")
     @Mapping(target = "owner", source = "owner")
-    ProductGroup create(CreateProductGroupDTO groupDTO, String owner);
+    ProductGroup create(CreateProductGroupDTO groupDTO, String owner, @Context ProductRepository repository);
+
+    Map<UUID, BigDecimal> toUUIDs(Map<Product, BigDecimal> map);
+    Map<Product, BigDecimal> toProducts(Map<UUID, BigDecimal> map, @Context ProductRepository repository);
 
     @Mapping(target = "uuid", ignore = true)
-    @Mapping(target = "products", ignore = true)
     @Mapping(target = "owner", ignore = true)
-    void update(@MappingTarget ProductGroup target, CreateProductGroupDTO update);
+    void update(@MappingTarget ProductGroup target, CreateProductGroupDTO update, @Context ProductRepository repository);
 }

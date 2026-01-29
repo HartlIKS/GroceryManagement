@@ -71,7 +71,8 @@ public class ProductGroupController {
                 .map(p -> {
                     dtoMapper.update(
                         p,
-                        createProductGroupDTO
+                        createProductGroupDTO,
+                        products
                     );
                     return p;
                 })
@@ -93,7 +94,8 @@ public class ProductGroupController {
     ) {
         ListProductGroupDTO ret = dtoMapper.map(groups.saveAndFlush(dtoMapper.create(
             createProductGroupDTO,
-            getOwner(principal)
+            getOwner(principal),
+            products
         )));
         return ResponseEntity
             .created(
@@ -103,46 +105,6 @@ public class ProductGroupController {
                     .build(ret.uuid())
             )
             .body(ret);
-    }
-
-    @PutMapping("/{group}/{product}")
-    public ResponseEntity<ListProductGroupDTO> addProductToGroup(
-        @PathVariable UUID group,
-        @PathVariable UUID product,
-        @AuthenticationPrincipal Object principal
-    ) {
-        return ResponseEntity.of(
-            groups
-                .findByUuidAndOwner(group, getOwner(principal))
-                .map(g -> {
-                    g
-                        .getProducts()
-                        .computeIfAbsent(product, p -> products.findById(p).orElseThrow());
-                    return g;
-                })
-                .map(groups::saveAndFlush)
-                .map(dtoMapper::map)
-        );
-    }
-
-    @DeleteMapping("/{group}/{product}")
-    public ResponseEntity<ListProductGroupDTO> removeProductFromGroup(
-        @PathVariable UUID group,
-        @PathVariable UUID product,
-        @AuthenticationPrincipal Object principal
-    ) {
-        return ResponseEntity.of(
-            groups
-                .findByUuidAndOwner(group, getOwner(principal))
-                .map(g -> {
-                    g
-                        .getProducts()
-                        .remove(product);
-                    return g;
-                })
-                .map(groups::saveAndFlush)
-                .map(dtoMapper::map)
-        );
     }
 
     @GetMapping
