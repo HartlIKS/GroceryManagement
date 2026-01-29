@@ -124,4 +124,14 @@ export class PriceListComponent implements OnInit {
     const store = this.stores().find(s => s.uuid === storeUuid);
     return store ? store.name : 'Unknown Store';
   }
+
+  getProductImage(productUuid: string): string | null {
+    const product = this.products().find(p => p.uuid === productUuid);
+    return product ? product.image : null;
+  }
+
+  getStoreLogo(storeUuid: string): string | null {
+    const store = this.stores().find(s => s.uuid === storeUuid);
+    return store ? store.logo : null;
+  }
 }

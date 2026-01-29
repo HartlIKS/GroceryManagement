@@ -2,20 +2,14 @@
 
 .filters-section {
   display: flex;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
   align-items: center;
   flex-wrap: wrap;
 }
 
 .filter-field {
   min-width: 200px;
-}
-
-.filter-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .clear-filters-btn {

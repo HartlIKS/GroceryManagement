@@ -366,6 +366,13 @@
   }
 }
 
+/* Common layout utilities */
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
 /* Images */
 .image-large {
   width: 50px;

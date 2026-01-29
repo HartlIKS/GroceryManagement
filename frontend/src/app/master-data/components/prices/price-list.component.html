@@ -58,12 +58,26 @@
     <mat-table [dataSource]="dataSource()" class="table">
       <ng-container matColumnDef="product">
         <mat-header-cell *matHeaderCellDef>Product</mat-header-cell>
-        <mat-cell *matCellDef="let price">{{ getProductName(price.product) }}</mat-cell>
+        <mat-cell *matCellDef="let price">
+          <div class="filter-option">
+            @if (getProductImage(price.product)) {
+              <img [src]="getProductImage(price.product)" [alt]="getProductName(price.product)" class="image-small">
+            }
+            <span>{{ getProductName(price.product) }}</span>
+          </div>
+        </mat-cell>
       </ng-container>
 
       <ng-container matColumnDef="store">
         <mat-header-cell *matHeaderCellDef>Store</mat-header-cell>
-        <mat-cell *matCellDef="let price">{{ getStoreName(price.store) }}</mat-cell>
+        <mat-cell *matCellDef="let price">
+          <div class="filter-option">
+            @if (getStoreLogo(price.store)) {
+              <img [src]="getStoreLogo(price.store)" [alt]="getStoreName(price.store)" class="image-small">
+            }
+            <span>{{ getStoreName(price.store) }}</span>
+          </div>
+        </mat-cell>
       </ng-container>
 
       <ng-container matColumnDef="price">

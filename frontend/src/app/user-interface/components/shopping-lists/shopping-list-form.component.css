@@ -23,13 +23,6 @@
 
 /* Component-specific layout styles */
 
-/* Align filter-option content horizontally */
-.filter-option {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
 .sample-images .image-small,
 .sample-images-dropdown .image-small {
   border: 1px solid var(--color-shadow);
