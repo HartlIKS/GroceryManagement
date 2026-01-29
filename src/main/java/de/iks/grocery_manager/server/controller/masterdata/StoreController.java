@@ -1,9 +1,9 @@
-package de.iks.grocery_manager.server.controller;
+package de.iks.grocery_manager.server.controller.masterdata;
 
-import de.iks.grocery_manager.server.dto.CreateStoreDTO;
+import de.iks.grocery_manager.server.dto.masterdata.CreateStoreDTO;
 import de.iks.grocery_manager.server.dto.DTOMapper;
-import de.iks.grocery_manager.server.dto.ListStoreDTO;
-import de.iks.grocery_manager.server.jpa.StoreRepository;
+import de.iks.grocery_manager.server.dto.masterdata.ListStoreDTO;
+import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

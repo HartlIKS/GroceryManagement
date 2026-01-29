@@ -1,4 +1,4 @@
-package de.iks.grocery_manager.server.dto;
+package de.iks.grocery_manager.server.dto.masterdata;
 
 import java.util.Currency;
 import java.util.UUID;

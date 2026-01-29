@@ -1,5 +1,6 @@
 package de.iks.grocery_manager.server.model;
 
+import de.iks.grocery_manager.server.model.masterdata.Product;
 import jakarta.persistence.*;
 import lombok.Data;
 

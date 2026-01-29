@@ -4,7 +4,7 @@ import de.iks.grocery_manager.server.dto.CreateProductGroupDTO;
 import de.iks.grocery_manager.server.dto.DTOMapper;
 import de.iks.grocery_manager.server.dto.ListProductGroupDTO;
 import de.iks.grocery_manager.server.jpa.ProductGroupRepository;
-import de.iks.grocery_manager.server.jpa.ProductRepository;
+import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -1,4 +1,4 @@
-package de.iks.grocery_manager.server.model;
+package de.iks.grocery_manager.server.model.masterdata;
 
 import jakarta.persistence.Embeddable;
 import lombok.Data;

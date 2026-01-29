@@ -1,7 +1,12 @@
 package de.iks.grocery_manager.server.dto;
 
-import de.iks.grocery_manager.server.jpa.ProductRepository;
+import de.iks.grocery_manager.server.dto.masterdata.*;
+import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
 import de.iks.grocery_manager.server.model.*;
+import de.iks.grocery_manager.server.model.masterdata.Address;
+import de.iks.grocery_manager.server.model.masterdata.PriceListing;
+import de.iks.grocery_manager.server.model.masterdata.Product;
+import de.iks.grocery_manager.server.model.masterdata.Store;
 import org.mapstruct.*;
 import org.mapstruct.MappingConstants.ComponentModel;
 import org.mapstruct.MappingTarget;
