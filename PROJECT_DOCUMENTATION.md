@@ -66,6 +66,7 @@ GroceryManagement/
     │   │   ├── user-interface/     # User interface
     │   │   │   ├── components/      # User interface components
     │   │   │   │   ├── product-groups/  # Product group management
+    │   │   │   │   ├── shopping-lists/  # Shopping list management
     │   │   │   │   └── user-dashboard.component.*  # User dashboard
     │   │   │   ├── models/          # User interface models
     │   │   │   └── services/        # User interface services
@@ -126,8 +127,19 @@ Shopping lists allow users to create personalized grocery lists with specific qu
 
 ### User Dashboard
 - **Main landing page** for regular users
-- **Navigation** to product groups and other features
+- **Navigation** to product groups, shopping lists, and other features
+- **Real-time statistics** for product groups and shopping lists
 - **Modern Angular Material design** with responsive layout
+
+### Shopping Lists Management
+- **Complete CRUD operations** for shopping lists (user-scoped)
+- **Unified item management** - Single table for both products and product groups
+- **Visual item distinction** - Background colors differentiate item types
+- **Sample images** - Product groups display sample images from contained products
+- **Unified dropdown** - Single dropdown for adding both products and groups
+- **Real-time updates** with reactive form controls and optimistic UI changes
+- **Amount management** - Editable quantities with proper validation
+- **Type-aware interactions** - Contextual tooltips and actions per item type
 
 ### Product Groups Management
 - **Complete CRUD operations** for product groups
@@ -138,10 +150,16 @@ Shopping lists allow users to create personalized grocery lists with specific qu
 
 ### Key Features
 - **Product Images**: Displayed in dropdowns and tables when available
-- **Signal-based State Management**: Using Angular 17+ signals for reactive updates
-- **Consistent Styling**: Matches master data interface patterns
+- **Signal-based State Management**: Using Angular 21+ signals for reactive updates
+- **Unified Interface**: Single table and dropdown for mixed item types (products + groups)
+- **Visual Type Distinction**: CSS-based color coding for different item types
+- **Sample Image Display**: Product groups show sample images from contained products
+- **Reactive Form Controls**: Real-time validation and updates without event handlers
+- **Consistent Styling**: Matches master data interface patterns with global design system
 - **Modern Control Flow**: Uses `@if` and `@for` instead of deprecated `*ngIf` and `*ngFor`
-- **Global Design System**: Centralized styling with CSS custom properties
+- **Global Design System**: Centralized styling with CSS custom properties and inheritance
+- **Hex Alpha Colors**: Modern color format with transparency support
+- **Component CSS Optimization**: Leverages global styles to reduce redundancy
 
 ### Address
 - **country**: Country name (String)
@@ -258,11 +276,11 @@ This will:
 - Angular 21.1.0
 - Angular Material 21.1.1
 - Angular Signals (state management)
-- NgRx Store 21.0.1
-- RxJS 7.8.0
 - TypeScript 5.9.2
-- Vitest 4.0.8 (testing)
+- RxJS 7.8.0
 - Modern Control Flow (`@if`, `@for`)
+- CSS Custom Properties (design system)
+- Hex Alpha Color Format (modern colors)
 
 ## Security Configuration
 - OAuth2 Resource Server configuration
@@ -293,15 +311,14 @@ This will:
 - The project uses MapStruct 1.6.3 for DTO-to-entity mapping
 - Lombok reduces boilerplate code in entities and DTOs
 - Frontend uses Angular Material 21.1.1 for consistent UI components
-- Angular Signals manage reactive state in the frontend
+- Angular Signals manage reactive state in the frontend (replaced NgRx for simplicity)
 - Modern control flow (`@if`, `@for`) replaces deprecated structural directives
 - Global design system with CSS custom properties for consistent styling
 - Separated architecture: `master-data` for admin functions, `user-interface` for user-facing features
-- The build process integrates both backend and frontend into a single deployment artifact using frontend-maven-plugin
-- Product groups feature includes visual product selection and real-time updates
-- Shopping lists feature with user-specific access control and comprehensive CRUD operations
-- NgRx Store 21.0.1 provides centralized state management
-- Vitest 4.0.8 used for frontend unit testing
-- Spring Boot 4.0.1 with Java 21 provides the latest backend features
-- Comprehensive security with OAuth2 Resource Server and WebAuthn support
-- Full test coverage including controller tests with MockMvc, security testing, and data integrity validation
+- Shopping Lists feature implements unified table for mixed item types with visual distinction
+- CSS inheritance pattern with base classes (.item-type) and type-specific extensions
+- Hex alpha color format (#RRGGBBAA) for modern color management with transparency
+- Component CSS optimization leverages global styles to minimize redundancy
+- Reactive form controls use valueChanges subscriptions instead of (input) event handlers
+- Sample image logic displays product previews for product groups in both dropdowns and tables
+- Type-aware UI interactions provide contextual tooltips and actions based on item type
