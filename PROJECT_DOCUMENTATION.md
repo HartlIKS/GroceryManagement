@@ -43,6 +43,9 @@ GroceryManagement/
 │   │   │       └── masterdata/      # Master data entities
 │   │   └── resources/               # Application resources
 │   └── test/                        # Backend tests
+│       └── java/de/iks/grocery_manager/server/
+│           ├── Testdata.java                          # Test data constants
+│           └── controller/          # Controller tests
 └── frontend/                        # Angular frontend
     ├── package.json                 # Node.js dependencies
     ├── angular.json                 # Angular configuration
@@ -110,6 +113,15 @@ GroceryManagement/
 
 Product groups allow users to group similar products together that can be substituted for one another. For example, different brands of milk or various types of pasta could be grouped together, allowing users to choose any product within the same group as a substitute.
 
+### ShoppingList
+- **uuid**: Primary identifier (UUID)
+- **name**: List name (required, String)
+- **owner**: User who owns the list (required, String)
+- **products**: Map of products to quantities (Map<Product, BigDecimal>)
+- **productGroups**: Map of product groups to quantities (Map<ProductGroup, BigDecimal>)
+
+Shopping lists allow users to create personalized grocery lists with specific quantities for individual products or product groups. Users can only access their own shopping lists.
+
 ## User Interface Features
 
 ### User Dashboard
@@ -170,6 +182,13 @@ Product groups allow users to group similar products together that can be substi
 - `GET /productGroups` - Search product groups (with optional name parameter, paginated)
 - `PUT /productGroups/{group}/{product}` - Add product to group
 - `DELETE /productGroups/{group}/{product}` - Remove product from group
+
+### Shopping Lists (`/shoppingLists`)
+- `GET /shoppingLists/{uuid}` - Get shopping list by UUID (user-owned only)
+- `PUT /shoppingLists/{uuid}` - Update shopping list (user-owned only)
+- `POST /shoppingLists` - Create new shopping list
+- `DELETE /shoppingLists/{uuid}` - Delete shopping list (user-owned only)
+- `GET /shoppingLists` - Search shopping lists (with optional name parameter, paginated, user-owned only)
 
 ## Development Setup
 
@@ -255,8 +274,11 @@ This will:
 - Migration files located in `src/main/resources/db/migration/`
 
 ## Testing
-- Backend: JUnit 5, Spring Boot Test, Testcontainers
+- Backend: JUnit 5, Spring Boot Test, MockMvc for controller testing
 - Frontend: Vitest, Angular Testing Utilities
+- Comprehensive test coverage for all CRUD operations
+- Security testing with JWT authentication
+- Data integrity testing with foreign key constraints
 
 ## API Documentation
 - Swagger UI available at: `http://localhost:8080/swagger-ui.html`
@@ -277,7 +299,9 @@ This will:
 - Separated architecture: `master-data` for admin functions, `user-interface` for user-facing features
 - The build process integrates both backend and frontend into a single deployment artifact using frontend-maven-plugin
 - Product groups feature includes visual product selection and real-time updates
+- Shopping lists feature with user-specific access control and comprehensive CRUD operations
 - NgRx Store 21.0.1 provides centralized state management
 - Vitest 4.0.8 used for frontend unit testing
 - Spring Boot 4.0.1 with Java 21 provides the latest backend features
 - Comprehensive security with OAuth2 Resource Server and WebAuthn support
+- Full test coverage including controller tests with MockMvc, security testing, and data integrity validation
