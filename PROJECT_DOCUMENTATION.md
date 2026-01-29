@@ -16,10 +16,10 @@ This is a full-stack grocery management system consisting of a Spring Boot REST 
 - **Migration**: Liquibase
 
 ### Frontend (Angular 21)
-- **Framework**: Angular 21 with TypeScript
-- **State Management**: NgRx Store
-- **UI Components**: Angular Material + Angular CDK
-- **Build Tool**: Angular CLI
+- **Framework**: Angular 21 with TypeScript 5.9
+- **State Management**: NgRx Store 21.0.1
+- **UI Components**: Angular Material 21.1.1 + Angular CDK
+- **Build Tool**: Angular CLI 21.1.0
 - **Package Manager**: npm 11.6.2
 
 ## Project Structure
@@ -28,16 +28,19 @@ This is a full-stack grocery management system consisting of a Spring Boot REST 
 GroceryManagement/
 ├── pom.xml                           # Maven configuration
 ├── docker-compose.yaml               # PostgreSQL container
-├── compose.yaml                      # Alternative Docker Compose
 ├── src/                              # Backend source code
 │   ├── main/
 │   │   ├── java/de/iks/grocery_manager/server/
 │   │   │   ├── GroceryManagementApplication.java  # Main application class
 │   │   │   ├── config/              # Security and configuration
 │   │   │   ├── controller/          # REST controllers
+│   │   │   │   └── masterdata/      # Master data controllers
 │   │   │   ├── dto/                 # Data Transfer Objects
+│   │   │   │   └── masterdata/      # Master data DTOs
 │   │   │   ├── jpa/                 # JPA repositories
+│   │   │   │   └── masterdata/      # Master data repositories
 │   │   │   └── model/               # JPA entities
+│   │   │       └── masterdata/      # Master data entities
 │   │   └── resources/               # Application resources
 │   └── test/                        # Backend tests
 └── frontend/                        # Angular frontend
@@ -48,7 +51,7 @@ GroceryManagement/
     │   │   ├── app.config.ts        # Application configuration
     │   │   ├── app.routes.ts        # Routing configuration
     │   │   ├── components/          # Shared components
-    │   │   │   ├── navigation/      # Navigation components
+    │   │   │   └── navigation/      # Navigation components
     │   │   ├── master-data/        # Master data interface
     │   │   │   ├── components/      # Master data components
     │   │   │   │   ├── dashboard/   # Dashboard component
@@ -60,22 +63,19 @@ GroceryManagement/
     │   │   ├── user-interface/     # User interface
     │   │   │   ├── components/      # User interface components
     │   │   │   │   ├── product-groups/  # Product group management
-    │   │   │   │   │   ├── product-group-form.component.*  # Product group form
-    │   │   │   │   │   ├── product-group-list.component.*  # Product group list
-    │   │   │   │   │   └── index.ts  # Component exports
-    │   │   │   │   ├── user-dashboard.component.*  # User dashboard
-    │   │   │   │   └── index.ts  # Component exports
+    │   │   │   │   └── user-dashboard.component.*  # User dashboard
     │   │   │   ├── models/          # User interface models
-    │   │   │   │   ├── product-group.model.ts  # Product group models
-    │   │   │   │   └── index.ts  # Model exports
-    │   │   │   ├── services/        # User interface services
-    │   │   │   │   ├── product-group.service.ts  # Product group service
-    │   │   │   │   └── index.ts  # Service exports
+    │   │   │   └── services/        # User interface services
     │   │   ├── models/              # Global models
     │   │   └── services/            # Global services
+    │   ├── environments/            # Environment configurations
     │   ├── index.html               # Entry HTML
     │   ├── main.ts                  # Application bootstrap
-    │   └── styles/                  # Global styles
+    │   ├── material-theme.scss      # Angular Material theme
+    │   └── styles.scss              # Global styles
+    ├── public/                      # Public assets
+    │   └── favicon.ico              # Favicon
+    ├── .angular/                    # Angular CLI cache
     └── dist/                        # Build output (generated)
 ```
 
@@ -236,11 +236,13 @@ This will:
 - Micrometer Prometheus (metrics)
 
 ### Frontend Dependencies
-- Angular 21
-- Angular Material 21
+- Angular 21.1.0
+- Angular Material 21.1.1
 - Angular Signals (state management)
-- RxJS (reactive programming)
-- TypeScript 5.9
+- NgRx Store 21.0.1
+- RxJS 7.8.0
+- TypeScript 5.9.2
+- Vitest 4.0.8 (testing)
 - Modern Control Flow (`@if`, `@for`)
 
 ## Security Configuration
@@ -266,12 +268,16 @@ This will:
 - Health checks at `/actuator/health`
 
 ## Development Notes
-- The project uses MapStruct for DTO-to-entity mapping
+- The project uses MapStruct 1.6.3 for DTO-to-entity mapping
 - Lombok reduces boilerplate code in entities and DTOs
-- Frontend uses Angular Material for consistent UI components
+- Frontend uses Angular Material 21.1.1 for consistent UI components
 - Angular Signals manage reactive state in the frontend
 - Modern control flow (`@if`, `@for`) replaces deprecated structural directives
 - Global design system with CSS custom properties for consistent styling
 - Separated architecture: `master-data` for admin functions, `user-interface` for user-facing features
-- The build process integrates both backend and frontend into a single deployment artifact
+- The build process integrates both backend and frontend into a single deployment artifact using frontend-maven-plugin
 - Product groups feature includes visual product selection and real-time updates
+- NgRx Store 21.0.1 provides centralized state management
+- Vitest 4.0.8 used for frontend unit testing
+- Spring Boot 4.0.1 with Java 21 provides the latest backend features
+- Comprehensive security with OAuth2 Resource Server and WebAuthn support
