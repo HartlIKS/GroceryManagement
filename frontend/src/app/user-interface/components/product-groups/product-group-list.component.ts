@@ -82,7 +82,7 @@ export class ProductGroupListComponent implements OnInit {
     }
   }
 
-  getProductCount(products: string[]): number {
-    return products ? products.length : 0;
+  getProductCount(products: Record<string, number>): number {
+    return products ? Object.keys(products).length : 0;
   }
 }

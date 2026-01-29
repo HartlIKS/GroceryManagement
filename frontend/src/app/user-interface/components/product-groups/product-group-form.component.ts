@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -44,18 +44,23 @@ export class ProductGroupFormComponent implements OnInit {
   // Product management properties
   selectedProductUuid: string | null = null;
   availableProducts = computed(() => this.productService.products());
-  productGroupUuids = signal<string[]>([]);
+  productGroupProducts = signal<Record<string, number>>({});
+  productAmountControls = signal<Record<string, FormControl>>({});
+
   currentProducts = computed(() => {
     const allProducts = this.availableProducts();
-    const groupUuids = this.productGroupUuids();
+    const groupProducts = this.productGroupProducts();
 
-    if (!groupUuids || groupUuids.length === 0) {
+    if (!groupProducts || Object.keys(groupProducts).length === 0) {
       return [];
     }
 
-    return groupUuids
-      .map(uuid => allProducts.find(p => p.uuid === uuid))
-      .filter(product => product !== undefined) as ListProductDTO[];
+    return Object.entries(groupProducts)
+      .map(([uuid, amount]) => {
+        const product = allProducts.find(p => p.uuid === uuid);
+        return product ? { ...product, amount } : null;
+      })
+      .filter(product => product !== undefined) as (ListProductDTO & { amount: number })[];
   });
   productsDataSource = computed(() => new MatTableDataSource<ListProductDTO>(this.currentProducts()));
 
@@ -71,7 +76,8 @@ export class ProductGroupFormComponent implements OnInit {
     private route: ActivatedRoute
   ) {
     this.productGroupForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(255)]]
+      name: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(255)]],
+      amount: [1, [Validators.required, Validators.min(0.01)]]
     });
   }
 
@@ -110,8 +116,17 @@ export class ProductGroupFormComponent implements OnInit {
         this.productGroupForm.patchValue({
           name: productGroup.name
         });
-        // Set the product UUIDs - the computed signal will automatically update
-        this.productGroupUuids.set(productGroup.products || []);
+        // Set the product map - the computed signal will automatically update
+        this.productGroupProducts.set(productGroup.products || {});
+
+        // Create form controls for each product amount
+        const controls: Record<string, FormControl> = {};
+        if (productGroup.products) {
+          Object.entries(productGroup.products).forEach(([uuid, amount]) => {
+            controls[uuid] = new FormControl(amount, [Validators.required, Validators.min(0.01)]);
+          });
+        }
+        this.productAmountControls.set(controls);
       },
       error: (error) => {
         console.error('Error loading product group:', error);
@@ -120,38 +135,37 @@ export class ProductGroupFormComponent implements OnInit {
   }
 
   addProductToGroup(): void {
-    if (!this.selectedProductUuid || !this.productGroupUuid) {
+    if (!this.selectedProductUuid || this.productGroupForm.get('amount')?.invalid) {
       return;
     }
 
-    this.productGroupService.addProductToGroup(this.productGroupUuid, this.selectedProductUuid).subscribe({
-      next: (updatedGroup: ListProductGroupDTO) => {
-        // Update local state
-        this.productGroupService.updateProductGroupInCache(updatedGroup);
-        this.productGroupUuids.set(updatedGroup.products || []);
-        this.selectedProductUuid = null;
-      },
-      error: (error) => {
-        console.error('Error adding product to group:', error);
-      }
-    });
+    const amount = this.productGroupForm.get('amount')?.value || 1;
+
+    // Update local state only - don't send to server immediately
+    const currentProducts = { ...this.productGroupProducts() };
+    currentProducts[this.selectedProductUuid] = amount;
+    this.productGroupProducts.set(currentProducts);
+
+    // Create form control for the new product amount
+    const currentControls = { ...this.productAmountControls() };
+    currentControls[this.selectedProductUuid] = new FormControl(amount, [Validators.required, Validators.min(0.01)]);
+    this.productAmountControls.set(currentControls);
+
+    // Reset form fields
+    this.selectedProductUuid = null;
+    this.productGroupForm.get('amount')?.setValue(1);
   }
 
   removeProductFromGroup(productUuid: string): void {
-    if (!this.productGroupUuid) {
-      return;
-    }
+    // Update local state only - don't send to server immediately
+    const currentProducts = { ...this.productGroupProducts() };
+    delete currentProducts[productUuid];
+    this.productGroupProducts.set(currentProducts);
 
-    this.productGroupService.removeProductFromGroup(this.productGroupUuid, productUuid).subscribe({
-      next: (updatedGroup: ListProductGroupDTO) => {
-        // Update local state
-        this.productGroupService.updateProductGroupInCache(updatedGroup);
-        this.productGroupUuids.set(updatedGroup.products || []);
-      },
-      error: (error) => {
-        console.error('Error removing product from group:', error);
-      }
-    });
+    // Remove form control
+    const currentControls = { ...this.productAmountControls() };
+    delete currentControls[productUuid];
+    this.productAmountControls.set(currentControls);
   }
 
   onSubmit(): void {
@@ -159,8 +173,19 @@ export class ProductGroupFormComponent implements OnInit {
       return;
     }
 
+    // Get all current amounts from form controls
+    const controls = this.productAmountControls();
+    const products: Record<string, number> = {};
+
+    Object.entries(controls).forEach(([uuid, control]) => {
+      if (control.valid && control.value > 0) {
+        products[uuid] = control.value;
+      }
+    });
+
     const formData: CreateProductGroupDTO = {
-      name: this.productGroupForm.value.name
+      name: this.productGroupForm.value.name,
+      products: products
     };
 
     if (this.isEditMode && this.productGroupUuid) {

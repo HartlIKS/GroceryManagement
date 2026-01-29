@@ -22,7 +22,7 @@ export class UserDashboardComponent implements OnInit {
 
   readonly totalProductsInGroups = computed(() => {
     return this.productGroupService.productGroups()
-      .reduce((total, group) => total + (group.products?.length || 0), 0);
+      .reduce((total, group) => total + (group.products ? Object.keys(group.products).length : 0), 0);
   });
 
   readonly loading = computed(() => this.productGroupService.loading());

@@ -76,23 +76,6 @@ export class ProductGroupService {
     return this.apiService.delete(this.endpoint, uuid);
   }
 
-  // Add product to group
-  addProductToGroup(groupUuid: string, productUuid: string): Observable<ListProductGroupDTO> {
-    return this.apiService.put<ListProductGroupDTO>(
-      this.endpoint,
-      `${groupUuid}/${productUuid}`,
-      {}
-    );
-  }
-
-  // Remove product from group
-  removeProductFromGroup(groupUuid: string, productUuid: string): Observable<ListProductGroupDTO> {
-    return this.apiService.deleteWithData<ListProductGroupDTO>(
-      this.endpoint,
-      `${groupUuid}/${productUuid}`
-    );
-  }
-
   // Refresh current product group list
   refreshProductGroups(): void {
     const currentState = this.state();
