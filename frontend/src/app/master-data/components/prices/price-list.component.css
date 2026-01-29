@@ -15,3 +15,25 @@
 .clear-filters-btn {
   height: 56px;
 }
+
+/* Angular Material table column width optimization */
+.mat-column-product {
+  flex: 1 1 35%;
+}
+
+.mat-column-store {
+  flex: 1 1 25%;
+}
+
+.mat-column-price {
+  flex: 0 0 100px;
+}
+.mat-column-validFrom,
+.mat-column-validTo {
+  flex: 0 0 150px;
+}
+
+.mat-column-actions {
+  flex: 0 0 100px;
+  justify-content: center;
+}

@@ -1,1 +1,24 @@
 /* Store-specific styles - common styles moved to styles.scss */
+
+/* Angular Material table column width optimization */
+.mat-column-name {
+  flex: 1 1 35%;
+}
+
+.mat-column-logo {
+  flex: 0 0 80px;
+  justify-content: center;
+}
+
+.mat-column-address {
+  flex: 1 1 40%;
+}
+
+.mat-column-currency {
+  flex: 0 0 100px;
+}
+
+.mat-column-actions {
+  flex: 0 0 100px;
+  justify-content: center;
+}

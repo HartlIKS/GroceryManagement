@@ -29,7 +29,7 @@ import { ListProductDTO } from '../../models';
   styleUrls: ['./product-list.component.css']
 })
 export class ProductListComponent implements OnInit {
-  displayedColumns: string[] = ['name', 'image', 'EAN', 'actions'];
+  displayedColumns: string[] = ['image', 'name', 'EAN', 'actions'];
   searchTerm = '';
 
   // Use computed signals from service

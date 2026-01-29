@@ -1,0 +1,16 @@
+/* Product Group-specific styles - common styles moved to styles.scss */
+
+/* Angular Material table column width optimization */
+.mat-column-name {
+  flex: 1 1 60%;
+}
+
+.mat-column-productCount {
+  flex: 0 0 120px;
+  justify-content: center;
+}
+
+.mat-column-actions {
+  flex: 0 0 100px;
+  justify-content: center;
+}

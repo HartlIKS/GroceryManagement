@@ -1,1 +1,20 @@
 /* Product-specific styles - common styles moved to styles.scss */
+
+/* Angular Material table column width optimization */
+.mat-column-name {
+  flex: 1 1 40% !important;
+}
+
+.mat-column-image {
+  flex: 0 0 80px !important;
+  justify-content: center !important;
+}
+
+.mat-column-EAN {
+  flex: 0 0 150px !important;
+}
+
+.mat-column-actions {
+  flex: 0 0 100px !important;
+  justify-content: center !important;
+}

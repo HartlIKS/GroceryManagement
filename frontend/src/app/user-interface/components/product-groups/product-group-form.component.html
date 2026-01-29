@@ -73,18 +73,14 @@
               @if (currentProducts().length > 0) {
                 <mat-table [dataSource]="productsDataSource()" class="table">
                   <ng-container matColumnDef="name">
-                    <mat-header-cell *matHeaderCellDef>Product Name</mat-header-cell>
-                    <mat-cell *matCellDef="let product">{{ product.name }}</mat-cell>
-                  </ng-container>
-
-                  <ng-container matColumnDef="image">
-                    <mat-header-cell *matHeaderCellDef>Image</mat-header-cell>
+                    <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
                     <mat-cell *matCellDef="let product">
-                      @if (product.image) {
-                        <img [src]="product.image" [alt]="product.name" class="image-large">
-                      } @else {
-                        <span>-</span>
-                      }
+                      <div class="filter-option">
+                        @if (product.image) {
+                          <img [src]="product.image" [alt]="product.name" class="image-large">
+                        }
+                        <span>{{ product.name }}</span>
+                      </div>
                     </mat-cell>
                   </ng-container>
 
@@ -125,8 +121,8 @@
                     </mat-cell>
                   </ng-container>
 
-                  <mat-header-row *matHeaderRowDef="['name', 'image', 'EAN', 'amount', 'actions']"></mat-header-row>
-                  <mat-row *matRowDef="let _; columns: ['name', 'image', 'EAN', 'amount', 'actions'];"></mat-row>
+                  <mat-header-row *matHeaderRowDef="['name', 'EAN', 'amount', 'actions']"></mat-header-row>
+                  <mat-row *matRowDef="let _; columns: ['name', 'EAN', 'amount', 'actions'];"></mat-row>
                 </mat-table>
               }
 

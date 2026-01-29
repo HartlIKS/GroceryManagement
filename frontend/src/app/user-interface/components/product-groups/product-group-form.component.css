@@ -1,1 +1,19 @@
 /* User interface component uses global styles */
+
+/* Angular Material table column width optimization */
+.mat-column-name {
+  flex: 1 1 35%;
+}
+
+.mat-column-ean {
+  flex: 0 0 200px;
+}
+
+.mat-column-amount {
+  flex: 0 0 200px;
+}
+
+.mat-column-actions {
+  flex: 0 0 80px;
+  justify-content: center;
+}
