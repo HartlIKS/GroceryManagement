@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -31,7 +31,8 @@ import { MatTooltip } from '@angular/material/tooltip';
     MatIconModule,
     MatTableModule,
     MatSelectModule,
-    MatTooltip
+    MatTooltip,
+    RouterLink
   ],
   templateUrl: './product-group-form.component.html',
   styleUrls: ['./product-group-form.component.css']
@@ -219,10 +220,6 @@ export class ProductGroupFormComponent implements OnInit {
         console.error('Error updating product group:', error);
       }
     });
-  }
-
-  onCancel(): void {
-    this.router.navigate(['/product-groups']);
   }
 
   getErrorMessage(controlName: string): string {

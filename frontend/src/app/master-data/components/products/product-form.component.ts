@@ -1,5 +1,5 @@
 import { Component, OnInit, computed } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -20,7 +20,8 @@ import { CreateProductDTO, ListProductDTO } from '../../models';
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    RouterLink
   ],
   templateUrl: './product-form.component.html',
   styleUrls: ['./product-form.component.css']
@@ -85,7 +86,7 @@ export class ProductFormComponent implements OnInit {
         next: (updatedProduct) => {
           // Optimistic update
           this.productService.updateProductInCache(updatedProduct);
-          this.router.navigate(['/products']);
+          this.router.navigate(['/master-data/products']);
         },
         error: (error) => {
           console.error('Error updating product:', error);
@@ -96,7 +97,7 @@ export class ProductFormComponent implements OnInit {
         next: (newProduct) => {
           // Optimistic update
           this.productService.addProductToCache(newProduct);
-          this.router.navigate(['/products']);
+          this.router.navigate(['/master-data/products']);
         },
         error: (error) => {
           console.error('Error creating product:', error);
@@ -105,7 +106,4 @@ export class ProductFormComponent implements OnInit {
     }
   }
 
-  onCancel(): void {
-    this.router.navigate(['/products']);
-  }
 }

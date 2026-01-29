@@ -464,3 +464,8 @@ mat-card-subtitle {
   color: var(--color-text-secondary);
 }
 
+/* Remove underline from the anchor element itself */
+a:has(> mat-card) {
+  text-decoration: none;
+  color: inherit;
+}

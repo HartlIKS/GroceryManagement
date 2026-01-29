@@ -6,10 +6,10 @@
         <mat-icon>refresh</mat-icon>
         Refresh
       </button>
-      <button mat-raised-button color="primary" (click)="onAddStore()">
+      <a mat-raised-button color="primary" routerLink="/master-data/stores/new">
         <mat-icon>add</mat-icon>
         Add Store
-      </button>
+      </a>
     </div>
   </div>
 
@@ -55,9 +55,9 @@
       <ng-container matColumnDef="actions">
         <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
         <mat-cell *matCellDef="let store">
-          <button mat-icon-button color="primary" (click)="onEditStore(store.uuid)">
+          <a mat-icon-button color="primary" [routerLink]="['/master-data/stores', store.uuid]">
             <mat-icon>edit</mat-icon>
-          </button>
+          </a>
           <button mat-icon-button color="warn" (click)="onDeleteStore(store.uuid)">
             <mat-icon>delete</mat-icon>
           </button>

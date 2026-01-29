@@ -1,10 +1,10 @@
 <div class="container">
   <div class="header">
     <h2>Product Groups</h2>
-    <button mat-raised-button color="primary" (click)="onAddProductGroup()">
+    <a mat-raised-button color="primary" routerLink="/product-groups/new">
       <mat-icon>add</mat-icon>
       Add Product Group
-    </button>
+    </a>
   </div>
 
   <div class="search-section">
@@ -43,9 +43,9 @@
           <ng-container matColumnDef="actions">
             <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
             <mat-cell *matCellDef="let productGroup">
-              <button mat-icon-button color="primary" (click)="onEditProductGroup(productGroup.uuid)">
+              <a mat-icon-button color="primary" [routerLink]="['/product-groups', productGroup.uuid]">
                 <mat-icon>edit</mat-icon>
-              </button>
+              </a>
               <button mat-icon-button color="warn" (click)="onDeleteProductGroup(productGroup.uuid)">
                 <mat-icon>delete</mat-icon>
               </button>

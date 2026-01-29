@@ -1,5 +1,5 @@
 import { Component, computed, DestroyRef, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -32,7 +32,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     MatTableModule,
     MatSelectModule,
     MatTooltip,
-    MatDividerModule
+    MatDividerModule,
+    RouterLink
   ],
   templateUrl: './shopping-list-form.component.html',
   styleUrls: ['./shopping-list-form.component.css']
@@ -359,7 +360,4 @@ export class ShoppingListFormComponent implements OnInit {
     }
   }
 
-  onCancel(): void {
-    this.router.navigate(['/shopping-lists']);
-  }
 }

@@ -147,12 +147,12 @@
                 <mat-icon>{{ isEditMode ? 'save' : 'add' }}</mat-icon>
                 {{ isEditMode ? 'Update Product Group' : 'Create Product Group' }}
               </button>
-              <button mat-button
-                      type="button"
-                      (click)="onCancel()">
+              <a mat-button
+                     type="button"
+                     routerLink="/product-groups">
                 <mat-icon>cancel</mat-icon>
                 Cancel
-              </button>
+              </a>
             </div>
           </div>
         </form>

@@ -1,5 +1,5 @@
 import { Component, computed, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -22,7 +22,8 @@ import { ListPriceDTO } from '../../models';
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatSelectModule,
-    MatFormFieldModule
+    MatFormFieldModule,
+    RouterLink
   ],
   templateUrl: './price-list.component.html',
   styleUrls: ['./price-list.component.css']
@@ -51,8 +52,7 @@ export class PriceListComponent implements OnInit {
   constructor(
     private priceService: PriceService,
     private productService: ProductService,
-    private storeService: StoreService,
-    private router: Router
+    private storeService: StoreService
   ) {}
 
   ngOnInit(): void {
@@ -98,14 +98,6 @@ export class PriceListComponent implements OnInit {
   onClearFilters(): void {
     this.priceService.clearFilters();
     this.priceService.getPrices(0, this.pageSize());
-  }
-
-  onAddPrice(): void {
-    this.router.navigate(['/prices/new']);
-  }
-
-  onEditPrice(uuid: string): void {
-    this.router.navigate(['/prices', uuid]);
   }
 
   onDeletePrice(uuid: string): void {

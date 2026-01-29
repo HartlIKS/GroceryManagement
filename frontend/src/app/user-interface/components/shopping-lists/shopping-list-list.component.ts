@@ -1,6 +1,6 @@
-import { Component, OnInit, computed } from '@angular/core';
-import { Router } from '@angular/router';
-import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { Component, computed, OnInit } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -22,7 +22,8 @@ import { ListShoppingListDTO } from '../../models';
     MatInputModule,
     MatFormFieldModule,
     MatProgressSpinnerModule,
-    FormsModule
+    FormsModule,
+    RouterLink
   ],
   templateUrl: './shopping-list-list.component.html',
   styleUrls: ['./shopping-list-list.component.css']
@@ -44,7 +45,6 @@ export class ShoppingListListComponent implements OnInit {
 
   constructor(
     private shoppingListService: ShoppingListService,
-    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -57,14 +57,6 @@ export class ShoppingListListComponent implements OnInit {
 
   onSearch(): void {
     this.loadShoppingLists();
-  }
-
-  onAddShoppingList(): void {
-    this.router.navigate(['/shopping-lists/new']);
-  }
-
-  onEditShoppingList(uuid: string): void {
-    this.router.navigate(['/shopping-lists', uuid]);
   }
 
   onDeleteShoppingList(uuid: string): void {

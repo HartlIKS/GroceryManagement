@@ -1,5 +1,5 @@
 import { Component, computed, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,7 +10,7 @@ import { PriceService, ProductService, StoreService } from '../../services';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, RouterLink],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
@@ -32,7 +32,6 @@ export class DashboardComponent implements OnInit {
     private productService: ProductService,
     private storeService: StoreService,
     private priceService: PriceService,
-    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -55,27 +54,4 @@ export class DashboardComponent implements OnInit {
     this.priceService.getPrices(0, 1);
   }
 
-  navigateToProducts(): void {
-    this.router.navigate(['/products']);
-  }
-
-  navigateToStores(): void {
-    this.router.navigate(['/stores']);
-  }
-
-  navigateToPrices(): void {
-    this.router.navigate(['/prices']);
-  }
-
-  addProduct(): void {
-    this.router.navigate(['/products/new']);
-  }
-
-  addStore(): void {
-    this.router.navigate(['/stores/new']);
-  }
-
-  addPrice(): void {
-    this.router.navigate(['/prices/new']);
-  }
 }

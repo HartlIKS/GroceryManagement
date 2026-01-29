@@ -1,10 +1,10 @@
 <div class="container">
   <div class="header">
     <h2>Shopping Lists</h2>
-    <button mat-raised-button color="primary" (click)="onAddShoppingList()">
+    <a mat-raised-button color="primary" routerLink="/shopping-lists/new">
       <mat-icon>add</mat-icon>
       Add Shopping List
-    </button>
+    </a>
   </div>
 
   <div class="search-section">
@@ -51,9 +51,9 @@
           <ng-container matColumnDef="actions">
             <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
             <mat-cell *matCellDef="let shoppingList">
-              <button mat-icon-button color="primary" (click)="onEditShoppingList(shoppingList.uuid)">
+              <a mat-icon-button color="primary" [routerLink]="['/shopping-lists', shoppingList.uuid]">
                 <mat-icon>edit</mat-icon>
-              </button>
+              </a>
               <button mat-icon-button color="warn" (click)="onDeleteShoppingList(shoppingList.uuid)">
                 <mat-icon>delete</mat-icon>
               </button>

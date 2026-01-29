@@ -1,5 +1,5 @@
 import { Component, computed, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -22,7 +22,8 @@ import { CreatePriceListingDTO, ListPriceDTO, UpdatePriceDTO } from '../../model
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    RouterLink
   ],
   templateUrl: './price-form.component.html',
   styleUrls: ['./price-form.component.css']
@@ -110,7 +111,7 @@ export class PriceFormComponent implements OnInit {
         next: (updatedPrice) => {
           // Optimistic update
           this.priceService.updatePriceInCache(updatedPrice);
-          this.router.navigate(['/prices']);
+          this.router.navigate(['/master-data/prices']);
         },
         error: (error: any) => {
           console.error('Error updating price:', error);
@@ -129,7 +130,7 @@ export class PriceFormComponent implements OnInit {
         next: (newPrice) => {
           // Optimistic update
           this.priceService.addPriceToCache(newPrice);
-          this.router.navigate(['/prices']);
+          this.router.navigate(['/master-data/prices']);
         },
         error: (error: any) => {
           console.error('Error creating price:', error);
@@ -138,9 +139,6 @@ export class PriceFormComponent implements OnInit {
     }
   }
 
-  onCancel(): void {
-    this.router.navigate(['/prices']);
-  }
 
   private convertToIsoDateTime(dateString: string | undefined): string | undefined {
     if (!dateString) return dateString;

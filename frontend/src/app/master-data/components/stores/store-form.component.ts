@@ -1,5 +1,5 @@
 import { Component, computed, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -20,7 +20,8 @@ import { CreateStoreDTO, ListStoreDTO } from '../../models';
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    RouterLink
   ],
   templateUrl: './store-form.component.html',
   styleUrls: ['./store-form.component.css']
@@ -99,7 +100,7 @@ export class StoreFormComponent implements OnInit {
         next: (updatedStore) => {
           // Optimistic update
           this.storeService.updateStoreInCache(updatedStore);
-          this.router.navigate(['/stores']);
+          this.router.navigate(['/master-data/stores']);
         },
         error: (error) => {
           console.error('Error updating store:', error);
@@ -110,7 +111,7 @@ export class StoreFormComponent implements OnInit {
         next: (newStore) => {
           // Optimistic update
           this.storeService.addStoreToCache(newStore);
-          this.router.navigate(['/stores']);
+          this.router.navigate(['/master-data/stores']);
         },
         error: (error) => {
           console.error('Error creating store:', error);
@@ -119,7 +120,4 @@ export class StoreFormComponent implements OnInit {
     }
   }
 
-  onCancel(): void {
-    this.router.navigate(['/stores']);
-  }
 }

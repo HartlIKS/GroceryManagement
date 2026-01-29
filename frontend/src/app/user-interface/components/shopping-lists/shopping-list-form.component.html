@@ -30,7 +30,7 @@
           </div>
 
           <div class="form-row-spaced">
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="outline" class="half-width">
               <mat-label>Add Items to List</mat-label>
               <mat-select [(value)]="selectedItemUuid" (selectionChange)="onSelectionChange()"
                           placeholder="Select products or groups">
@@ -88,7 +88,7 @@
                       <div class="sample-images">
                         @if (item.sampleImages && item.sampleImages.length > 0) {
                           @for (image of item.sampleImages; track image) {
-                            <img [src]="image" [alt]="item.name" class="image-small">
+                            <img [src]="image" [alt]="item.name" class="image-large">
                           }
                         } @else {
                           <span>-</span>
@@ -153,10 +153,10 @@
           <mat-icon>save</mat-icon>
           {{ isEditMode ? 'Update' : 'Create' }} Shopping List
         </button>
-        <button mat-raised-button color="warn" type="button" (click)="onCancel()">
+        <a mat-raised-button color="warn" type="button" routerLink="/shopping-lists">
           <mat-icon>cancel</mat-icon>
           Cancel
-        </button>
+        </a>
       </div>
     </mat-card-actions>
   </mat-card>
