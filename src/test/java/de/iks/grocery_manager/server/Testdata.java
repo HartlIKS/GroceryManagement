@@ -290,4 +290,82 @@ public class Testdata {
             %s
           ]
         }""", PRICE_1_JSON, PRICE_2_JSON);
+
+    public static final UUID SHOPPING_LIST_1_UUID = UUID.fromString("30000000-0000-0000-0000-000000000000");
+    public static final String SHOPPING_LIST_1_JSON = String.format("""
+        {
+          "uuid": "%s",
+          "name": "List 1",
+          "products": {
+            "%s": 2
+          },
+          "productGroups": {}
+        }""", SHOPPING_LIST_1_UUID, PRODUCT_GROUP_TEST_1_UUID);
+    public static final String SHOPPING_LIST_1_UPDATE_JSON = String.format("""
+        {
+          "name": "List 1b",
+          "products": {
+            "%s": 2,
+            "%s": 1
+          },
+          "productGroups": {}
+        }""", PRODUCT_GROUP_TEST_1_UUID, PRODUCT_GROUP_TEST_2_UUID);
+    public static final String SHOPPING_LIST_1_JSON2 = String.format("""
+        {
+          "uuid": "%s",
+          "name": "List 1b",
+          "products": {
+            "%s": 2,
+            "%s": 1
+          },
+          "productGroups": {}
+        }""", SHOPPING_LIST_1_UUID, PRODUCT_GROUP_TEST_1_UUID, PRODUCT_GROUP_TEST_2_UUID);
+    public static final UUID SHOPPING_LIST_2_UUID = UUID.fromString("30000000-0000-0000-0000-000000000001");
+    public static final String SHOPPING_LIST_2_JSON = String.format("""
+        {
+          "uuid": "%s",
+          "name": "List 2",
+          "products": {},
+          "productGroups": {}
+        }""", SHOPPING_LIST_2_UUID);
+    public static final String SHOPPING_LIST_3_CREATE_JSON = String.format("""
+        {
+          "name": "List 3",
+          "products": {
+            "%s": 3
+          },
+          "productGroups": {}
+        }""", PRODUCT_GROUP_TEST_1_UUID);
+    public static final String SHOPPING_LIST_3_JSON = String.format("""
+        {
+          "name": "List 3",
+          "products": {
+            "%s": 3
+          },
+          "productGroups": {}
+        }""", PRODUCT_GROUP_TEST_1_UUID);
+    public static final String SHOPPING_LIST_SEARCH_RESULT_JSON = String.format("""
+        {
+          "page": {
+            "number": 0,
+            "size": 10,
+            "totalElements": 1,
+            "totalPages": 1
+          },
+          "content": [
+            %s
+          ]
+        }""", SHOPPING_LIST_1_JSON);
+    public static final String SHOPPING_LIST_SEARCH_RESULT_USER2_JSON = String.format("""
+        {
+          "page": {
+            "number": 0,
+            "size": 10,
+            "totalElements": 1,
+            "totalPages": 1
+          },
+          "content": [
+            %s
+          ]
+        }""", SHOPPING_LIST_2_JSON);
 }
