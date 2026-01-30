@@ -1,1 +1,9 @@
-/* Using global styles from styles.scss - no component-specific styles needed */
+/* Using global styles from styles.scss - only mat-table-row hover effect needed */
+mat-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+mat-row:hover {
+  background-color: rgba(63, 81, 181, 0.04);
+}

@@ -1,0 +1,74 @@
+<div class="container">
+  <div class="header">
+    <h2>Shopping Trip Checklist</h2>
+  </div>
+
+  @if (loading()) {
+    <div class="loading">
+      <mat-spinner></mat-spinner>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="error">
+      {{ error() }}
+    </div>
+  }
+
+  @if (!loading() && !error() && currentShoppingTrip(); as trip) {
+    <mat-card>
+      <mat-card-title>
+        <div class="form-row-spaced">
+          <div class="filter-option">
+            @if (currentStore()?.logo) {
+              <img [src]="currentStore()?.logo" [alt]="currentStore()?.name || 'Unknown Store'" class="image-small">
+            }
+            <span>{{ currentStore()?.name || 'Unknown Store' }}</span>
+          </div>
+          <span>{{ formatDate(trip.time) }}</span>
+        </div>
+      </mat-card-title>
+      <mat-card-content>
+        <mat-progress-bar mode="determinate" [value]="getCompletionPercentage()"></mat-progress-bar>
+      </mat-card-content>
+    </mat-card>
+
+    <div class="section-header">
+      <h3>Shopping List</h3>
+      <span>Total Expected Cost: {{ getHasUnknownPrices() ? '≥ ' : '' }}{{ getTotalPrice() | currency: currentStore()?.currency }}</span>
+    </div>
+
+    @if (checklistItems().length === 0) {
+      <div class="no-data">
+        No items in this shopping trip.
+      </div>
+    } @else {
+      <div class="dashboard-grid">
+        @for (item of checklistItems(); track item.productUuid) {
+          <mat-checkbox
+            [checked]="item.checked"
+            (click)="$event.stopPropagation(); toggleItem(item)">
+            <div class="filter-option">
+              @if (item.productImage) {
+                <img [src]="item.productImage" [alt]="item.productName" class="image-large">
+              }
+              <div class="half-width">
+                <div>{{ item.productName }}</div>
+                <div>Quantity: {{ item.quantity }}</div>
+                @if (item.price) {
+                  <div>Price: {{ item.price | currency: currentStore()?.currency }}</div>
+                }
+              </div>
+            </div>
+          </mat-checkbox>
+        }
+      </div>
+    }
+  }
+
+  @if (!loading() && !error() && !currentShoppingTrip()) {
+    <div class="no-data">
+      Shopping trip not found.
+    </div>
+  }
+</div>

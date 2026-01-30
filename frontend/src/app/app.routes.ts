@@ -8,7 +8,7 @@ import {
   ProductListComponent, StoreFormComponent,
   StoreListComponent
 } from './master-data/components';
-import { UserDashboardComponent, ProductGroupListComponent, ProductGroupFormComponent, ShoppingListListComponent, ShoppingListFormComponent, ShoppingTripListComponent, ShoppingTripFormComponent } from './user-interface/components';
+import { UserDashboardComponent, ProductGroupListComponent, ProductGroupFormComponent, ShoppingListListComponent, ShoppingListFormComponent, ShoppingTripListComponent, ShoppingTripFormComponent, ShoppingTripChecklistComponent } from './user-interface/components';
 
 export const routes: Routes = [
   {
@@ -59,6 +59,10 @@ export const routes: Routes = [
       {
         path: 'shopping-trips/:id',
         component: ShoppingTripFormComponent
+      },
+      {
+        path: 'shopping-trips/:id/checklist',
+        component: ShoppingTripChecklistComponent
       }
     ],
   },

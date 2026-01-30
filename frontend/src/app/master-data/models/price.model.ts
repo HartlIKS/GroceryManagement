@@ -22,3 +22,8 @@ export type UpdatePriceDTO = {
 }
 
 export type ListPriceDTO = Price;
+
+export type PriceListingDTO = {
+  listPriceUUID: string;
+  price: number;
+}

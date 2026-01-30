@@ -1,7 +1,7 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from '../../services';
-import { CreatePriceListingDTO, ListPriceDTO, UpdatePriceDTO } from '../models';
+import { CreatePriceListingDTO, ListPriceDTO, UpdatePriceDTO, PriceListingDTO } from '../models';
 import { Page } from '../../models';
 
 interface PriceState {
@@ -187,5 +187,16 @@ export class PriceService {
       prices: updatedPrices,
       totalElements: currentState.totalElements + 1
     });
+  }
+
+  // Search prices for specific products and stores at a specific time
+  searchPricesForProductsAndStores(products: string[], stores: string, at: string = new Date().toISOString()): Observable<Record<string, Record<string, PriceListingDTO[]>>> {
+    const params = {
+      at,
+      products: products.join(','),
+      stores
+    };
+
+    return this.apiService.get<Record<string, Record<string, PriceListingDTO[]>>>(this.endpoint, params);
   }
 }

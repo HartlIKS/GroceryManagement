@@ -11,20 +11,20 @@
     <div class="form-row">
       <mat-form-field appearance="outline" class="search-field">
         <mat-label>From Date</mat-label>
-        <input matInput 
-               type="datetime-local" 
+        <input matInput
+               type="datetime-local"
                [formControl]="fromDateControl"
                (change)="onDateFilterChange()">
       </mat-form-field>
-      
+
       <mat-form-field appearance="outline" class="search-field">
         <mat-label>To Date</mat-label>
-        <input matInput 
-               type="datetime-local" 
+        <input matInput
+               type="datetime-local"
                [formControl]="toDateControl"
                (change)="onDateFilterChange()">
       </mat-form-field>
-      
+
       <button mat-raised-button (click)="clearFilters()">Clear</button>
     </div>
   </div>
@@ -66,17 +66,17 @@
           <ng-container matColumnDef="actions">
             <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
             <mat-cell *matCellDef="let trip">
-              <a mat-icon-button color="primary" [routerLink]="['/shopping-trips', trip.uuid]">
+              <a mat-icon-button color="primary" [routerLink]="['/shopping-trips', trip.uuid]" (click)="$event.stopPropagation()">
                 <mat-icon>edit</mat-icon>
               </a>
-              <button mat-icon-button color="warn" (click)="deleteShoppingTrip(trip.uuid)">
+              <button mat-icon-button color="warn" (click)="deleteShoppingTrip(trip.uuid); $event.stopPropagation()">
                 <mat-icon>delete</mat-icon>
               </button>
             </mat-cell>
           </ng-container>
 
           <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-          <mat-row *matRowDef="let _; columns: displayedColumns;"></mat-row>
+          <mat-row *matRowDef="let trip; columns: displayedColumns;" [routerLink]="['/shopping-trips', trip.uuid, 'checklist']"></mat-row>
         </mat-table>
 
         @if (dataSource().data.length === 0) {
