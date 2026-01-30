@@ -46,7 +46,7 @@ public class SecurityConfiguration {
             .authorizeHttpRequests(r -> r
                 .requestMatchers("/masterdata/**")
                 .hasAuthority(AUTHORITY_MASTERDATA)
-                .requestMatchers("/productGroups/**", "/productGroups", "/shoppingLists/**", "/shoppingLists")
+                .requestMatchers("/productGroups/**", "/productGroups", "/shoppingLists/**", "/shoppingLists", "/shoppingTrips/**", "/shoppingTrips")
                 .authenticated()
                 .anyRequest()
                 .denyAll()

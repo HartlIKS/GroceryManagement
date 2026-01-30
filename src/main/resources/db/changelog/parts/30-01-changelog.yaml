@@ -1,0 +1,92 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1769762570433-1
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_shoppingtrip
+                  name: uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: owner
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: store_uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: time
+                  type: timestamp
+            tableName: shopping_trip
+  - changeSet:
+      id: 1769762570433-2
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_shoppingtrip_products
+                  name: shopping_trip_uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: amount
+                  type: DECIMAL
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_shoppingtrip_products
+                  name: product_uuid
+                  type: UUID
+            tableName: shopping_trip_products
+  - changeSet:
+      id: 1769762570433-3
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: store_uuid
+            baseTableName: shopping_trip
+            constraintName: FK_SHOPPINGTRIP_ON_STORE_UUID
+            referencedColumnNames: uuid
+            referencedTableName: store
+  - changeSet:
+      id: 1769762570433-4
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: product_uuid
+            baseTableName: shopping_trip_products
+            constraintName: fk_shoppingtrip_products_on_product
+            referencedColumnNames: uuid
+            referencedTableName: product
+  - changeSet:
+      id: 1769762570433-5
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: shopping_trip_uuid
+            baseTableName: shopping_trip_products
+            constraintName: fk_shoppingtrip_products_on_shopping_trip
+            referencedColumnNames: uuid
+            referencedTableName: shopping_trip
+

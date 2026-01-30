@@ -3,6 +3,7 @@ package de.iks.grocery_manager.server.dto;
 import de.iks.grocery_manager.server.dto.masterdata.*;
 import de.iks.grocery_manager.server.jpa.ProductGroupRepository;
 import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
+import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;
 import de.iks.grocery_manager.server.model.*;
 import de.iks.grocery_manager.server.model.masterdata.Address;
 import de.iks.grocery_manager.server.model.masterdata.PriceListing;
@@ -26,6 +27,12 @@ public interface DTOMapper {
 
     default UUID toUUID(Store store) {
         return store.getUuid();
+    }
+
+    default Store toStore(UUID uuid, @Context StoreRepository repository) {
+        return repository
+            .findById(uuid)
+            .orElseThrow(() -> new NoSuchElementException(uuid.toString()));
     }
 
     @Mapping(target = "uuid", ignore = true)
@@ -123,5 +130,25 @@ public interface DTOMapper {
         CreateShoppingListDTO update,
         @Context ProductRepository products,
         @Context ProductGroupRepository groups
+    );
+
+    ShoppingTripDTO map(ShoppingTrip trip);
+
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "owner", source = "owner")
+    ShoppingTrip create(
+        CreateShoppingTripDTO listDTO,
+        String owner,
+        @Context StoreRepository stores,
+        @Context ProductRepository products
+    );
+
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "owner", ignore = true)
+    void update(
+        @MappingTarget ShoppingTrip target,
+        CreateShoppingTripDTO update,
+        @Context StoreRepository stores,
+        @Context ProductRepository products
     );
 }
