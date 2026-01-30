@@ -15,7 +15,7 @@ public interface PriceRepository extends JpaRepository<PriceListing, UUID> {
     Page<PriceListing> findByStore_Uuid(UUID storeUuid, Pageable pageable);
     Page<PriceListing> findByProduct_UuidAndStore_Uuid(UUID productUuid, UUID storeUuid, Pageable pageable);
 
-    Stream<PriceListing> findAllByValidFromBeforeAndValidToAfterAndStore_UuidInAndProduct_UuidIn(
+    Stream<PriceListing> findAllByValidFromLessThanEqualAndValidToGreaterThanEqualAndStore_UuidInAndProduct_UuidIn(
         ZonedDateTime validFromBefore,
         ZonedDateTime validToAfter,
         Collection<? extends UUID> stores,

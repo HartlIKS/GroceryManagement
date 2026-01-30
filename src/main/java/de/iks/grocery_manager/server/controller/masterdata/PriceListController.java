@@ -107,7 +107,8 @@ public class PriceListController {
     public Page<ListPriceDTO> getPrices(
         @RequestParam(required = false) UUID store,
         @RequestParam(required = false) UUID product,
-        @PageableDefault Pageable page) {
+        @PageableDefault Pageable page
+    ) {
         if(store == null && product == null) {
             return priceList
                 .findAll(page)
@@ -138,7 +139,7 @@ public class PriceListController {
     ) {
         return ResponseEntity.ok(
             priceList
-                .findAllByValidFromBeforeAndValidToAfterAndStore_UuidInAndProduct_UuidIn(at, at, Set.of(stores), Set.of(products))
+                .findAllByValidFromLessThanEqualAndValidToGreaterThanEqualAndStore_UuidInAndProduct_UuidIn(at, at, Set.of(stores), Set.of(products))
                 .collect(Collectors.groupingBy(
                     p -> p
                         .getProduct()
