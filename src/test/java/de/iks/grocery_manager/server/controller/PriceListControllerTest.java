@@ -14,6 +14,8 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.time.ZonedDateTime;
+
 import static de.iks.grocery_manager.server.config.SecurityConfiguration.AUTHORITY_MASTERDATA;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -207,6 +209,168 @@ class PriceListControllerTest {
                 .andExpect(jsonPath("$.content", hasSize(1)))
                 .andExpect(jsonPath("$.content[0].store").value(Testdata.STORE_3_UUID.toString()))
                 .andExpect(jsonPath("$.content[0].product").value(Testdata.PRODUCT_GROUP_TEST_1_UUID.toString()));
+        }
+    }
+
+    @Nested
+    class SearchPricesWithDateStoresAndProducts {
+        @Test
+        void shouldReturnPricesWhenSearchingWithValidDateStoresAndProducts() throws Exception {
+            ZonedDateTime searchDate = ZonedDateTime.parse("2024-06-15T10:00:00Z");
+            
+            mockMvc
+                .perform(
+                    get("/masterdata/price")
+                        .queryParam("at", searchDate.toString())
+                        .queryParam("stores", Testdata.STORE_3_UUID.toString())
+                        .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isMap())
+                .andExpect(jsonPath("$.size()").value(1))
+                .andExpect(jsonPath("$." + Testdata.PRODUCT_GROUP_TEST_1_UUID).exists())
+                .andExpect(jsonPath("$." + Testdata.PRODUCT_GROUP_TEST_1_UUID + "." + Testdata.STORE_3_UUID).exists())
+                .andExpect(jsonPath("$." + Testdata.PRODUCT_GROUP_TEST_1_UUID + "." + Testdata.STORE_3_UUID).isArray())
+                .andExpect(jsonPath("$." +
+                                        Testdata.PRODUCT_GROUP_TEST_1_UUID + "." + Testdata.STORE_3_UUID + ".size()").value(1))
+                .andExpect(jsonPath("$." + Testdata.PRODUCT_GROUP_TEST_1_UUID + "." + Testdata.STORE_3_UUID + "[0].listPriceUUID").value(Testdata.PRICE_1_UUID.toString()))
+                .andExpect(jsonPath("$." + Testdata.PRODUCT_GROUP_TEST_1_UUID + "." + Testdata.STORE_3_UUID + "[0].price").value(11));
+        }
+
+        @Test
+        void shouldReturnMultiplePricesWhenSearchingWithMultipleStoresAndProducts() throws Exception {
+            ZonedDateTime searchDate = ZonedDateTime.parse("2024-06-15T10:00:00Z");
+            
+            mockMvc
+                .perform(
+                    get("/masterdata/price")
+                        .queryParam("at", searchDate.toString())
+                        .queryParam("stores", Testdata.STORE_3_UUID + "," + Testdata.STORE_4_UUID)
+                        .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID + "," +
+                            Testdata.PRODUCT_GROUP_TEST_2_UUID
+                        )
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isMap())
+                .andExpect(jsonPath("$.size()").value(2))
+                .andExpect(jsonPath("$." + Testdata.PRODUCT_GROUP_TEST_1_UUID).exists())
+                .andExpect(jsonPath("$." + Testdata.PRODUCT_GROUP_TEST_2_UUID).exists())
+                .andExpect(jsonPath("$." + Testdata.PRODUCT_GROUP_TEST_1_UUID + "." + Testdata.STORE_3_UUID).exists())
+                .andExpect(jsonPath("$." + Testdata.PRODUCT_GROUP_TEST_2_UUID + "." + Testdata.STORE_4_UUID).exists())
+                .andExpect(jsonPath("$." +
+                                        Testdata.PRODUCT_GROUP_TEST_1_UUID + "." + Testdata.STORE_3_UUID + ".size()").value(1))
+                .andExpect(jsonPath("$." +
+                                        Testdata.PRODUCT_GROUP_TEST_2_UUID + "." + Testdata.STORE_4_UUID + ".size()").value(1));
+        }
+
+        @Test
+        void shouldReturnEmptyMapWhenSearchingWithDateOutsideValidRange() throws Exception {
+            ZonedDateTime searchDate = ZonedDateTime.parse("2023-06-15T10:00:00Z");
+            
+            mockMvc
+                .perform(
+                    get("/masterdata/price")
+                        .queryParam("at", searchDate.toString())
+                        .queryParam("stores", Testdata.STORE_3_UUID.toString())
+                        .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isMap())
+                .andExpect(jsonPath("$.size()").value(0));
+        }
+
+        @Test
+        void shouldReturnEmptyMapWhenSearchingWithNonExistentStore() throws Exception {
+            ZonedDateTime searchDate = ZonedDateTime.parse("2024-06-15T10:00:00Z");
+            
+            mockMvc
+                .perform(
+                    get("/masterdata/price")
+                        .queryParam("at", searchDate.toString())
+                        .queryParam("stores", Testdata.BAD_UUID.toString())
+                        .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isMap())
+                .andExpect(jsonPath("$.size()").value(0));
+        }
+
+        @Test
+        void shouldReturnEmptyMapWhenSearchingWithNonExistentProduct() throws Exception {
+            ZonedDateTime searchDate = ZonedDateTime.parse("2024-06-15T10:00:00Z");
+            
+            mockMvc
+                .perform(
+                    get("/masterdata/price")
+                        .queryParam("at", searchDate.toString())
+                        .queryParam("stores", Testdata.STORE_3_UUID.toString())
+                        .queryParam("products", Testdata.BAD_UUID.toString())
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isMap())
+                .andExpect(jsonPath("$.size()").value(0));
+        }
+
+        @Test
+        void shouldReturnPricesWhenSearchingWithDateAtValidFromBoundary() throws Exception {
+            ZonedDateTime searchDate = ZonedDateTime.parse("2024-01-01T00:00:00Z");
+            
+            mockMvc
+                .perform(
+                    get("/masterdata/price")
+                        .queryParam("at", searchDate.toString())
+                        .queryParam("stores", Testdata.STORE_3_UUID.toString())
+                        .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isMap())
+                .andExpect(jsonPath("$.size()").value(1))
+                .andExpect(jsonPath("$." + Testdata.PRODUCT_GROUP_TEST_1_UUID + "." + Testdata.STORE_3_UUID).exists())
+                .andExpect(jsonPath("$." +
+                                        Testdata.PRODUCT_GROUP_TEST_1_UUID + "." + Testdata.STORE_3_UUID + ".size()").value(1));
+        }
+
+        @Test
+        void shouldReturnPricesWhenSearchingWithDateAtValidToBoundary() throws Exception {
+            ZonedDateTime searchDate = ZonedDateTime.parse("2024-12-31T23:59:59Z");
+            
+            mockMvc
+                .perform(
+                    get("/masterdata/price")
+                        .queryParam("at", searchDate.toString())
+                        .queryParam("stores", Testdata.STORE_3_UUID.toString())
+                        .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isMap())
+                .andExpect(jsonPath("$.size()").value(1))
+                .andExpect(jsonPath("$." + Testdata.PRODUCT_GROUP_TEST_1_UUID + "." + Testdata.STORE_3_UUID).exists())
+                .andExpect(jsonPath("$." +
+                                        Testdata.PRODUCT_GROUP_TEST_1_UUID + "." + Testdata.STORE_3_UUID + ".size()").value(1));
+        }
+
+        @Test
+        void shouldReturnEmptyMapWhenSearchingWithDateJustAfterValidTo() throws Exception {
+            ZonedDateTime searchDate = ZonedDateTime.parse("2025-01-01T00:00:00Z");
+            
+            mockMvc
+                .perform(
+                    get("/masterdata/price")
+                        .queryParam("at", searchDate.toString())
+                        .queryParam("stores", Testdata.STORE_3_UUID.toString())
+                        .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isMap())
+                .andExpect(jsonPath("$.size()").value(0));
         }
     }
 }
