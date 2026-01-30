@@ -368,4 +368,89 @@ public class Testdata {
             %s
           ]
         }""", SHOPPING_LIST_2_JSON);
+
+    public static final UUID SHOPPING_TRIP_1_UUID = UUID.fromString("50000000-0000-0000-0000-000000000000");
+    public static final String SHOPPING_TRIP_1_JSON = String.format("""
+        {
+          "uuid": "%s",
+          "store": "%s",
+          "time": "2024-01-15T10:00:00+01:00",
+          "products": {
+            "%s": 2
+          }
+        }""", SHOPPING_TRIP_1_UUID, STORE_3_UUID, PRODUCT_GROUP_TEST_1_UUID);
+    public static final String SHOPPING_TRIP_1_UPDATE_JSON = String.format("""
+        {
+          "name": "Trip 1b",
+          "store": "%s",
+          "time": "2024-01-15T13:00:00Z",
+          "products": {
+            "%s": 1,
+            "%s": 3
+          }
+        }""", STORE_2_UUID, PRODUCT_GROUP_TEST_1_UUID, PRODUCT_GROUP_TEST_2_UUID);
+    public static final String SHOPPING_TRIP_1_JSON2 = String.format("""
+        {
+          "uuid": "%s",
+          "store": "%s",
+          "time": "2024-01-15T13:00:00Z",
+          "products": {
+            "%s": 1,
+            "%s": 3
+          }
+        }""", SHOPPING_TRIP_1_UUID, STORE_2_UUID, PRODUCT_GROUP_TEST_1_UUID, PRODUCT_GROUP_TEST_2_UUID);
+    
+    public static final UUID SHOPPING_TRIP_2_UUID = UUID.fromString("50000000-0000-0000-0000-000000000001");
+    public static final String SHOPPING_TRIP_2_JSON = String.format("""
+        {
+          "uuid": "%s",
+          "store": "%s",
+          "time": "2024-01-20T15:30:00+01:00",
+          "products": {}
+        }""", SHOPPING_TRIP_2_UUID, STORE_3_UUID);
+    
+    public static final String SHOPPING_TRIP_3_CREATE_JSON = String.format("""
+        {
+          "name": "Trip 3",
+          "store": "%s",
+          "time": "2024-01-25T08:00:00Z",
+          "products": {
+            "%s": 1
+          }
+        }""", STORE_1_UUID, PRODUCT_GROUP_TEST_2_UUID);
+    
+    public static final String SHOPPING_TRIP_3_JSON = String.format("""
+        {
+          "store": "%s",
+          "time": "2024-01-25T08:00:00Z",
+          "products": {
+            "%s": 1
+          }
+        }""", STORE_1_UUID, PRODUCT_GROUP_TEST_2_UUID);
+    
+    public static final String SHOPPING_TRIP_SEARCH_RESULT_JSON = String.format("""
+        {
+          "page": {
+            "number": 0,
+            "size": 10,
+            "totalElements": 1,
+            "totalPages": 1
+          },
+          "content": [
+            %s
+          ]
+        }""", SHOPPING_TRIP_1_JSON);
+    
+    public static final String SHOPPING_TRIP_SEARCH_RESULT_USER2_JSON = String.format("""
+        {
+          "page": {
+            "number": 0,
+            "size": 10,
+            "totalElements": 1,
+            "totalPages": 1
+          },
+          "content": [
+            %s
+          ]
+        }""", SHOPPING_TRIP_2_JSON);
 }
