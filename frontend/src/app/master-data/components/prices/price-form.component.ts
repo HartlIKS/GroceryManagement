@@ -142,7 +142,8 @@ export class PriceFormComponent implements OnInit {
 
   private convertToIsoDateTime(dateString: string | undefined): string | undefined {
     if (!dateString) return dateString;
-    // datetime-local gives us YYYY-MM-DDTHH:mm, we need to add timezone info
+    // datetime-local gives us YYYY-MM-DDTHH:mm in local timezone
+    // We need to treat this as local time and convert to ISO properly
     const date = new Date(dateString);
     return date.toISOString();
   }
@@ -150,8 +151,13 @@ export class PriceFormComponent implements OnInit {
   private convertToDateTimeLocal(isoString: string | undefined): string | undefined {
     if (!isoString) return isoString;
     // Convert ISO string to YYYY-MM-DDTHH:mm format for datetime-local input
+    // Preserve the local time representation
     const date = new Date(isoString);
-    // Get the local datetime representation in the format required by datetime-local input
-    return date.toISOString().slice(0, 16);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 }
