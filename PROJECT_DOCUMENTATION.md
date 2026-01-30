@@ -123,6 +123,15 @@ Product groups allow users to group similar products together that can be substi
 
 Shopping lists allow users to create personalized grocery lists with specific quantities for individual products or product groups. Users can only access their own shopping lists.
 
+### ShoppingTrip
+- **uuid**: Primary identifier (UUID)
+- **store**: Reference to Store (Store, required)
+- **time**: When the shopping trip occurred (ZonedDateTime, required)
+- **products**: Map of products to quantities purchased (Map<Product, BigDecimal>)
+- **owner**: User who owns the trip (required, String)
+
+Shopping trips record actual purchases made by users at specific stores, including quantities and prices paid. Users can only access their own shopping trips.
+
 ## User Interface Features
 
 ### User Dashboard
@@ -207,6 +216,13 @@ Shopping lists allow users to create personalized grocery lists with specific qu
 - `POST /shoppingLists` - Create new shopping list
 - `DELETE /shoppingLists/{uuid}` - Delete shopping list (user-owned only)
 - `GET /shoppingLists` - Search shopping lists (with optional name parameter, paginated, user-owned only)
+
+### Shopping Trips (`/shoppingTrips`)
+- `GET /shoppingTrips/{uuid}` - Get shopping trip by UUID (user-owned only)
+- `PUT /shoppingTrips/{uuid}` - Update shopping trip (user-owned only)
+- `POST /shoppingTrips` - Create new shopping trip
+- `DELETE /shoppingTrips/{uuid}` - Delete shopping trip (user-owned only)
+- `GET /shoppingTrips` - Search shopping trips (with optional from/to date parameters, paginated, user-owned only)
 
 ## Development Setup
 
@@ -297,6 +313,7 @@ This will:
 - Comprehensive test coverage for all CRUD operations
 - Security testing with JWT authentication
 - Data integrity testing with foreign key constraints
+- ShoppingTripController tests with full CRUD coverage and ownership validation
 
 ## API Documentation
 - Swagger UI available at: `http://localhost:8080/swagger-ui.html`
