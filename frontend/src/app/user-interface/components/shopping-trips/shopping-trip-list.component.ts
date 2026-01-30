@@ -97,13 +97,11 @@ export class ShoppingTripListComponent implements OnInit {
   }
 
   getStoreName(storeUuid: string): string {
-    const store = this.availableStores().find(s => s.uuid === storeUuid);
-    return store ? store.name : 'Unknown Store';
+    return this.availableStores().find(s => s.uuid === storeUuid)?.name ?? 'Unknown Store';
   }
 
   getStoreLogo(storeUuid: string): string | undefined {
-    const store = this.availableStores().find(s => s.uuid === storeUuid);
-    return store?.logo;
+    return this.availableStores().find(s => s.uuid === storeUuid)?.logo;
   }
 
   formatDate(dateString: string): string {

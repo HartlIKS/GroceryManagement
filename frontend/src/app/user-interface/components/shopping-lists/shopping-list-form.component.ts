@@ -69,10 +69,7 @@ export class ShoppingListFormComponent implements OnInit {
 
       const sampleImages = Object.keys(groupProducts)
         .slice(0, 2) // Take up to 2 sample images for dropdown
-        .map(productUuid => {
-          const product = availableProducts.find(p => p.uuid === productUuid);
-          return product?.image;
-        })
+        .map(productUuid => availableProducts.find(p => p.uuid === productUuid)?.image)
         .filter(image => image); // Remove null/undefined images
 
       return { ...g, type: 'productGroup' as const, sampleImages };
@@ -88,7 +85,7 @@ export class ShoppingListFormComponent implements OnInit {
       return {
         uuid,
         amount,
-        name: product?.name || 'Unknown Product',
+        name: product?.name ?? 'Unknown Product',
         image: product?.image,
         type: 'product' as const,
         EAN: product?.EAN
@@ -117,7 +114,7 @@ export class ShoppingListFormComponent implements OnInit {
       return {
         uuid,
         amount,
-        name: group?.name || 'Unknown Group',
+        name: group?.name ?? 'Unknown Group',
         image: null, // Product groups don't have single images
         type: 'productGroup' as const,
         sampleImages,
@@ -242,7 +239,7 @@ export class ShoppingListFormComponent implements OnInit {
   onSelectionChange(): void {
     if (this.selectedItemUuid) {
       const selectedItem = this.availableItems().find(item => item.uuid === this.selectedItemUuid);
-      this.selectedItemType = selectedItem?.type || null;
+      this.selectedItemType = selectedItem?.type ?? null;
     } else {
       this.selectedItemType = null;
     }

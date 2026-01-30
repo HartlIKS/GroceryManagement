@@ -76,7 +76,7 @@ export class ShoppingTripChecklistComponent implements OnInit {
 
       return {
         productUuid,
-        productName: product?.name || 'Unknown Product',
+        productName: product?.name ?? 'Unknown Product',
         productImage: product?.image,
         quantity,
         checked: false,

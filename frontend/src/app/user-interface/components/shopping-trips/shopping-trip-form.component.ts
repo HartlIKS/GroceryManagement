@@ -58,7 +58,7 @@ export class ShoppingTripFormComponent implements OnInit {
       return {
         uuid,
         amount,
-        name: product?.name || 'Unknown Product',
+        name: product?.name ?? 'Unknown Product',
         image: product?.image,
         type: 'product' as const
       };
@@ -119,7 +119,7 @@ export class ShoppingTripFormComponent implements OnInit {
     const selectedUuid = this.productSelectControl.value;
     if (selectedUuid) {
       const currentProducts = this.shoppingTripProducts();
-      const currentAmount = currentProducts[selectedUuid] || 0;
+      const currentAmount = currentProducts[selectedUuid] ?? 0;
 
       this.shoppingTripProducts.set({
         ...currentProducts,
@@ -186,23 +186,19 @@ export class ShoppingTripFormComponent implements OnInit {
   }
 
   getProductName(productUuid: string): string {
-    const product = this.availableProducts().find(p => p.uuid === productUuid);
-    return product ? product.name : 'Unknown Product';
+    return this.availableProducts().find(p => p.uuid === productUuid)?.name ?? 'Unknown Product';
   }
 
   getProductImage(productUuid: string): string | undefined {
-    const product = this.availableProducts().find(p => p.uuid === productUuid);
-    return product?.image;
+    return this.availableProducts().find(p => p.uuid === productUuid)?.image;
   }
 
   getStoreName(storeUuid: string): string {
-    const store = this.availableStores().find(s => s.uuid === storeUuid);
-    return store ? store.name : 'Unknown Store';
+    return this.availableStores().find(s => s.uuid === storeUuid)?.name ?? 'Unknown Store';
   }
 
   getStoreLogo(storeUuid: string): string | undefined {
-    const store = this.availableStores().find(s => s.uuid === storeUuid);
-    return store?.logo;
+    return this.availableStores().find(s => s.uuid === storeUuid)?.logo;
   }
 
   private formatDateTimeForInput(dateString: string): string {

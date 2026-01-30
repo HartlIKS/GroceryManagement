@@ -21,9 +21,9 @@
         <div class="form-row-spaced">
           <div class="filter-option">
             @if (currentStore()?.logo) {
-              <img [src]="currentStore()?.logo" [alt]="currentStore()?.name || 'Unknown Store'" class="image-small">
+              <img [src]="currentStore()?.logo" [alt]="currentStore()?.name ?? 'Unknown Store'" class="image-small">
             }
-            <span>{{ currentStore()?.name || 'Unknown Store' }}</span>
+            <span>{{ currentStore()?.name ?? 'Unknown Store' }}</span>
           </div>
           <span>{{ formatDate(trip.time) }}</span>
         </div>
