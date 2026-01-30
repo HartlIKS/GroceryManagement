@@ -1,4 +1,4 @@
-import { Component, computed, OnInit } from '@angular/core';
+import { Component, computed, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,9 +7,16 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { CommonModule } from '@angular/common';
 import { PriceService, ProductService, StoreService } from '../../services';
 import { ListPriceDTO } from '../../models';
+
+// Enhanced price item with validity status
+type PriceWithValidity = ListPriceDTO & {
+  validityStatus: 'past' | 'current' | 'future',
+  validityClass: string,
+};
 
 @Component({
   selector: 'app-price-list',
@@ -23,6 +30,7 @@ import { ListPriceDTO } from '../../models';
     MatProgressSpinnerModule,
     MatSelectModule,
     MatFormFieldModule,
+    MatInputModule,
     RouterLink
   ],
   templateUrl: './price-list.component.html',
@@ -30,6 +38,10 @@ import { ListPriceDTO } from '../../models';
 })
 export class PriceListComponent implements OnInit {
   displayedColumns: string[] = ['product', 'store', 'price', 'validFrom', 'validTo', 'actions'];
+
+  // Reference timestamp signal - defaults to current time
+  private readonly referenceTimestamp = signal<string>(new Date().toISOString().slice(0, 16));
+  public readonly referenceTimestampValue = this.referenceTimestamp.asReadonly();
 
   // Use computed signals from services
   public readonly products = computed(() => this.productService.products());
@@ -43,10 +55,18 @@ export class PriceListComponent implements OnInit {
   public readonly selectedStore = computed(() => this.priceService.selectedStore());
   public readonly selectedProduct = computed(() => this.priceService.selectedProduct());
 
-  // Create MatTableDataSource from prices signal
+  // Create MatTableDataSource from prices signal with validity status included
   public readonly dataSource = computed(() => {
     const prices = this.prices();
-    return new MatTableDataSource<ListPriceDTO>(prices);
+    const pricesWithValidity = prices.map(price => {
+      const status = this.getPriceValidityStatus(price);
+      return {
+        ...price,
+        validityStatus: status,
+        validityClass: `price-${status}`
+      } as PriceWithValidity;
+    });
+    return new MatTableDataSource<PriceWithValidity>(pricesWithValidity);
   });
 
   constructor(
@@ -116,22 +136,38 @@ export class PriceListComponent implements OnInit {
   }
 
   getProductName(productUuid: string): string {
-    const product = this.products().find(p => p.uuid === productUuid);
-    return product ? product.name : 'Unknown Product';
+    return this.products().find(p => p.uuid === productUuid)?.name ?? 'Unknown Product';
   }
 
   getStoreName(storeUuid: string): string {
-    const store = this.stores().find(s => s.uuid === storeUuid);
-    return store ? store.name : 'Unknown Store';
+    return this.stores().find(s => s.uuid === storeUuid)?.name ?? 'Unknown Store';
   }
 
   getProductImage(productUuid: string): string | null {
-    const product = this.products().find(p => p.uuid === productUuid);
-    return product ? product.image : null;
+    return this.products().find(p => p.uuid === productUuid)?.image ?? null;
   }
 
   getStoreLogo(storeUuid: string): string | null {
-    const store = this.stores().find(s => s.uuid === storeUuid);
-    return store ? store.logo : null;
+    return this.stores().find(s => s.uuid === storeUuid)?.logo ?? null;
+  }
+
+  // Price validity status methods
+  private getPriceValidityStatus(price: ListPriceDTO): 'past' | 'current' | 'future' {
+    const referenceTime = new Date(this.referenceTimestamp()).getTime();
+    const validFrom = new Date(price.validFrom).getTime();
+    const validTo = price.validTo ? new Date(price.validTo).getTime() : null;
+
+    if (validTo && referenceTime > validTo) {
+      return 'past';
+    } else if (referenceTime >= validFrom && (!validTo || referenceTime <= validTo)) {
+      return 'current';
+    } else {
+      return 'future';
+    }
+  }
+
+  onReferenceTimestampChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.referenceTimestamp.set(input.value);
   }
 }

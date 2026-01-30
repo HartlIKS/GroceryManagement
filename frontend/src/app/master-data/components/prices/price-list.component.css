@@ -37,3 +37,18 @@
   flex: 0 0 100px;
   justify-content: center;
 }
+
+/* Price validity highlighting */
+.price-past {
+  background-color: var(--color-surface);
+  opacity: 0.6;
+  color: var(--color-text-secondary);
+}
+
+.price-current {
+  background-color: #fff9c4; /* Light yellow for current prices - no global equivalent */
+}
+
+.price-future {
+  /* No highlighting for future prices - class kept for future use */
+}
