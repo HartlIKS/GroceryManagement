@@ -1,0 +1,105 @@
+<div class="container">
+  <div class="header">
+    <h2>Shopping Trips</h2>
+    <a mat-raised-button color="primary" routerLink="/shopping-trips/new">
+      <mat-icon>add</mat-icon>
+      Add Shopping Trip
+    </a>
+  </div>
+
+  <div class="search-section">
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>From Date</mat-label>
+        <input matInput 
+               type="datetime-local" 
+               [formControl]="fromDateControl"
+               (change)="onDateFilterChange()">
+      </mat-form-field>
+      
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>To Date</mat-label>
+        <input matInput 
+               type="datetime-local" 
+               [formControl]="toDateControl"
+               (change)="onDateFilterChange()">
+      </mat-form-field>
+      
+      <button mat-raised-button (click)="clearFilters()">Clear</button>
+    </div>
+  </div>
+
+  @if (!loading()) {
+    <div class="content">
+      <div class="table-container">
+        <mat-table [dataSource]="dataSource()" class="table">
+          <!-- Date/Time Column -->
+          <ng-container matColumnDef="time">
+            <mat-header-cell *matHeaderCellDef>Date & Time</mat-header-cell>
+            <mat-cell *matCellDef="let trip">
+              {{ formatDate(trip.time) }}
+            </mat-cell>
+          </ng-container>
+
+          <!-- Store Column -->
+          <ng-container matColumnDef="store">
+            <mat-header-cell *matHeaderCellDef>Store</mat-header-cell>
+            <mat-cell *matCellDef="let trip">
+              <div class="filter-option">
+                @if (getStoreLogo(trip.store)) {
+                  <img [src]="getStoreLogo(trip.store)" [alt]="getStoreName(trip.store)" class="image-small">
+                }
+                <span>{{ getStoreName(trip.store) }}</span>
+              </div>
+            </mat-cell>
+          </ng-container>
+
+          <!-- Product Count Column -->
+          <ng-container matColumnDef="productCount">
+            <mat-header-cell *matHeaderCellDef>Products</mat-header-cell>
+            <mat-cell *matCellDef="let trip">
+              {{ getProductCount(trip.products) }} items
+            </mat-cell>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+            <mat-cell *matCellDef="let trip">
+              <a mat-icon-button color="primary" [routerLink]="['/shopping-trips', trip.uuid]">
+                <mat-icon>edit</mat-icon>
+              </a>
+              <button mat-icon-button color="warn" (click)="deleteShoppingTrip(trip.uuid)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </mat-cell>
+          </ng-container>
+
+          <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+          <mat-row *matRowDef="let _; columns: displayedColumns;"></mat-row>
+        </mat-table>
+
+        @if (dataSource().data.length === 0) {
+          <div class="no-data">
+            <p>No shopping trips found.</p>
+            <a routerLink="/shopping-trips/new" mat-raised-button color="primary">
+              Create Your First Shopping Trip
+            </a>
+          </div>
+        }
+      </div>
+    </div>
+  } @else {
+    <div class="loading">
+      <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+      <p>Loading shopping trips...</p>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="error">
+      <p>Error loading shopping trips: {{ error() }}</p>
+      <button mat-raised-button color="primary" (click)="loadShoppingTrips()">Retry</button>
+    </div>
+  }
+</div>

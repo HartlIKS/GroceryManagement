@@ -4,7 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CommonModule } from '@angular/common';
-import { ProductGroupService, ShoppingListService } from '../services';
+import { ProductGroupService, ShoppingListService, ShoppingTripService } from '../services';
 import { RouterLink } from '@angular/router';
 
 @Component({
@@ -17,7 +17,8 @@ import { RouterLink } from '@angular/router';
 export class UserDashboardComponent implements OnInit {
   constructor(
     private productGroupService: ProductGroupService,
-    private shoppingListService: ShoppingListService
+    private shoppingListService: ShoppingListService,
+    private shoppingTripService: ShoppingTripService
   ) {}
 
   // Computed properties for product groups
@@ -31,13 +32,17 @@ export class UserDashboardComponent implements OnInit {
   // Computed properties for shopping lists
   readonly totalShoppingLists = computed(() => this.shoppingListService.shoppingLists().length);
 
+  // Computed properties for shopping trips
+  readonly totalShoppingTrips = computed(() => this.shoppingTripService.shoppingTrips().length);
+
   readonly loading = computed(() => 
-    this.productGroupService.loading() || this.shoppingListService.loading()
+    this.productGroupService.loading() || this.shoppingListService.loading() || this.shoppingTripService.loading()
   );
 
   ngOnInit() {
     // Load data when dashboard initializes
     this.productGroupService.getProductGroups();
     this.shoppingListService.getShoppingLists();
+    this.shoppingTripService.getShoppingTrips();
   }
 }
