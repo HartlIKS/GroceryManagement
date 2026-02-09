@@ -1,0 +1,21 @@
+.price-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0;
+}
+
+.store-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.price-info {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.validity-info {
+  font-size: 11px;
+  color: #666;
+}

@@ -1,0 +1,6 @@
+/* Shopping list item specific styles - only keep what's unique */
+
+mat-list-item {
+  height: 96px !important;
+  align-items: center;
+}

@@ -1,14 +1,29 @@
 import { Routes } from '@angular/router';
 import { NavigationComponent } from './components/navigation/navigation.component';
 import { MainNavItemsComponent } from './components/navigation/main-nav-items/main-nav-items.component';
-import { MasterDataNavItemsComponent } from './components/navigation/master-data-nav-items/master-data-nav-items.component';
 import {
-  DashboardComponent, PriceFormComponent, PriceListComponent,
+  MasterDataNavItemsComponent
+} from './components/navigation/master-data-nav-items/master-data-nav-items.component';
+import {
+  DashboardComponent,
+  PriceFormComponent,
+  PriceListComponent,
   ProductFormComponent,
-  ProductListComponent, StoreFormComponent,
+  ProductListComponent,
+  StoreFormComponent,
   StoreListComponent
 } from './master-data/components';
-import { UserDashboardComponent, ProductGroupListComponent, ProductGroupFormComponent, ShoppingListListComponent, ShoppingListFormComponent, ShoppingTripListComponent, ShoppingTripFormComponent, ShoppingTripChecklistComponent } from './user-interface/components';
+import {
+  PlanboardComponent,
+  ProductGroupFormComponent,
+  ProductGroupListComponent,
+  ShoppingListFormComponent,
+  ShoppingListListComponent,
+  ShoppingTripChecklistComponent,
+  ShoppingTripFormComponent,
+  ShoppingTripListComponent,
+  UserDashboardComponent
+} from './user-interface/components';
 
 export const routes: Routes = [
   {
@@ -63,6 +78,10 @@ export const routes: Routes = [
       {
         path: 'shopping-trips/:id/checklist',
         component: ShoppingTripChecklistComponent
+      },
+      {
+        path: 'planboard',
+        component: PlanboardComponent
       }
     ],
   },

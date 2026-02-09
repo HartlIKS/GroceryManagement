@@ -1,0 +1,81 @@
+<div class="container">
+  <div class="header header-centered">
+    <h1>Planboard</h1>
+    <p>Plan your shopping trips by assigning shopping list items to stores</p>
+  </div>
+
+  @if (loading()) {
+    <div class="loading">
+      <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+      <p>Loading data...</p>
+    </div>
+  } @else {
+    <div class="planboard-layout">
+      <mat-card class="both-columns">
+        <mat-card-header>
+          <mat-card-title>Select Shopping Lists</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div>
+            @for (list of shoppingLists(); track list.uuid) {
+              <mat-checkbox [checked]="selectedShoppingListUuids().includes(list.uuid)"
+                            (change)="toggleShoppingListSelection(list.uuid)">
+                <h3>{{ list.name }}</h3>
+                <div>{{ objectKeys(list.products).length }} products, {{ objectKeys(list.productGroups).length }}
+                  groups
+                </div>
+              </mat-checkbox>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <!-- Left Column: Shopping Lists and Items -->
+      <div class="left-column">
+        <!-- Shopping List Items -->
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Shopping List Items</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <mat-list>
+              @for (list of shoppingListItems(); track list.list.uuid) {
+                <hr>
+                <h3>{{ list.list.name }}</h3>
+                @for (item of list.items; track item.productUuid ?? item.productGroupUuid) {
+                  <app-shopping-list-item
+                    [item]="item"
+                    [plannedTrips]="plannedTrips()"
+                    (priceEntrySelected)="assignItemToPriceEntry(list.list.uuid, item, $event)"
+                  />
+                }
+              }
+            </mat-list>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Right Column: Planned Trips -->
+      <div class="right-column">
+        <!-- Planned Trips -->
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Planned Trips</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            @for (kv of plannedTrips() | keyvalue; track kv.key) {
+              <app-planned-trip [trip]="kv.value" [tripId]="kv.key"/>
+            }
+          </mat-card-content>
+          <mat-card-actions>
+            <button mat-raised-button color="accent"
+                    (click)="finalizePlanning()"
+                    [disabled]="hasUnassignedItems()">
+              <mat-icon>check_circle</mat-icon>
+              Finalize Planning
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+    </div>
+  }
+</div>

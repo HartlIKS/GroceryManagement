@@ -1,0 +1,22 @@
+<div class="price-option">
+  @let entry = priceEntry();
+  @let price = entry.price;
+  @let store = this.store();
+  @if (store) {
+    @if (entry.newTrip) {
+      <span>New trip</span>
+    } @else {
+      <span>Trip {{ entry.tripId }}</span>
+    }
+    <span class="store-name">
+      <img class="image-small" [src]="store.logo" [alt]="store.name"/>
+      {{ store.name }}
+    </span>
+    <span class="price-info">{{ price.price | currency: store.currency }}</span>
+    <span class="validity-info">
+      Valid: {{ formatDate(price.validFrom) }} - {{ formatDate(price.validTo) }}
+    </span>
+  } @else {
+    <mat-spinner type="indeterminate"/>
+  }
+</div>

@@ -26,7 +26,7 @@ export class StoreService {
   }
 
   // Get single store by UUID
-  getStore(uuid: Signal<string> | string) {
+  getStore(uuid: Signal<string | undefined> | string) {
     return this.apiService.getById<ListStoreDTO>(this.endpoint, uuid);
   }
 

@@ -1,0 +1,36 @@
+@if (loading()) {
+  <mat-list-item>
+    <mat-spinner diameter="20"></mat-spinner>
+    <span>Loading...</span>
+  </mat-list-item>
+} @else {
+  <mat-list-item>
+    @if(itemImage()) {
+      <img matListItemIcon class="image-large" [src]="itemImage()" alt="">
+    } @else {
+      <div matListItemIcon class="image-large"></div>
+    }
+    <span matListItemTitle>{{ itemName() }}</span>
+    @if (availablePriceEntries().length) {
+    <mat-form-field appearance="outline" matListItemMeta>
+      <mat-label>Select Price Entry</mat-label>
+      <mat-select
+        [value]="selectedPriceEntry()"
+        (valueChange)="priceEntrySelected.emit(availablePriceEntries()[$event ?? -1] ?? {})"
+      >
+        <mat-select-trigger>
+          Trip {{availablePriceEntries()[selectedPriceEntry() ?? -1]?.tripId}}
+        </mat-select-trigger>
+        <mat-option [value]="undefined">Unassigned</mat-option>
+        @for (priceEntry of availablePriceEntries(); track `${priceEntry.price.uuid}-${priceEntry.tripId}`) {
+          <mat-option [value]="$index">
+            <app-price-option [priceEntry]="priceEntry"/>
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    } @else {
+      <mat-error matListItemMeta>No prices found!</mat-error>
+    }
+  </mat-list-item>
+}

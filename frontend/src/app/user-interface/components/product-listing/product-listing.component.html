@@ -1,0 +1,24 @@
+@if (loading()) {
+  <mat-list-item>
+    <mat-spinner type="indeterminate"/>
+  </mat-list-item>
+} @else {
+  <mat-list-item>
+    @let img = product()?.image;
+    @if (img) {
+      <img class="image-large" matListItemIcon [src]="img" [alt]="product()?.name"/>
+    } @else {
+      <div class="image-large" matListItemIcon></div>
+    }
+    <div>{{ product()?.name ?? 'Unknown Product' }}</div>
+    <div matListItemMeta>
+      @if (quantity() !== undefined) {
+        <span>{{ quantity() }}x </span>
+      }
+      @let price = this.price();
+      @if (price) {
+        <span>{{ price.price | currency: currency() }}</span>
+      }
+    </div>
+  </mat-list-item>
+}

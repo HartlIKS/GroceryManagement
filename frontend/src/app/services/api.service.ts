@@ -45,9 +45,12 @@ export class ApiService {
     }));
   }
 
-  getById<T>(endpoint: string, id: Signal<string> | string) {
+  getById<T>(endpoint: string, id: Signal<string | undefined> | string) {
     id = resolve(id);
-    return httpResource<T>(() => `${this.baseUrl}${endpoint}/${id()}`);
+    return httpResource<T>(() => {
+      const uuid = id();
+      return uuid ? `${this.baseUrl}${endpoint}/${uuid}` : undefined
+    });
   }
 
   post<T>(endpoint: string, data: any): Observable<T> {

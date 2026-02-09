@@ -1,0 +1,31 @@
+<mat-card>
+  @if (loading()) {
+    <mat-card-content>
+      <mat-spinner diameter="20"></mat-spinner>
+      <span>Loading store...</span>
+    </mat-card-content>
+  } @else {
+    @let store = this.store();
+    <mat-card-header>
+      @if (store?.logo) {
+        <img [src]="store?.logo" [alt]="store?.name" mat-card-avatar class="logo">
+      }
+      <mat-card-title-group>
+        <mat-card-title>
+          {{ store?.name ?? 'Unknown Store' }}
+        </mat-card-title>
+        <mat-card-subtitle>
+          Trip {{ tripId() }}
+        </mat-card-subtitle>
+      </mat-card-title-group>
+    </mat-card-header>
+    <mat-card-content>
+      <p [ngClass]="{error: !hasValidity()}">Timespan: {{ validityText() }}</p>
+      <mat-list>
+        @for (product of productEntries(); track product.priceUuid) {
+          <app-product-listing [uuid]="product.priceUuid" isPrice="true" [quantity]="product.quantity"/>
+        }
+      </mat-list>
+    </mat-card-content>
+  }
+</mat-card>

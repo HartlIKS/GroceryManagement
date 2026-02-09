@@ -388,6 +388,11 @@
   border-radius: var(--border-radius-sm);
 }
 
+img[mat-card-avatar].logo {
+  border-radius: var(--border-radius-sm);
+  object-fit: contain;
+}
+
 /* Dashboard */
 .dashboard-content {
   min-height: 400px;

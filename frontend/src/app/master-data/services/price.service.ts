@@ -14,10 +14,10 @@ export class PriceService {
 
   // Get prices with pagination and filtering
   getPrices(
-    page: Signal<number> | number = 0,
-    size: Signal<number> | number = 20,
-    store: Signal<string> | string = '',
-    product: Signal<string> | string = ''
+    page: Signal<number> | number,
+    size: Signal<number> | number,
+    store?: Signal<string | undefined> | string,
+    product?: Signal<string | undefined> | string,
   ) {
     return this.apiService.get<Page<ListPriceDTO>>(this.endpoint, {
         page,
@@ -28,7 +28,7 @@ export class PriceService {
   }
 
   // Get single price by UUID
-  getPrice(uuid: Signal<string> | string) {
+  getPrice(uuid: Signal<string | undefined> | string) {
     return this.apiService.getById<ListPriceDTO>(this.endpoint, uuid);
   }
 

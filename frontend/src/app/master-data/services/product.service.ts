@@ -26,7 +26,7 @@ export class ProductService {
   }
 
   // Get single product by UUID
-  getProduct(uuid: Signal<string> | string) {
+  getProduct(uuid: Signal<string | undefined> | string) {
     return this.apiService.getById<ListProductDTO>(this.endpoint, uuid);
   }
 
