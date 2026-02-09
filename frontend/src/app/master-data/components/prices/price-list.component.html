@@ -2,7 +2,7 @@
   <div class="header">
     <h1>Price Lists</h1>
     <div class="header-actions">
-      <button mat-raised-button color="accent" (click)="loadPrices()" class="refresh-btn">
+      <button mat-raised-button color="accent" (click)="pricesResource.reload()" class="refresh-btn">
         <mat-icon>refresh</mat-icon>
         Refresh
       </button>
@@ -16,10 +16,9 @@
   <div class="filters-section">
     <mat-form-field appearance="outline" class="filter-field">
       <mat-label>Reference Timestamp</mat-label>
-      <input matInput 
-             type="datetime-local" 
-             [value]="referenceTimestampValue()"
-             (change)="onReferenceTimestampChange($event)">
+      <input matInput
+             type="datetime-local"
+             [value]="referenceTimestamp">
       <mat-hint>Prices are highlighted relative to this time</mat-hint>
     </mat-form-field>
 

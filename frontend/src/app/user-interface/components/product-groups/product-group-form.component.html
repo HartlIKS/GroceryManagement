@@ -2,10 +2,10 @@
   <mat-card class="form-container">
     <mat-card-header>
       <mat-card-title>
-        <h2>{{ isEditMode ? 'Edit Product Group' : 'Create Product Group' }}</h2>
+        <h2>{{ isEditMode() ? 'Edit Product Group' : 'Create Product Group' }}</h2>
       </mat-card-title>
       <mat-card-subtitle>
-        {{ isEditMode ? 'Update the product group information' : 'Add a new product group to organize similar products' }}
+        {{ isEditMode() ? 'Update the product group information' : 'Add a new product group to organize similar products' }}
       </mat-card-subtitle>
     </mat-card-header>
 
@@ -23,7 +23,7 @@
           </div>
 
           <!-- Product Management Section (only in edit mode) -->
-          @if (isEditMode) {
+          @if (isEditMode()) {
             <div class="section-header">
               <h3>Products in this Group</h3>
             </div>
@@ -140,8 +140,8 @@
                       type="submit"
                       color="primary"
                       [disabled]="productGroupForm.invalid">
-                <mat-icon>{{ isEditMode ? 'save' : 'add' }}</mat-icon>
-                {{ isEditMode ? 'Update Product Group' : 'Create Product Group' }}
+                <mat-icon>{{ isEditMode() ? 'save' : 'add' }}</mat-icon>
+                {{ isEditMode() ? 'Update Product Group' : 'Create Product Group' }}
               </button>
               <a mat-button
                      type="button"
@@ -155,14 +155,14 @@
       } @else {
         <div class="loading">
           <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
-          <p>{{ isEditMode ? 'Loading product group...' : 'Creating product group...' }}</p>
+          <p>{{ isEditMode() ? 'Loading product group...' : 'Creating product group...' }}</p>
         </div>
       }
     </mat-card-content>
 
     @if (error()) {
       <div class="error">
-        <p>{{ isEditMode ? 'Error updating product group:' : 'Error creating product group:' }} {{ error() }}</p>
+        <p>{{ isEditMode() ? 'Error updating product group:' : 'Error creating product group:' }} {{ error() }}</p>
       </div>
     }
   </mat-card>

@@ -2,7 +2,7 @@
   <div class="header">
     <h1>Products</h1>
     <div class="header-actions">
-      <button mat-raised-button color="accent" (click)="loadProducts()" class="refresh-btn">
+      <button mat-raised-button color="accent" (click)="productsResource.reload()" class="refresh-btn">
         <mat-icon>refresh</mat-icon>
         Refresh
       </button>
@@ -16,10 +16,10 @@
   <div class="search-section">
     <mat-form-field appearance="outline" class="search-field">
       <mat-label>Search products</mat-label>
-      <input matInput [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" placeholder="Enter product name">
+      <input matInput [(ngModel)]="searchTerm" placeholder="Enter product name">
       <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
-    <button mat-raised-button (click)="onSearch()">Search</button>
+    <button mat-raised-button (click)="productsResource.reload()">Search</button>
   </div>
 
   <div class="table-container">

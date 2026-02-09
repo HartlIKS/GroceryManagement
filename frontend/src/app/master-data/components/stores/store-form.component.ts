@@ -1,4 +1,4 @@
-import { Component, computed, OnInit } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CommonModule } from '@angular/common';
 import { StoreService } from '../../services';
-import { CreateStoreDTO, ListStoreDTO } from '../../models';
+import { CreateStoreDTO } from '../../models';
 
 @Component({
   selector: 'app-store-form',
@@ -28,16 +28,26 @@ import { CreateStoreDTO, ListStoreDTO } from '../../models';
 })
 export class StoreFormComponent implements OnInit {
   storeForm: FormGroup;
-  isEditing = false;
-  storeId?: string;
+  isEditing = computed(() => !!this.storeId());
+  storeId = signal<string>('');
 
-  // Use computed signals from service
-  public readonly loading = computed(() => this.storeService.loading());
-  public readonly error = computed(() => this.storeService.error());
+  private readonly storeService = inject(StoreService);
+
+  // Create HTTP resource for store
+  private readonly storeResource = this.storeService.getStore(this.storeId);
+
+  // Computed properties from resource
+  public readonly loading = computed(() => {
+    const storeStatus = this.storeResource.status();
+    return storeStatus === 'loading';
+  });
+  public readonly error = computed(() => {
+    const storeStatus = this.storeResource.status();
+    return storeStatus === 'error' ? 'Failed to load store' : null;
+  });
 
   constructor(
     private fb: FormBuilder,
-    private storeService: StoreService,
     private router: Router,
     private route: ActivatedRoute
   ) {
@@ -56,18 +66,13 @@ export class StoreFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.storeId = this.route.snapshot.paramMap.get('id') || undefined;
-    if (this.storeId) {
-      this.isEditing = true;
-      this.loadStore();
-    }
-  }
-
-  loadStore(): void {
-    if (!this.storeId) return;
-
-    this.storeService.getStore(this.storeId).subscribe({
-      next: (store: ListStoreDTO) => {
+    this.route.params.subscribe(({id}) => {
+      this.storeId.set(id);
+    });
+    // Watch for changes in the store resource
+    effect(() => {
+      const store = this.storeResource.value();
+      if (store) {
         this.storeForm.patchValue({
           name: store.name,
           logo: store.logo || '',
@@ -80,9 +85,6 @@ export class StoreFormComponent implements OnInit {
           },
           currency: store.currency || ''
         });
-      },
-      error: (error) => {
-        console.error('Error loading store:', error);
       }
     });
   }
@@ -94,12 +96,10 @@ export class StoreFormComponent implements OnInit {
     }
 
     const storeData: CreateStoreDTO = this.storeForm.value;
-
-    if (this.isEditing && this.storeId) {
-      this.storeService.updateStore(this.storeId, storeData).subscribe({
-        next: (updatedStore) => {
-          // Optimistic update
-          this.storeService.updateStoreInCache(updatedStore);
+    const storeId = this.storeId();
+    if (storeId) {
+      this.storeService.updateStore(storeId, storeData).subscribe({
+        next: () => {
           this.router.navigate(['/master-data/stores']);
         },
         error: (error) => {
@@ -108,9 +108,7 @@ export class StoreFormComponent implements OnInit {
       });
     } else {
       this.storeService.createStore(storeData).subscribe({
-        next: (newStore) => {
-          // Optimistic update
-          this.storeService.addStoreToCache(newStore);
+        next: () => {
           this.router.navigate(['/master-data/stores']);
         },
         error: (error) => {

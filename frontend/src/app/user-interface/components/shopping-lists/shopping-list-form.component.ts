@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal, DestroyRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -11,7 +11,7 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { ProductGroupService, ShoppingListService } from '../../services';
-import { CreateShoppingListDTO, ListShoppingListDTO } from '../../models';
+import { CreateShoppingListDTO } from '../../models';
 import { ProductService } from '../../../master-data/services';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
@@ -40,18 +40,23 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class ShoppingListFormComponent implements OnInit {
   shoppingListForm: FormGroup;
-  isEditMode = false;
-  shoppingListUuid: string | null = null;
+  isEditMode = computed(() => !!this.shoppingListUuid());
+  shoppingListUuid = signal<string>('');
+
+  // Create HTTP resources
+  private readonly productsResource = inject(ProductService).getProducts('', 0, 1000);
+  private readonly productGroupsResource = inject(ProductGroupService).getProductGroups('', 0, 1000);
+  private readonly shoppingListResource = inject(ShoppingListService).getShoppingList(this.shoppingListUuid);
 
   // Product management properties
   selectedProductUuid: string | null = null;
-  availableProducts = computed(() => this.productService.products());
+  availableProducts = computed(() => this.productsResource.value()?.content ?? []);
   shoppingListProducts = signal<Record<string, number>>({});
   productAmountControls = signal<Record<string, FormControl>>({});
 
   // Product group management properties
   selectedProductGroupUuid: string | null = null;
-  availableProductGroups = computed(() => this.productGroupService.productGroups());
+  availableProductGroups = computed(() => this.productGroupsResource.value()?.content ?? []);
   shoppingListProductGroups = signal<Record<string, number>>({});
   productGroupAmountControls = signal<Record<string, FormControl>>({});
 
@@ -135,20 +140,24 @@ export class ShoppingListFormComponent implements OnInit {
 
   // Loading and error states
   public readonly loading = computed(() =>
-    this.productService.loading() || this.productGroupService.loading() || this.shoppingListService.loading()
+    this.productsResource.status() === 'loading' ||
+    this.productGroupsResource.status() === 'loading' ||
+    this.shoppingListResource.status() === 'loading'
   );
-  public readonly error = computed(() =>
-    this.productService.error() || this.productGroupService.error() || this.shoppingListService.error()
-  );
+  public readonly error = computed(() => {
+    const productStatus = this.productsResource.status();
+    const groupStatus = this.productGroupsResource.status();
+    const listStatus = this.shoppingListResource.status();
+    return productStatus === 'error' || groupStatus === 'error' || listStatus === 'error'
+      ? 'Failed to load data'
+      : null;
+  });
 
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private shoppingListService: ShoppingListService,
-    private productService: ProductService,
-    private productGroupService: ProductGroupService,
-    private destroyRef: DestroyRef
+    private readonly destroyRef: DestroyRef,
   ) {
     this.shoppingListForm = this.fb.group({
       name: ['', Validators.required]
@@ -156,22 +165,15 @@ export class ShoppingListFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Load available products and product groups
-    this.productService.getProducts();
-    this.productGroupService.getProductGroups();
-
     // Check if we're in edit mode
-    const uuid = this.route.snapshot.paramMap.get('id');
-    if (uuid) {
-      this.isEditMode = true;
-      this.shoppingListUuid = uuid;
-      this.loadShoppingList(uuid);
-    }
-  }
+    this.route.params.subscribe(({id}) => {
+      this.shoppingListUuid.set(id);
+    });
 
-  loadShoppingList(uuid: string): void {
-    this.shoppingListService.getShoppingList(uuid).subscribe({
-      next: (shoppingList: ListShoppingListDTO) => {
+    // Watch for changes in the shopping list resource
+    effect(() => {
+      const shoppingList = this.shoppingListResource.value();
+      if (shoppingList) {
         this.shoppingListForm.patchValue({
           name: shoppingList.name
         });
@@ -179,9 +181,6 @@ export class ShoppingListFormComponent implements OnInit {
         this.shoppingListProductGroups.set(shoppingList.productGroups || {});
         this.updateProductControls();
         this.updateProductGroupControls();
-      },
-      error: (error) => {
-        console.error('Error loading shopping list:', error);
       }
     });
   }
@@ -342,9 +341,12 @@ export class ShoppingListFormComponent implements OnInit {
         productGroups: this.shoppingListProductGroups()
       };
 
-      const operation = this.isEditMode
-        ? this.shoppingListService.updateShoppingList(this.shoppingListUuid!, formData)
-        : this.shoppingListService.createShoppingList(formData);
+      const shoppingListUuid = this.shoppingListUuid();
+      const shoppingListService = inject(ShoppingListService);
+
+      const operation = shoppingListUuid
+        ? shoppingListService.updateShoppingList(shoppingListUuid, formData)
+        : shoppingListService.createShoppingList(formData);
 
       operation.subscribe({
         next: () => {

@@ -12,11 +12,10 @@
       <mat-label>Search product groups</mat-label>
       <input matInput
              [(ngModel)]="searchTerm"
-             (keyup.enter)="onSearch()"
              placeholder="Enter product group name">
       <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
-    <button mat-raised-button (click)="onSearch()">Search</button>
+    <button mat-raised-button (click)="productGroupsResource.reload()">Search</button>
   </div>
 
   @if (!loading()) {

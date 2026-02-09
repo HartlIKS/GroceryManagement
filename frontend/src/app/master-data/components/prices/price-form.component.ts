@@ -1,4 +1,4 @@
-import { Component, computed, OnInit } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,7 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CommonModule } from '@angular/common';
 import { PriceService, ProductService, StoreService } from '../../services';
-import { CreatePriceListingDTO, ListPriceDTO, UpdatePriceDTO } from '../../models';
+import { CreatePriceListingDTO, UpdatePriceDTO } from '../../models';
 
 @Component({
   selector: 'app-price-form',
@@ -30,20 +30,32 @@ import { CreatePriceListingDTO, ListPriceDTO, UpdatePriceDTO } from '../../model
 })
 export class PriceFormComponent implements OnInit {
   priceForm: FormGroup;
-  isEditing = false;
-  priceId?: string;
+  isEditing = computed(() => !!this.priceId());
+  priceId = signal<string>('');
 
-  // Use computed signals from services
-  public readonly products = computed(() => this.productService.products());
-  public readonly stores = computed(() => this.storeService.stores());
-  public readonly loading = computed(() => this.priceService.loading());
-  public readonly error = computed(() => this.priceService.error());
+  private readonly productService = inject(ProductService);
+  private readonly storeService = inject(StoreService);
+  private readonly priceService = inject(PriceService);
+
+  // Create HTTP resources
+  private readonly productsResource = this.productService.getProducts('', 0, 1000);
+  private readonly storesResource = this.storeService.getStores('', 0, 1000);
+  private readonly priceResource = this.priceService.getPrice(this.priceId);
+
+  // Computed properties from resources
+  public readonly products = computed(() => this.productsResource.value()?.content ?? []);
+  public readonly stores = computed(() => this.storesResource.value()?.content ?? []);
+  public readonly loading = computed(() => {
+    const priceStatus = this.priceResource.status();
+    return priceStatus === 'loading';
+  });
+  public readonly error = computed(() => {
+    const priceStatus = this.priceResource.status();
+    return priceStatus === 'error' ? 'Failed to load price' : null;
+  });
 
   constructor(
     private fb: FormBuilder,
-    private priceService: PriceService,
-    private productService: ProductService,
-    private storeService: StoreService,
     private router: Router,
     private route: ActivatedRoute
   ) {
@@ -57,29 +69,13 @@ export class PriceFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadProducts();
-    this.loadStores();
-
-    this.priceId = this.route.snapshot.paramMap.get('id') || undefined;
-    if (this.priceId) {
-      this.isEditing = true;
-      this.loadPrice();
-    }
-  }
-
-  loadProducts(): void {
-    this.productService.getProducts('', 0, 1000);
-  }
-
-  loadStores(): void {
-    this.storeService.getStores('', 0, 1000);
-  }
-
-  loadPrice(): void {
-    if (!this.priceId) return;
-
-    this.priceService.getPrice(this.priceId).subscribe({
-      next: (price: ListPriceDTO) => {
+    this.route.params.subscribe(({id}) => {
+      this.priceId.set(id);
+    })
+    const priceResource = this.priceResource;
+    effect(() => {
+      const price = priceResource.value();
+      if (price) {
         this.priceForm.patchValue({
           product: price.product,
           store: price.store,
@@ -87,9 +83,6 @@ export class PriceFormComponent implements OnInit {
           validFrom: this.convertToDateTimeLocal(price.validFrom),
           validTo: this.convertToDateTimeLocal(price.validTo) || ''
         });
-      },
-      error: (error: any) => {
-        console.error('Error loading price:', error);
       }
     });
   }
@@ -100,17 +93,17 @@ export class PriceFormComponent implements OnInit {
       return;
     }
 
-    if (this.isEditing && this.priceId) {
+    let priceId = this.priceId();
+
+    if (priceId) {
       const updateData: UpdatePriceDTO = {
         price: this.priceForm.value.price,
         validFrom: this.convertToIsoDateTime(this.priceForm.value.validFrom),
         validTo: this.priceForm.value.validTo ? this.convertToIsoDateTime(this.priceForm.value.validTo) : undefined
       };
 
-      this.priceService.updatePrice(this.priceId, updateData).subscribe({
-        next: (updatedPrice) => {
-          // Optimistic update
-          this.priceService.updatePriceInCache(updatedPrice);
+      this.priceService.updatePrice(priceId, updateData).subscribe({
+        next: () => {
           this.router.navigate(['/master-data/prices']);
         },
         error: (error: any) => {
@@ -127,9 +120,7 @@ export class PriceFormComponent implements OnInit {
       };
 
       this.priceService.createPrice(createData).subscribe({
-        next: (newPrice) => {
-          // Optimistic update
-          this.priceService.addPriceToCache(newPrice);
+        next: () => {
           this.router.navigate(['/master-data/prices']);
         },
         error: (error: any) => {

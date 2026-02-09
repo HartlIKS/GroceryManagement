@@ -2,10 +2,10 @@
   <mat-card class="form-container">
     <mat-card-header>
       <mat-card-title>
-        <h2>{{ isEditMode ? 'Edit Shopping List' : 'Create Shopping List' }}</h2>
+        <h2>{{ isEditMode() ? 'Edit Shopping List' : 'Create Shopping List' }}</h2>
       </mat-card-title>
       <mat-card-subtitle>
-        {{ isEditMode ? 'Update the shopping list information' : 'Create a new shopping list for your grocery needs' }}
+        {{ isEditMode() ? 'Update the shopping list information' : 'Create a new shopping list for your grocery needs' }}
       </mat-card-subtitle>
     </mat-card-header>
 
@@ -151,7 +151,7 @@
                 (click)="onSave()"
                 [disabled]="shoppingListForm.invalid || loading()">
           <mat-icon>save</mat-icon>
-          {{ isEditMode ? 'Update' : 'Create' }} Shopping List
+          {{ isEditMode() ? 'Update' : 'Create' }} Shopping List
         </button>
         <a mat-raised-button color="warn" type="button" routerLink="/shopping-lists">
           <mat-icon>cancel</mat-icon>

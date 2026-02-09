@@ -1,5 +1,5 @@
-import { Component, computed, OnInit } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { ShoppingTripService } from '../../services';
 import { ListShoppingTripDTO } from '../../models';
 import { StoreService } from '../../../master-data/services';
+import { toDate } from '../../../utils/signalutils';
 
 @Component({
   selector: 'app-shopping-trip-list',
@@ -28,21 +29,35 @@ import { StoreService } from '../../../master-data/services';
     MatSelectModule,
     RouterLink,
     MatCardModule,
-    ReactiveFormsModule
+    FormsModule
   ],
   templateUrl: './shopping-trip-list.component.html',
   styleUrls: ['./shopping-trip-list.component.css']
 })
-export class ShoppingTripListComponent implements OnInit {
+export class ShoppingTripListComponent {
   displayedColumns: string[] = ['time', 'store', 'productCount', 'actions'];
-  fromDateControl: FormControl;
-  toDateControl: FormControl;
+  // Filter signals
+  protected readonly fromDate = signal<string | undefined>(this.toDatetimeLocal());
+  protected readonly toDate = signal<string | undefined>(undefined);
 
-  // Use computed signals from service
-  public readonly shoppingTrips = computed(() => this.shoppingTripService.shoppingTrips());
-  public readonly loading = computed(() => this.shoppingTripService.loading());
-  public readonly error = computed(() => this.shoppingTripService.error());
-  public readonly availableStores = computed(() => this.storeService.stores());
+  private readonly shoppingTripService = inject(ShoppingTripService);
+  private readonly storeService = inject(StoreService);
+
+  // Create HTTP resources
+  protected readonly shoppingTripsResource = this.shoppingTripService.getShoppingTrips(
+    toDate(this.fromDate),
+    toDate(this.toDate)
+  );
+  private readonly storesResource = this.storeService.getStores('', 0, 1000);
+
+  // Computed properties from resources
+  public readonly shoppingTrips = computed(() => this.shoppingTripsResource.value()?.content ?? []);
+  public readonly loading = computed(() => this.shoppingTripsResource.status() === 'loading');
+  public readonly error = computed(() => {
+    const status = this.shoppingTripsResource.status();
+    return status === 'error' ? 'Failed to load shopping trips' : null;
+  });
+  public readonly availableStores = computed(() => this.storesResource.value()?.content ?? []);
 
   // Create MatTableDataSource from shopping trips signal
   public readonly dataSource = computed(() => {
@@ -50,50 +65,23 @@ export class ShoppingTripListComponent implements OnInit {
     return new MatTableDataSource<ListShoppingTripDTO>(shoppingTrips);
   });
 
-  constructor(
-    private shoppingTripService: ShoppingTripService,
-    private storeService: StoreService
-  ) {
-    this.fromDateControl = new FormControl('');
-    this.toDateControl = new FormControl('');
-  }
-
-  ngOnInit(): void {
-    // Load initial data
-    this.loadShoppingTrips();
-    this.storeService.getStores();
-  }
-
-  loadShoppingTrips(): void {
-    const fromDate = this.fromDateControl.value || '';
-    const toDate = this.toDateControl.value || '';
-    // Convert datetime-local format to ISO format for the API
-    const formattedFromDate = fromDate ? new Date(fromDate).toISOString() : '';
-    const formattedToDate = toDate ? new Date(toDate).toISOString() : '';
-    this.shoppingTripService.getShoppingTrips(formattedFromDate, formattedToDate);
-  }
-
-  onDateFilterChange(): void {
-    this.loadShoppingTrips();
-  }
-
   clearFilters(): void {
-    this.fromDateControl.setValue('');
-    this.toDateControl.setValue('');
-    this.loadShoppingTrips();
+    this.fromDate.set(undefined)
+    this.toDate.set(undefined);
   }
 
   deleteShoppingTrip(uuid: string): void {
     if (confirm('Are you sure you want to delete this shopping trip?')) {
       this.shoppingTripService.deleteShoppingTrip(uuid).subscribe({
-        next: () => {
-          // Service will handle optimistic update
-        },
         error: (error) => {
           console.error('Error deleting shopping trip:', error);
         }
       });
     }
+  }
+
+  toDatetimeLocal(d: Date = new Date()): string {
+    return `${d.getFullYear()}-${('0'+(d.getMonth()+1)).slice(-2)}-${('0'+d.getDate()).slice(-2)}T${d.toTimeString().slice(0, 5)}`;
   }
 
   getStoreName(storeUuid: string): string {
@@ -110,9 +98,5 @@ export class ShoppingTripListComponent implements OnInit {
 
   getProductCount(products: Record<string, number>): number {
     return Object.keys(products).length;
-  }
-
-  getTotalProducts(products: Record<string, number>): number {
-    return Object.values(products).reduce((sum, amount) => sum + amount, 0);
   }
 }

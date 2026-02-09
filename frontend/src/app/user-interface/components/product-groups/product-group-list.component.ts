@@ -1,4 +1,4 @@
-import { Component, computed, OnInit } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -28,14 +28,23 @@ import { ListProductGroupDTO } from '../../models';
   templateUrl: './product-group-list.component.html',
   styleUrls: ['./product-group-list.component.css']
 })
-export class ProductGroupListComponent implements OnInit {
+export class ProductGroupListComponent {
   displayedColumns: string[] = ['name', 'productCount', 'actions'];
-  searchTerm = '';
+  
+  // Search signal
+  protected readonly searchTerm = signal('');
+  
+  // Create HTTP resource
+  private readonly productGroupService = inject(ProductGroupService);
+  protected readonly productGroupsResource = this.productGroupService.getProductGroups(this.searchTerm);
 
-  // Use computed signals from service
-  public readonly productGroups = computed(() => this.productGroupService.productGroups());
-  public readonly loading = computed(() => this.productGroupService.loading());
-  public readonly error = computed(() => this.productGroupService.error());
+  // Computed properties from resource
+  public readonly productGroups = computed(() => this.productGroupsResource.value()?.content ?? []);
+  public readonly loading = computed(() => this.productGroupsResource.status() === 'loading');
+  public readonly error = computed(() => {
+    const status = this.productGroupsResource.status();
+    return status === 'error' ? 'Failed to load product groups' : null;
+  });
 
   // Create MatTableDataSource from product groups signal
   public readonly dataSource = computed(() => {
@@ -43,32 +52,12 @@ export class ProductGroupListComponent implements OnInit {
     return new MatTableDataSource<ListProductGroupDTO>(productGroups);
   });
 
-  constructor(
-    private productGroupService: ProductGroupService,
-  ) {}
-
-  ngOnInit(): void {
-    this.loadProductGroups();
-  }
-
-  loadProductGroups(): void {
-    this.productGroupService.getProductGroups(this.searchTerm);
-  }
-
-  onSearch(): void {
-    this.loadProductGroups();
-  }
 
   onDeleteProductGroup(uuid: string): void {
     if (confirm('Are you sure you want to delete this product group?')) {
-      // Optimistic update
-      this.productGroupService.removeProductGroupFromCache(uuid);
-
       this.productGroupService.deleteProductGroup(uuid).subscribe({
         error: (error) => {
           console.error('Error deleting product group:', error);
-          // Refresh on error to restore state
-          this.productGroupService.refreshProductGroups();
         }
       });
     }

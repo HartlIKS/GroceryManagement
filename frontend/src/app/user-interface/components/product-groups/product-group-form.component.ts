@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -7,14 +7,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { ProductGroupService } from '../../services';
-import { CreateProductGroupDTO, ListProductGroupDTO } from '../../models';
+import { CreateProductGroupDTO } from '../../models';
 import { ProductService } from '../../../master-data/services';
 import { ListProductDTO } from '../../../master-data/models';
-import { map } from 'rxjs/operators';
 import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
@@ -39,12 +38,16 @@ import { MatTooltip } from '@angular/material/tooltip';
 })
 export class ProductGroupFormComponent implements OnInit {
   productGroupForm: FormGroup;
-  isEditMode = false;
-  productGroupUuid: string | null = null;
+  isEditMode = computed(() => !!this.productGroupUuid());
+  productGroupUuid = signal<string>('');
+
+  // Create HTTP resources
+  private readonly productsResource = inject(ProductService).getProducts('', 0, 1000);
+  private readonly productGroupResource = inject(ProductGroupService).getProductGroup(this.productGroupUuid);
 
   // Product management properties
   selectedProductUuid: string | null = null;
-  availableProducts = computed(() => this.productService.products());
+  availableProducts = computed(() => this.productsResource.value()?.content ?? []);
   productGroupProducts = signal<Record<string, number>>({});
   productAmountControls = signal<Record<string, FormControl>>({});
 
@@ -65,14 +68,15 @@ export class ProductGroupFormComponent implements OnInit {
   });
   productsDataSource = computed(() => new MatTableDataSource<ListProductDTO>(this.currentProducts()));
 
-  // Use computed signals from service
-  public readonly loading = computed(() => this.productGroupService.loading());
-  public readonly error = computed(() => this.productGroupService.error());
+  // Use computed signals from resource
+  public readonly loading = computed(() => this.productGroupResource.status() === 'loading');
+  public readonly error = computed(() => {
+    const status = this.productGroupResource.status();
+    return status === 'error' ? 'Failed to load product group' : null;
+  });
 
   constructor(
     private fb: FormBuilder,
-    private productGroupService: ProductGroupService,
-    private productService: ProductService,
     private router: Router,
     private route: ActivatedRoute
   ) {
@@ -80,40 +84,10 @@ export class ProductGroupFormComponent implements OnInit {
       name: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(255)]],
       amount: [1, [Validators.required, Validators.min(0.01)]]
     });
-  }
 
-  ngOnInit(): void {
-    // Subscribe to route parameter changes
-    this.route.paramMap.pipe(
-      map(params => {
-        const id = params.get('id');
-        if (id === 'new') {
-          return { isEditMode: false, uuid: null };
-        } else if (id) {
-          return { isEditMode: true, uuid: id };
-        }
-        return { isEditMode: false, uuid: null };
-      })
-    ).subscribe(({ isEditMode, uuid }) => {
-      this.isEditMode = isEditMode;
-      this.productGroupUuid = uuid;
-
-      if (isEditMode && uuid) {
-        // Load products first, then load the product group
-        this.loadAvailableProducts();
-        this.loadProductGroup(uuid);
-      }
-    });
-  }
-
-  loadAvailableProducts(): void {
-    // Load all products to populate the dropdown
-    this.productService.getProducts('', 0, 1000); // Load all products
-  }
-
-  loadProductGroup(uuid: string): void {
-    this.productGroupService.getProductGroup(uuid).subscribe({
-      next: (productGroup: ListProductGroupDTO) => {
+    effect(() => {
+      const productGroup = this.productGroupResource.value();
+      if (productGroup) {
         this.productGroupForm.patchValue({
           name: productGroup.name
         });
@@ -128,10 +102,14 @@ export class ProductGroupFormComponent implements OnInit {
           });
         }
         this.productAmountControls.set(controls);
-      },
-      error: (error) => {
-        console.error('Error loading product group:', error);
       }
+    });
+  }
+
+  ngOnInit(): void {
+    // Subscribe to route parameter changes
+    this.route.params.subscribe(({ id }) => {
+      this.productGroupUuid.set(id);
     });
   }
 
@@ -189,37 +167,28 @@ export class ProductGroupFormComponent implements OnInit {
       products: products
     };
 
-    if (this.isEditMode && this.productGroupUuid) {
-      this.updateProductGroup(this.productGroupUuid, formData);
+    const productGroupUuid = this.productGroupUuid();
+    const productGroupService = inject(ProductGroupService);
+
+    if (productGroupUuid) {
+      productGroupService.updateProductGroup(productGroupUuid, formData).subscribe({
+        next: () => {
+          this.router.navigate(['/product-groups']);
+        },
+        error: (error) => {
+          console.error('Error updating product group:', error);
+        }
+      });
     } else {
-      this.createProductGroup(formData);
+      productGroupService.createProductGroup(formData).subscribe({
+        next: () => {
+          this.router.navigate(['/product-groups']);
+        },
+        error: (error) => {
+          console.error('Error creating product group:', error);
+        }
+      });
     }
-  }
-
-  createProductGroup(productGroup: CreateProductGroupDTO): void {
-    this.productGroupService.createProductGroup(productGroup).subscribe({
-      next: (createdProductGroup: ListProductGroupDTO) => {
-        // Optimistic update
-        this.productGroupService.addProductGroupToCache(createdProductGroup);
-        this.router.navigate(['/product-groups']);
-      },
-      error: (error) => {
-        console.error('Error creating product group:', error);
-      }
-    });
-  }
-
-  updateProductGroup(uuid: string, productGroup: CreateProductGroupDTO): void {
-    this.productGroupService.updateProductGroup(uuid, productGroup).subscribe({
-      next: (updatedProductGroup: ListProductGroupDTO) => {
-        // Optimistic update
-        this.productGroupService.updateProductGroupInCache(updatedProductGroup);
-        this.router.navigate(['/product-groups']);
-      },
-      error: (error) => {
-        console.error('Error updating product group:', error);
-      }
-    });
   }
 
   getErrorMessage(controlName: string): string {

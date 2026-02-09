@@ -13,16 +13,14 @@
         <mat-label>From Date</mat-label>
         <input matInput
                type="datetime-local"
-               [formControl]="fromDateControl"
-               (change)="onDateFilterChange()">
+               [(ngModel)]="fromDate">
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="search-field">
         <mat-label>To Date</mat-label>
         <input matInput
                type="datetime-local"
-               [formControl]="toDateControl"
-               (change)="onDateFilterChange()">
+               [(ngModel)]="toDate">
       </mat-form-field>
 
       <button mat-raised-button (click)="clearFilters()">Clear</button>
@@ -99,7 +97,7 @@
   @if (error()) {
     <div class="error">
       <p>Error loading shopping trips: {{ error() }}</p>
-      <button mat-raised-button color="primary" (click)="loadShoppingTrips()">Retry</button>
+      <button mat-raised-button color="primary" (click)="shoppingTripsResource.reload()">Retry</button>
     </div>
   }
 </div>

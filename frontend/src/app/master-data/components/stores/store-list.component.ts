@@ -1,4 +1,4 @@
-import { Component, computed, OnInit } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -28,14 +28,24 @@ import { ListStoreDTO } from '../../models';
   templateUrl: './store-list.component.html',
   styleUrls: ['./store-list.component.css']
 })
-export class StoreListComponent implements OnInit {
+export class StoreListComponent {
   displayedColumns: string[] = ['name', 'logo', 'address', 'currency', 'actions'];
-  searchTerm = '';
 
-  // Use computed signals from service
-  public readonly stores = computed(() => this.storeService.stores());
-  public readonly loading = computed(() => this.storeService.loading());
-  public readonly error = computed(() => this.storeService.error());
+  // Search signal
+  protected readonly searchTerm = signal('');
+
+  private readonly storeService = inject(StoreService);
+
+  // Create HTTP resource
+  protected readonly storesResource = this.storeService.getStores(this.searchTerm);
+
+  // Computed properties from resource
+  public readonly stores = computed(() => this.storesResource.value()?.content ?? []);
+  public readonly loading = computed(() => this.storesResource.status() === 'loading');
+  public readonly error = computed(() => {
+    const status = this.storesResource.status();
+    return status === 'error' ? 'Failed to load stores' : null;
+  });
 
   // Create MatTableDataSource from stores signal
   public readonly dataSource = computed(() => {
@@ -43,32 +53,15 @@ export class StoreListComponent implements OnInit {
     return new MatTableDataSource<ListStoreDTO>(stores);
   });
 
-  constructor(
-    private storeService: StoreService,
-  ) {}
-
-  ngOnInit(): void {
-    this.loadStores();
-  }
-
-  loadStores(): void {
-    this.storeService.getStores(this.searchTerm);
-  }
-
-  onSearch(): void {
-    this.loadStores();
+  onSearch(searchTerm: string): void {
+    this.searchTerm.set(searchTerm);
   }
 
   onDeleteStore(uuid: string): void {
     if (confirm('Are you sure you want to delete this store?')) {
-      // Optimistic update
-      this.storeService.removeStoreFromCache(uuid);
-
       this.storeService.deleteStore(uuid).subscribe({
         error: (error) => {
           console.error('Error deleting store:', error);
-          // Refresh on error to restore state
-          this.storeService.refreshStores();
         }
       });
     }

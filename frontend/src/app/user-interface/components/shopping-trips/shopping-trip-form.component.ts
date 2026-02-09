@@ -1,4 +1,4 @@
-import { Component, computed, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -11,7 +11,7 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { ShoppingTripService } from '../../services';
-import { CreateShoppingTripDTO, ListShoppingTripDTO } from '../../models';
+import { CreateShoppingTripDTO } from '../../models';
 import { ProductService, StoreService } from '../../../master-data/services';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
@@ -39,16 +39,23 @@ import { MatDividerModule } from '@angular/material/divider';
 export class ShoppingTripFormComponent implements OnInit {
   shoppingTripForm: FormGroup;
   productSelectControl: FormControl;
-  isEditMode = false;
-  shoppingTripUuid: string | null = null;
+  isEditMode = computed(() => !!this.shoppingTripUuid());
+  shoppingTripUuid = signal<string>('');
+
+  private readonly shoppingTripService = inject(ShoppingTripService);
+
+  // Create HTTP resources
+  private readonly productsResource = inject(ProductService).getProducts('', 0, 1000);
+  private readonly storesResource = inject(StoreService).getStores('', 0, 1000);
+  private readonly shoppingTripResource = this.shoppingTripService.getShoppingTrip(this.shoppingTripUuid);
 
   // Product management properties
-  availableProducts = computed(() => this.productService.products());
+  availableProducts = computed(() => this.productsResource.value()?.content ?? []);
   shoppingTripProducts = signal<Record<string, number>>({});
   productAmountControls = signal<Record<string, FormControl>>({});
 
   // Store management
-  availableStores = computed(() => this.storeService.stores());
+  availableStores = computed(() => this.storesResource.value()?.content ?? []);
 
   // Table properties
   displayedColumns: string[] = ['productName', 'image', 'amount', 'actions'];
@@ -66,16 +73,16 @@ export class ShoppingTripFormComponent implements OnInit {
   ));
 
   // Loading and error states
-  loading = computed(() => this.shoppingTripService.loading());
-  error = computed(() => this.shoppingTripService.error());
+  loading = computed(() => this.shoppingTripResource.status() === 'loading');
+  error = computed(() => {
+    const status = this.shoppingTripResource.status();
+    return status === 'error' ? 'Failed to load shopping trip' : null;
+  });
 
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
-    private router: Router,
-    private shoppingTripService: ShoppingTripService,
-    private productService: ProductService,
-    private storeService: StoreService
+    private router: Router
   ) {
     this.shoppingTripForm = this.fb.group({
       store: ['', Validators.required],
@@ -83,34 +90,24 @@ export class ShoppingTripFormComponent implements OnInit {
     });
 
     this.productSelectControl = new FormControl('');
-
-    // Load initial data
-    this.productService.getProducts();
-    this.storeService.getStores();
   }
 
   ngOnInit(): void {
     // Check if we're in edit mode
-    const uuid = this.route.snapshot.paramMap.get('id');
-    if (uuid) {
-      this.isEditMode = true;
-      this.shoppingTripUuid = uuid;
-      this.loadShoppingTrip(uuid);
-    }
-  }
+    this.route.params.subscribe(({id}) => {
+      this.shoppingTripUuid.set(id);
+    });
 
-  loadShoppingTrip(uuid: string): void {
-    this.shoppingTripService.getShoppingTrip(uuid).subscribe({
-      next: (shoppingTrip: ListShoppingTripDTO) => {
+    // Watch for changes in the shopping trip resource
+    effect(() => {
+      const shoppingTrip = this.shoppingTripResource.value();
+      if (shoppingTrip) {
         this.shoppingTripForm.patchValue({
           store: shoppingTrip.store,
           time: this.formatDateTimeForInput(shoppingTrip.time)
         });
         this.shoppingTripProducts.set(shoppingTrip.products);
         this.initializeProductControls();
-      },
-      error: (error) => {
-        console.error('Error loading shopping trip:', error);
       }
     });
   }
@@ -170,8 +167,9 @@ export class ShoppingTripFormComponent implements OnInit {
         products: this.shoppingTripProducts()
       };
 
-      const operation = this.isEditMode
-        ? this.shoppingTripService.updateShoppingTrip(this.shoppingTripUuid!, shoppingTripData)
+      const shoppingTripUuid = this.shoppingTripUuid();
+      const operation = shoppingTripUuid
+        ? this.shoppingTripService.updateShoppingTrip(shoppingTripUuid, shoppingTripData)
         : this.shoppingTripService.createShoppingTrip(shoppingTripData);
 
       operation.subscribe({
@@ -183,22 +181,6 @@ export class ShoppingTripFormComponent implements OnInit {
         }
       });
     }
-  }
-
-  getProductName(productUuid: string): string {
-    return this.availableProducts().find(p => p.uuid === productUuid)?.name ?? 'Unknown Product';
-  }
-
-  getProductImage(productUuid: string): string | undefined {
-    return this.availableProducts().find(p => p.uuid === productUuid)?.image;
-  }
-
-  getStoreName(storeUuid: string): string {
-    return this.availableStores().find(s => s.uuid === storeUuid)?.name ?? 'Unknown Store';
-  }
-
-  getStoreLogo(storeUuid: string): string | undefined {
-    return this.availableStores().find(s => s.uuid === storeUuid)?.logo;
   }
 
   private formatDateTimeForInput(dateString: string): string {

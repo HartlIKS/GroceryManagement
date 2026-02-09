@@ -2,7 +2,7 @@
   <mat-card class="form-container">
     <mat-card-header>
       <mat-card-title>
-        <h2>{{ isEditMode ? 'Edit Shopping Trip' : 'Create New Shopping Trip' }}</h2>
+        <h2>{{ isEditMode() ? 'Edit Shopping Trip' : 'Create New Shopping Trip' }}</h2>
       </mat-card-title>
       <mat-card-subtitle>
         <a routerLink="/shopping-trips" mat-button>
@@ -30,9 +30,6 @@
                 </mat-option>
               }
             </mat-select>
-            <mat-error *ngIf="shoppingTripForm.get('store')?.hasError('required')">
-              Store is required
-            </mat-error>
           </mat-form-field>
         </div>
 
@@ -43,9 +40,6 @@
                    type="datetime-local"
                    formControlName="time"
                    required>
-            <mat-error *ngIf="shoppingTripForm.get('time')?.hasError('required')">
-              Date and time are required
-            </mat-error>
           </mat-form-field>
         </div>
 
@@ -155,7 +149,7 @@
         @if (loading()) {
           <mat-spinner diameter="20"></mat-spinner>
         }
-        {{ isEditMode ? 'Update Trip' : 'Create Trip' }}
+        {{ isEditMode() ? 'Update Trip' : 'Create Trip' }}
       </button>
     </mat-card-actions>
   </mat-card>

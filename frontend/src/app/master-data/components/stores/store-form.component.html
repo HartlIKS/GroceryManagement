@@ -1,6 +1,6 @@
 <div class="container">
   <div class="header header-centered header-margin-bottom-20">
-    <h1>{{ isEditing ? 'Edit Store' : 'Add New Store' }}</h1>
+    <h1>{{ isEditing() ? 'Edit Store' : 'Add New Store' }}</h1>
   </div>
 
   @if (!loading()) {
@@ -69,7 +69,7 @@
           <mat-card-actions align="end">
             <a mat-raised-button type="button" routerLink="/master-data/stores">Cancel</a>
             <button mat-raised-button color="primary" type="submit" [disabled]="storeForm.invalid">
-              {{ isEditing ? 'Update' : 'Create' }}
+              {{ isEditing() ? 'Update' : 'Create' }}
             </button>
           </mat-card-actions>
         </mat-card>

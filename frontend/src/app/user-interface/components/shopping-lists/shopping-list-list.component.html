@@ -12,11 +12,10 @@
       <mat-label>Search shopping lists</mat-label>
       <input matInput
              [(ngModel)]="searchTerm"
-             (keyup.enter)="onSearch()"
              placeholder="Enter shopping list name">
       <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
-    <button mat-raised-button (click)="onSearch()">Search</button>
+    <button mat-raised-button (click)="shoppingListsResource.reload()">Search</button>
   </div>
 
   @if (!loading()) {

@@ -1,4 +1,4 @@
-import { Component, computed, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -36,24 +36,42 @@ type PriceWithValidity = ListPriceDTO & {
   templateUrl: './price-list.component.html',
   styleUrls: ['./price-list.component.css']
 })
-export class PriceListComponent implements OnInit {
+export class PriceListComponent {
   displayedColumns: string[] = ['product', 'store', 'price', 'validFrom', 'validTo', 'actions'];
 
   // Reference timestamp signal - defaults to current time
-  private readonly referenceTimestamp = signal<string>(new Date().toISOString().slice(0, 16));
-  public readonly referenceTimestampValue = this.referenceTimestamp.asReadonly();
+  protected readonly referenceTimestamp = signal<string>(new Date().toISOString().slice(0, 16));
 
-  // Use computed signals from services
-  public readonly products = computed(() => this.productService.products());
-  public readonly stores = computed(() => this.storeService.stores());
-  public readonly prices = computed(() => this.priceService.prices());
-  public readonly totalElements = computed(() => this.priceService.totalElements());
-  public readonly currentPage = computed(() => this.priceService.currentPage());
-  public readonly pageSize = computed(() => this.priceService.pageSize());
-  public readonly loading = computed(() => this.priceService.loading());
-  public readonly error = computed(() => this.priceService.error());
-  public readonly selectedStore = computed(() => this.priceService.selectedStore());
-  public readonly selectedProduct = computed(() => this.priceService.selectedProduct());
+  // Pagination and filter signals
+  protected readonly currentPage = signal(0);
+  protected readonly pageSize = signal(20);
+  protected readonly selectedStore = signal<string>('');
+  protected readonly selectedProduct = signal<string>('');
+
+  private readonly productService = inject(ProductService);
+  private readonly storeService = inject(StoreService);
+  private readonly priceService = inject(PriceService);
+
+  // Create HTTP resources
+  private readonly productsResource = this.productService.getProducts('', 0, 1000);
+  private readonly storesResource = this.storeService.getStores('', 0, 1000);
+  protected readonly pricesResource = this.priceService.getPrices(
+    this.currentPage,
+    this.pageSize,
+    this.selectedStore,
+    this.selectedProduct,
+  );
+
+  // Computed properties from resources
+  public readonly products = computed(() => this.productsResource.value()?.content ?? []);
+  public readonly stores = computed(() => this.storesResource.value()?.content ?? []);
+  public readonly prices = computed(() => this.pricesResource.value()?.content ?? []);
+  public readonly totalElements = computed(() => this.pricesResource.value()?.page?.totalElements ?? 0);
+  public readonly loading = computed(() => this.pricesResource.status() === 'loading');
+  public readonly error = computed(() => {
+    const status = this.pricesResource.status();
+    return status === 'error' ? 'Failed to load prices' : null;
+  });
 
   // Create MatTableDataSource from prices signal with validity status included
   public readonly dataSource = computed(() => {
@@ -69,67 +87,32 @@ export class PriceListComponent implements OnInit {
     return new MatTableDataSource<PriceWithValidity>(pricesWithValidity);
   });
 
-  constructor(
-    private priceService: PriceService,
-    private productService: ProductService,
-    private storeService: StoreService
-  ) {}
-
-  ngOnInit(): void {
-    this.loadProducts();
-    this.loadStores();
-    this.loadPrices();
-  }
-
-  loadProducts(): void {
-    this.productService.getProducts('', 0, 1000);
-  }
-
-  loadStores(): void {
-    this.storeService.getStores('', 0, 1000);
-  }
-
-  loadPrices(): void {
-    this.priceService.getPrices();
-  }
-
   onPageChange(event: any): void {
-    this.priceService.getPrices(event.pageIndex, event.pageSize);
+    this.currentPage.set(event.pageIndex);
+    this.pageSize.set(event.pageSize);
   }
 
   onStoreFilterChange(storeUuid: string): void {
-    if (storeUuid === 'all') {
-      this.priceService.setStoreFilter(null);
-    } else {
-      this.priceService.setStoreFilter(storeUuid);
-    }
-    this.priceService.getPrices(0, this.pageSize());
+    this.selectedStore.set(storeUuid === 'all' ? '' : storeUuid);
+    this.currentPage.set(0);
   }
 
   onProductFilterChange(productUuid: string): void {
-    if (productUuid === 'all') {
-      this.priceService.setProductFilter(null);
-    } else {
-      this.priceService.setProductFilter(productUuid);
-    }
-    this.priceService.getPrices(0, this.pageSize());
+    this.selectedProduct.set(productUuid === 'all' ? '' : productUuid);
+    this.currentPage.set(0);
   }
 
   onClearFilters(): void {
-    this.priceService.clearFilters();
-    this.priceService.getPrices(0, this.pageSize());
+    this.selectedStore.set('');
+    this.selectedProduct.set('');
+    this.currentPage.set(0);
   }
 
   onDeletePrice(uuid: string): void {
     if (confirm('Are you sure you want to delete this price?')) {
-      // Optimistic update
-      this.priceService.removePriceFromCache(uuid);
-
       this.priceService.deletePrice(uuid).subscribe({
         error: (error: any) => {
           console.error('Error deleting price:', error);
-          // Refresh on error to restore state
-          this.priceService.refreshPrices();
         }
       });
     }

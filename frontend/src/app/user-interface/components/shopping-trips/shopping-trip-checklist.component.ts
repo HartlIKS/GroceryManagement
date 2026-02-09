@@ -1,4 +1,4 @@
-import { Component, computed, effect, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,7 +9,6 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { CommonModule } from '@angular/common';
 import { ShoppingTripService } from '../../services';
 import { PriceService, ProductService, StoreService } from '../../../master-data/services';
-import { PriceListingDTO } from '../../../master-data/models';
 
 interface ChecklistItem {
   productUuid: string;
@@ -35,19 +34,27 @@ interface ChecklistItem {
   templateUrl: './shopping-trip-checklist.component.html',
   styleUrls: ['./shopping-trip-checklist.component.css']
 })
-export class ShoppingTripChecklistComponent implements OnInit {
-  shoppingTripUuid: string | null = null;
+export class ShoppingTripChecklistComponent {
+  shoppingTripUuid = signal<string>('');
 
-  // Use computed signals from services
-  public readonly loading = computed(() => this.shoppingTripService.loading());
-  public readonly error = computed(() => this.shoppingTripService.error());
-  public readonly availableStores = computed(() => this.storeService.stores());
-  public readonly availableProducts = computed(() => this.productService.products());
+  // Create HTTP resources
+  private readonly shoppingTripResource = inject(ShoppingTripService).getShoppingTrip(this.shoppingTripUuid);
+  private readonly storesResource = inject(StoreService).getStores('', 0, 1000);
+  private readonly productsResource = inject(ProductService).getProducts('', 0, 1000);
+  private readonly priceService = inject(PriceService);
+
+  // Computed properties from resources
+  public readonly loading = computed(() => this.shoppingTripResource.status() === 'loading');
+  public readonly error = computed(() => {
+    const status = this.shoppingTripResource.status();
+    return status === 'error' ? 'Failed to load shopping trip' : null;
+  });
+  public readonly availableStores = computed(() => this.storesResource.value()?.content ?? []);
+  public readonly availableProducts = computed(() => this.productsResource.value()?.content ?? []);
 
   // Current shopping trip
   public readonly currentShoppingTrip = computed(() => {
-    if (!this.shoppingTripUuid) return null;
-    return this.shoppingTripService.getShoppingTripByUuid(this.shoppingTripUuid);
+    return this.shoppingTripResource.value();
   });
 
   // Current store for the trip
@@ -58,13 +65,20 @@ export class ShoppingTripChecklistComponent implements OnInit {
   });
 
   // Prices for the current shopping trip (using the efficient nested structure)
-  public readonly currentTripPrices = signal<Record<string, Record<string, PriceListingDTO[]>> | null>(null);
+  public readonly currentTripPrices = this.priceService.searchPricesForProductsAndStores(
+    computed(() => Object.keys(this.currentShoppingTrip()?.products ?? {})),
+    computed(() => {
+      const store = this.currentShoppingTrip()?.store;
+      return store ? [store] : [];
+    }),
+    computed(() => new Date(this.currentShoppingTrip()?.time!)),
+  );
 
   // Checklist items
   public readonly checklistItems = computed(() => {
     const trip = this.currentShoppingTrip();
     const products = this.availableProducts();
-    const priceMap = this.currentTripPrices();
+    const priceMap = this.currentTripPrices.value();
 
     if (!trip || !products.length) return [];
 
@@ -86,72 +100,13 @@ export class ShoppingTripChecklistComponent implements OnInit {
   });
 
   constructor(
-    private route: ActivatedRoute,
-    private shoppingTripService: ShoppingTripService,
-    private storeService: StoreService,
-    private productService: ProductService,
-    private priceService: PriceService
+    private route: ActivatedRoute
   ) {
-    // Effect to automatically fetch prices when the current shopping trip changes
-    effect(() => {
-      const trip = this.currentShoppingTrip();
-      if (!trip) {
-        this.currentTripPrices.set(null);
-        return;
-      }
-
-      // Get all product UUIDs from the shopping trip
-      const productUuids = Object.keys(trip.products);
-      if (productUuids.length === 0) {
-        this.currentTripPrices.set({});
-        return;
-      }
-
-      // Fetch prices for this trip's store and products
-      this.priceService.searchPricesForProductsAndStores(productUuids, trip.store, trip.time).subscribe({
-        next: (priceMap) => {
-          this.currentTripPrices.set(priceMap);
-        },
-        error: (error) => {
-          console.error('Error loading prices for store:', error);
-          this.currentTripPrices.set(null);
-        }
-      });
+    // Set up route parameter subscription
+    this.route.params.subscribe(({id}) => {
+      this.shoppingTripUuid.set(id);
     });
-  }
 
-  ngOnInit(): void {
-    this.shoppingTripUuid = this.route.snapshot.paramMap.get('id');
-
-    if (this.shoppingTripUuid) {
-      this.loadShoppingTrip();
-    }
-
-    // Load stores and products for display
-    this.storeService.getStores();
-    this.productService.getProducts('', 0, 1000); // Load all products for mapping
-  }
-
-  loadShoppingTrip(): void {
-    if (!this.shoppingTripUuid) return;
-
-    // First try to get from cache
-    const cachedTrip = this.shoppingTripService.getShoppingTripByUuid(this.shoppingTripUuid);
-    if (cachedTrip) {
-      return; // Already loaded - effect will handle price fetching
-    }
-
-    // If not in cache, load individual trip
-    this.shoppingTripService.getShoppingTrip(this.shoppingTripUuid).subscribe({
-      next: (trip) => {
-        // Add the loaded trip to cache so it becomes available
-        this.shoppingTripService.addShoppingTripToCache(trip);
-        // Effect will automatically fetch prices when trip is available
-      },
-      error: (error) => {
-        console.error('Error loading shopping trip:', error);
-      }
-    });
   }
 
   toggleItem(item: ChecklistItem): void {

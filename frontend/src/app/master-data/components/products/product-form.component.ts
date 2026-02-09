@@ -1,6 +1,6 @@
-import { Component, OnInit, computed } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CommonModule } from '@angular/common';
 import { ProductService } from '../../services';
-import { CreateProductDTO, ListProductDTO } from '../../models';
+import { CreateProductDTO } from '../../models';
 
 @Component({
   selector: 'app-product-form',
@@ -28,16 +28,26 @@ import { CreateProductDTO, ListProductDTO } from '../../models';
 })
 export class ProductFormComponent implements OnInit {
   productForm: FormGroup;
-  isEditing = false;
-  productId?: string;
+  isEditing = computed(() => !!this.productId())
+  productId = signal<string>('');
 
-  // Use computed signals from service
-  public readonly loading = computed(() => this.productService.loading());
-  public readonly error = computed(() => this.productService.error());
+  private readonly productService = inject(ProductService);
+
+  // Create HTTP resource for product
+  private readonly productResource = this.productService.getProduct(this.productId);
+
+  // Computed properties from resource
+  public readonly loading = computed(() => {
+    const productStatus = this.productResource.status();
+    return productStatus === 'loading';
+  });
+  public readonly error = computed(() => {
+    const productStatus = this.productResource.status();
+    return productStatus === 'error' ? 'Failed to load product' : null;
+  });
 
   constructor(
     private fb: FormBuilder,
-    private productService: ProductService,
     private router: Router,
     private route: ActivatedRoute
   ) {
@@ -49,26 +59,18 @@ export class ProductFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.productId = this.route.snapshot.paramMap.get('id') || undefined;
-    if (this.productId) {
-      this.isEditing = true;
-      this.loadProduct();
-    }
-  }
-
-  loadProduct(): void {
-    if (!this.productId) return;
-
-    this.productService.getProduct(this.productId).subscribe({
-      next: (product: ListProductDTO) => {
+    this.route.params.subscribe(({id}) => {
+      this.productId.set(id);
+    });
+    // Watch for changes in the product resource
+    effect(() => {
+      const product = this.productResource.value();
+      if (product) {
         this.productForm.patchValue({
           name: product.name,
           image: product.image || '',
           EAN: product.EAN || ''
         });
-      },
-      error: (error) => {
-        console.error('Error loading product:', error);
       }
     });
   }
@@ -80,12 +82,10 @@ export class ProductFormComponent implements OnInit {
     }
 
     const productData: CreateProductDTO = this.productForm.value;
-
-    if (this.isEditing && this.productId) {
-      this.productService.updateProduct(this.productId, productData).subscribe({
-        next: (updatedProduct) => {
-          // Optimistic update
-          this.productService.updateProductInCache(updatedProduct);
+    const productId = this.productId();
+    if (productId) {
+      this.productService.updateProduct(productId, productData).subscribe({
+        next: () => {
           this.router.navigate(['/master-data/products']);
         },
         error: (error) => {
@@ -94,9 +94,7 @@ export class ProductFormComponent implements OnInit {
       });
     } else {
       this.productService.createProduct(productData).subscribe({
-        next: (newProduct) => {
-          // Optimistic update
-          this.productService.addProductToCache(newProduct);
+        next: () => {
           this.router.navigate(['/master-data/products']);
         },
         error: (error) => {
