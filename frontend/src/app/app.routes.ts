@@ -1,29 +1,6 @@
 import { Routes } from '@angular/router';
-import { NavigationComponent } from './components/navigation/navigation.component';
-import { MainNavItemsComponent } from './components/navigation/main-nav-items/main-nav-items.component';
-import {
-  MasterDataNavItemsComponent
-} from './components/navigation/master-data-nav-items/master-data-nav-items.component';
-import {
-  DashboardComponent,
-  PriceFormComponent,
-  PriceListComponent,
-  ProductFormComponent,
-  ProductListComponent,
-  StoreFormComponent,
-  StoreListComponent
-} from './master-data/components';
-import {
-  PlanboardComponent,
-  ProductGroupFormComponent,
-  ProductGroupListComponent,
-  ShoppingListFormComponent,
-  ShoppingListListComponent,
-  ShoppingTripChecklistComponent,
-  ShoppingTripFormComponent,
-  ShoppingTripListComponent,
-  UserDashboardComponent
-} from './user-interface/components';
+import { MainNavItemsComponent, MasterDataNavItemsComponent, NavigationComponent } from './components/navigation';
+import { UserDashboardComponent } from './user-interface/components';
 
 export const routes: Routes = [
   {
@@ -41,47 +18,19 @@ export const routes: Routes = [
       },
       {
         path: 'product-groups',
-        component: ProductGroupListComponent
-      },
-      {
-        path: 'product-groups/new',
-        component: ProductGroupFormComponent
-      },
-      {
-        path: 'product-groups/:id',
-        component: ProductGroupFormComponent
+        loadChildren: () => import('./user-interface/product-groups.routes').then(m => m.productGroupsRoutes)
       },
       {
         path: 'shopping-lists',
-        component: ShoppingListListComponent
-      },
-      {
-        path: 'shopping-lists/new',
-        component: ShoppingListFormComponent
-      },
-      {
-        path: 'shopping-lists/:id',
-        component: ShoppingListFormComponent
+        loadChildren: () => import('./user-interface/shopping-lists.routes').then(m => m.shoppingListsRoutes)
       },
       {
         path: 'shopping-trips',
-        component: ShoppingTripListComponent
-      },
-      {
-        path: 'shopping-trips/new',
-        component: ShoppingTripFormComponent
-      },
-      {
-        path: 'shopping-trips/:id',
-        component: ShoppingTripFormComponent
-      },
-      {
-        path: 'shopping-trips/:id/checklist',
-        component: ShoppingTripChecklistComponent
+        loadChildren: () => import('./user-interface/shopping-trips.routes').then(m => m.shoppingTripsRoutes)
       },
       {
         path: 'planboard',
-        component: PlanboardComponent
+        loadComponent: () => import('./user-interface/components').then(m => m.PlanboardComponent)
       }
     ],
   },
@@ -101,43 +50,19 @@ export const routes: Routes = [
       },
       {
         path: 'dashboard',
-        component: DashboardComponent
+        loadComponent: () => import('./master-data/components').then(m => m.DashboardComponent)
       },
       {
         path: 'products',
-        component: ProductListComponent
-      },
-      {
-        path: 'products/new',
-        component: ProductFormComponent
-      },
-      {
-        path: 'products/:id',
-        component: ProductFormComponent
+        loadChildren: () => import('./master-data/products.routes').then(m => m.productsRoutes)
       },
       {
         path: 'stores',
-        component: StoreListComponent
-      },
-      {
-        path: 'stores/new',
-        component: StoreFormComponent
-      },
-      {
-        path: 'stores/:id',
-        component: StoreFormComponent
+        loadChildren: () => import('./master-data/stores.routes').then(m => m.storesRoutes)
       },
       {
         path: 'prices',
-        component: PriceListComponent
-      },
-      {
-        path: 'prices/new',
-        component: PriceFormComponent
-      },
-      {
-        path: 'prices/:id',
-        component: PriceFormComponent
+        loadChildren: () => import('./master-data/prices.routes').then(m => m.pricesRoutes)
       }
     ]
   },
