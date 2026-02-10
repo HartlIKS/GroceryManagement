@@ -67,6 +67,9 @@ GroceryManagement/
     │   │   │   ├── components/      # User interface components
     │   │   │   │   ├── product-groups/  # Product group management
     │   │   │   │   ├── shopping-lists/  # Shopping list management
+    │   │   │   │   ├── shopping-trips/  # Shopping trip management
+    │   │   │   │   ├── planboard/       # Shopping planning interface
+    │   │   │   │   ├── product-listing/ # Product price listing component
     │   │   │   │   └── user-dashboard.component.*  # User dashboard
     │   │   │   ├── models/          # User interface models
     │   │   │   └── services/        # User interface services
@@ -150,6 +153,28 @@ Shopping trips record actual purchases made by users at specific stores, includi
 - **Amount management** - Editable quantities with proper validation
 - **Type-aware interactions** - Contextual tooltips and actions per item type
 
+### Shopping Trips Management
+- **Complete CRUD operations** for shopping trips (user-scoped)
+- **Trip checklist interface** for tracking items during shopping
+- **Store and date selection** with proper validation
+- **Product quantity management** with real-time updates
+- **Historical trip tracking** with purchase records
+
+### Planboard (Shopping Planning)
+- **Interactive planning interface** for organizing shopping trips
+- **Shopping list integration** - Import and plan items from existing lists
+- **Store assignment** - Assign items to specific stores based on prices
+- **Price comparison** - View and compare prices across different stores
+- **Visual item management** - Drag-and-drop interface for item assignment
+- **Planned trip generation** - Create optimized shopping trips
+- **⚠️ Finalize Planning** - Button exists but backend integration is not yet implemented
+
+### Product Listing Component
+- **Price display component** for showing product prices across stores
+- **Store-specific pricing** - Filter prices by store and date
+- **Real-time price fetching** - Integrated with backend price search API
+- **Currency formatting** - Proper display of prices with store currency
+
 ### Product Groups Management
 - **Complete CRUD operations** for product groups
 - **Product assignment** - Add/remove products from groups
@@ -169,6 +194,9 @@ Shopping trips record actual purchases made by users at specific stores, includi
 - **Global Design System**: Centralized styling with CSS custom properties and inheritance
 - **Hex Alpha Colors**: Modern color format with transparency support
 - **Component CSS Optimization**: Leverages global styles to reduce redundancy
+- **Planboard Integration**: Advanced shopping planning with price optimization and store assignment
+- **Shopping Trip Checklists**: Interactive tracking for in-store shopping experience
+- **Real-time Price Fetching**: Dynamic price comparison across multiple stores
 
 ### Address
 - **country**: Country name (String)
@@ -223,6 +251,11 @@ Shopping trips record actual purchases made by users at specific stores, includi
 - `POST /shoppingTrips` - Create new shopping trip
 - `DELETE /shoppingTrips/{uuid}` - Delete shopping trip (user-owned only)
 - `GET /shoppingTrips` - Search shopping trips (with optional from/to date parameters, paginated, user-owned only)
+
+### Planboard (Frontend-only Feature)
+- **Route**: `/planboard` - Interactive shopping planning interface
+- **Features**: Shopping list integration, price comparison, store assignment, planned trip generation
+- **Note**: Finalize planning function exists in UI but backend integration is pending implementation
 
 ## Development Setup
 
@@ -339,3 +372,7 @@ This will:
 - Reactive form controls use valueChanges subscriptions instead of (input) event handlers
 - Sample image logic displays product previews for product groups in both dropdowns and tables
 - Type-aware UI interactions provide contextual tooltips and actions based on item type
+- Planboard component provides advanced shopping planning with price optimization and store assignment
+- Shopping trip checklist feature enables interactive in-store shopping experience
+- Product listing component offers real-time price comparison across multiple stores
+- **⚠️ Known Limitation**: Planboard finalize planning function is not yet connected to backend
