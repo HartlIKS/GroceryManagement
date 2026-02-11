@@ -17,10 +17,12 @@ This is a full-stack grocery management system consisting of a Spring Boot REST 
 
 ### Frontend (Angular 21)
 - **Framework**: Angular 21 with TypeScript 5.9
-- **State Management**: NgRx Store 21.0.1
+- **State Management**: Angular Signals (reactive state management)
 - **UI Components**: Angular Material 21.1.1 + Angular CDK
 - **Build Tool**: Angular CLI 21.1.0
 - **Package Manager**: npm 11.6.2
+- **Routing**: Lazy loading with feature-based route modules
+- **Performance**: Optimized initial bundle size with on-demand component loading
 
 ## Project Structure
 
@@ -52,7 +54,7 @@ GroceryManagement/
     ├── src/
     │   ├── app/                     # Angular application
     │   │   ├── app.config.ts        # Application configuration
-    │   │   ├── app.routes.ts        # Routing configuration
+    │   │   ├── app.routes.ts        # Main routing with lazy loading
     │   │   ├── components/          # Shared components
     │   │   │   └── navigation/      # Navigation components
     │   │   ├── master-data/        # Master data interface
@@ -62,7 +64,10 @@ GroceryManagement/
     │   │   │   │   ├── stores/      # Store management
     │   │   │   │   └── prices/      # Price management
     │   │   │   ├── models/          # Master data models
-    │   │   │   └── services/        # Master data services
+    │   │   │   ├── services/        # Master data services
+    │   │   │   ├── products.routes.ts    # Lazy-loaded product routes
+    │   │   │   ├── stores.routes.ts      # Lazy-loaded store routes
+    │   │   │   └── prices.routes.ts      # Lazy-loaded price routes
     │   │   ├── user-interface/     # User interface
     │   │   │   ├── components/      # User interface components
     │   │   │   │   ├── product-groups/  # Product group management
@@ -70,9 +75,12 @@ GroceryManagement/
     │   │   │   │   ├── shopping-trips/  # Shopping trip management
     │   │   │   │   ├── planboard/       # Shopping planning interface
     │   │   │   │   ├── product-listing/ # Product price listing component
-    │   │   │   │   └── user-dashboard.component.*  # User dashboard
+    │   │   │   │   └── user-dashboard.component.*  # User dashboard (eagerly loaded)
     │   │   │   ├── models/          # User interface models
-    │   │   │   └── services/        # User interface services
+    │   │   │   ├── services/        # User interface services
+    │   │   │   ├── product-groups.routes.ts   # Lazy-loaded product group routes
+    │   │   │   ├── shopping-lists.routes.ts   # Lazy-loaded shopping list routes
+    │   │   │   └── shopping-trips.routes.ts  # Lazy-loaded shopping trip routes
     │   │   ├── models/              # Global models
     │   │   └── services/            # Global services
     │   ├── environments/            # Environment configurations
@@ -138,10 +146,11 @@ Shopping trips record actual purchases made by users at specific stores, includi
 ## User Interface Features
 
 ### User Dashboard
-- **Main landing page** for regular users
+- **Main landing page** for regular users (eagerly loaded for optimal performance)
 - **Navigation** to product groups, shopping lists, and other features
 - **Real-time statistics** for product groups and shopping lists
 - **Modern Angular Material design** with responsive layout
+- **Fast initial load** - Critical component loaded in main bundle
 
 ### Shopping Lists Management
 - **Complete CRUD operations** for shopping lists (user-scoped)
@@ -183,6 +192,7 @@ Shopping trips record actual purchases made by users at specific stores, includi
 - **Responsive table design** with proper column widths
 
 ### Key Features
+- **Lazy Loading Architecture**: Feature-based route modules reduce initial bundle size
 - **Product Images**: Displayed in dropdowns and tables when available
 - **Signal-based State Management**: Using Angular 21+ signals for reactive updates
 - **Unified Interface**: Single table and dropdown for mixed item types (products + groups)
@@ -194,6 +204,8 @@ Shopping trips record actual purchases made by users at specific stores, includi
 - **Global Design System**: Centralized styling with CSS custom properties and inheritance
 - **Hex Alpha Colors**: Modern color format with transparency support
 - **Component CSS Optimization**: Leverages global styles to reduce redundancy
+- **On-Demand Loading**: Components loaded only when navigating to specific features
+- **Optimized Bundle Size**: Initial load contains only essential components and navigation
 - **Planboard Integration**: Advanced shopping planning with price optimization and store assignment
 - **Shopping Trip Checklists**: Interactive tracking for in-store shopping experience
 - **Real-time Price Fetching**: Dynamic price comparison across multiple stores
@@ -330,6 +342,8 @@ This will:
 - Modern Control Flow (`@if`, `@for`)
 - CSS Custom Properties (design system)
 - Hex Alpha Color Format (modern colors)
+- Lazy Loading with feature-based routing
+- On-demand component loading for performance optimization
 
 ## Security Configuration
 - OAuth2 Resource Server configuration
@@ -365,6 +379,8 @@ This will:
 - Modern control flow (`@if`, `@for`) replaces deprecated structural directives
 - Global design system with CSS custom properties for consistent styling
 - Separated architecture: `master-data` for admin functions, `user-interface` for user-facing features
+- **Lazy Loading Implementation**: Feature-based route modules optimize initial bundle size
+- **Performance Optimization**: UserDashboard eagerly loaded for fast landing page experience
 - Shopping Lists feature implements unified table for mixed item types with visual distinction
 - CSS inheritance pattern with base classes (.item-type) and type-specific extensions
 - Hex alpha color format (#RRGGBBAA) for modern color management with transparency
