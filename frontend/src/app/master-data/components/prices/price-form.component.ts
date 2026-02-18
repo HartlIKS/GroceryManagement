@@ -66,25 +66,22 @@ export class PriceFormComponent implements OnInit {
       validFrom: ['', Validators.required],
       validTo: ['']
     });
+    effect(() => {
+      const price = this.priceResource.value();
+      if (price) {
+        this.priceForm.patchValue({
+          ...price,
+          validFrom: this.convertToDateTimeLocal(price.validFrom),
+          validTo: this.convertToDateTimeLocal(price.validTo) || ''
+        });
+      }
+    });
   }
 
   ngOnInit(): void {
     this.route.params.subscribe(({id}) => {
       this.priceId.set(id);
     })
-    const priceResource = this.priceResource;
-    effect(() => {
-      const price = priceResource.value();
-      if (price) {
-        this.priceForm.patchValue({
-          product: price.product,
-          store: price.store,
-          price: price.price,
-          validFrom: this.convertToDateTimeLocal(price.validFrom),
-          validTo: this.convertToDateTimeLocal(price.validTo) || ''
-        });
-      }
-    });
   }
 
   onSave(): void {

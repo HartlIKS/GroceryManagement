@@ -63,29 +63,18 @@ export class StoreFormComponent implements OnInit {
       }),
       currency: ['']
     });
+    // Watch for changes in the store resource
+    effect(() => {
+      const store = this.storeResource.value();
+      if (store) {
+        this.storeForm.patchValue(store);
+      }
+    });
   }
 
   ngOnInit(): void {
     this.route.params.subscribe(({id}) => {
       this.storeId.set(id);
-    });
-    // Watch for changes in the store resource
-    effect(() => {
-      const store = this.storeResource.value();
-      if (store) {
-        this.storeForm.patchValue({
-          name: store.name,
-          logo: store.logo || '',
-          address: {
-            country: store.address.country || '',
-            city: store.address.city || '',
-            zip: store.address.zip || '',
-            street: store.address.street || '',
-            number: store.address.number || ''
-          },
-          currency: store.currency || ''
-        });
-      }
     });
   }
 

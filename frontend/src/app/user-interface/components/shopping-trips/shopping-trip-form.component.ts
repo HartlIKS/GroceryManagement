@@ -90,13 +90,6 @@ export class ShoppingTripFormComponent implements OnInit {
     });
 
     this.productSelectControl = new FormControl('');
-  }
-
-  ngOnInit(): void {
-    // Check if we're in edit mode
-    this.route.params.subscribe(({id}) => {
-      this.shoppingTripUuid.set(id);
-    });
 
     // Watch for changes in the shopping trip resource
     effect(() => {
@@ -109,6 +102,13 @@ export class ShoppingTripFormComponent implements OnInit {
         this.shoppingTripProducts.set(shoppingTrip.products);
         this.initializeProductControls();
       }
+    });
+  }
+
+  ngOnInit(): void {
+    // Check if we're in edit mode
+    this.route.params.subscribe(({id}) => {
+      this.shoppingTripUuid.set(id);
     });
   }
 

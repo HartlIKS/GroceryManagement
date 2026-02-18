@@ -56,22 +56,18 @@ export class ProductFormComponent implements OnInit {
       image: [''],
       EAN: ['']
     });
+    // Watch for changes in the product resource
+    effect(() => {
+      const product = this.productResource.value();
+      if (product) {
+        this.productForm.patchValue(product);
+      }
+    });
   }
 
   ngOnInit(): void {
     this.route.params.subscribe(({id}) => {
       this.productId.set(id);
-    });
-    // Watch for changes in the product resource
-    effect(() => {
-      const product = this.productResource.value();
-      if (product) {
-        this.productForm.patchValue({
-          name: product.name,
-          image: product.image || '',
-          EAN: product.EAN || ''
-        });
-      }
     });
   }
 

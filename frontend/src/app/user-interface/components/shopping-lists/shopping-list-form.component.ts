@@ -162,14 +162,6 @@ export class ShoppingListFormComponent implements OnInit {
     this.shoppingListForm = this.fb.group({
       name: ['', Validators.required]
     });
-  }
-
-  ngOnInit(): void {
-    // Check if we're in edit mode
-    this.route.params.subscribe(({id}) => {
-      this.shoppingListUuid.set(id);
-    });
-
     // Watch for changes in the shopping list resource
     effect(() => {
       const shoppingList = this.shoppingListResource.value();
@@ -182,6 +174,13 @@ export class ShoppingListFormComponent implements OnInit {
         this.updateProductControls();
         this.updateProductGroupControls();
       }
+    });
+  }
+
+  ngOnInit(): void {
+    // Check if we're in edit mode
+    this.route.params.subscribe(({id}) => {
+      this.shoppingListUuid.set(id);
     });
   }
 
