@@ -84,7 +84,7 @@ export class ProductFormComponent implements OnInit {
     const productData: CreateProductDTO = this.productForm.value;
     const productId = this.productId();
     if (productId) {
-      this.productService.updateProduct(productId, productData).subscribe({
+      this.productService.update(productId, productData).subscribe({
         next: () => {
           this.router.navigate(['/master-data/products']);
         },

@@ -98,7 +98,7 @@ export class StoreFormComponent implements OnInit {
     const storeData: CreateStoreDTO = this.storeForm.value;
     const storeId = this.storeId();
     if (storeId) {
-      this.storeService.updateStore(storeId, storeData).subscribe({
+      this.storeService.update(storeId, storeData).subscribe({
         next: () => {
           this.router.navigate(['/master-data/stores']);
         },

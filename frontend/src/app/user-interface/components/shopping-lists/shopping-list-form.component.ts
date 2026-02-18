@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, OnInit, signal, DestroyRef } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -345,7 +345,7 @@ export class ShoppingListFormComponent implements OnInit {
       const shoppingListService = inject(ShoppingListService);
 
       const operation = shoppingListUuid
-        ? shoppingListService.updateShoppingList(shoppingListUuid, formData)
+        ? shoppingListService.update(shoppingListUuid, formData)
         : shoppingListService.createShoppingList(formData);
 
       operation.subscribe({

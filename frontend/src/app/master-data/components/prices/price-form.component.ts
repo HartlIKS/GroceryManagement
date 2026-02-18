@@ -102,7 +102,7 @@ export class PriceFormComponent implements OnInit {
         validTo: this.priceForm.value.validTo ? this.convertToIsoDateTime(this.priceForm.value.validTo) : undefined
       };
 
-      this.priceService.updatePrice(priceId, updateData).subscribe({
+      this.priceService.update(priceId, updateData).subscribe({
         next: () => {
           this.router.navigate(['/master-data/prices']);
         },

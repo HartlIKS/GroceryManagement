@@ -169,7 +169,7 @@ export class ShoppingTripFormComponent implements OnInit {
 
       const shoppingTripUuid = this.shoppingTripUuid();
       const operation = shoppingTripUuid
-        ? this.shoppingTripService.updateShoppingTrip(shoppingTripUuid, shoppingTripData)
+        ? this.shoppingTripService.update(shoppingTripUuid, shoppingTripData)
         : this.shoppingTripService.createShoppingTrip(shoppingTripData);
 
       operation.subscribe({

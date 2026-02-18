@@ -72,7 +72,7 @@ export class ShoppingTripListComponent {
 
   deleteShoppingTrip(uuid: string): void {
     if (confirm('Are you sure you want to delete this shopping trip?')) {
-      this.shoppingTripService.deleteShoppingTrip(uuid).subscribe({
+      this.shoppingTripService.delete(uuid).subscribe({
         error: (error) => {
           console.error('Error deleting shopping trip:', error);
         }

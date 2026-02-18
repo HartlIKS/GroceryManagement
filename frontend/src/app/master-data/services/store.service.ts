@@ -1,18 +1,33 @@
-import { Injectable, Signal } from '@angular/core';
+import { Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiService } from '../../services';
+import { ApiService, CacheService } from '../../services';
 import { CreateStoreDTO, ListStoreDTO } from '../models';
 import { Page } from '../../models';
+import { HttpResourceRef } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
-export class StoreService {
+export class StoreService extends CacheService<ListStoreDTO, CreateStoreDTO> {
   private readonly endpoint = '/masterdata/store';
 
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService) {
+    super();
+  }
 
-  // Get stores with pagination and search
+  protected override rawGet(uuid: string): HttpResourceRef<ListStoreDTO | undefined> {
+    return this.apiService.getById<ListStoreDTO>(this.endpoint, uuid);
+  }
+
+  protected override rawUpdate(uuid: string, store: CreateStoreDTO): Observable<ListStoreDTO> {
+    return this.apiService.put<ListStoreDTO>(this.endpoint, uuid, store);
+  }
+
+  protected override rawDelete(uuid: string): Observable<void> {
+    return this.apiService.delete(this.endpoint, uuid);
+  }
+
+// Get stores with pagination and search
   getStores(
     name: Signal<string> | string = '',
     page: Signal<number> | number = 0,
@@ -27,22 +42,12 @@ export class StoreService {
 
   // Get single store by UUID
   getStore(uuid: Signal<string | undefined> | string) {
-    return this.apiService.getById<ListStoreDTO>(this.endpoint, uuid);
+    if(isSignal(uuid)) return this.apiService.getById<ListStoreDTO>(this.endpoint, uuid);
+    return this.get(uuid);
   }
 
   // Create store
   createStore(store: CreateStoreDTO): Observable<ListStoreDTO> {
     return this.apiService.post<ListStoreDTO>(this.endpoint, store);
   }
-
-  // Update store
-  updateStore(uuid: string, store: CreateStoreDTO): Observable<ListStoreDTO> {
-    return this.apiService.put<ListStoreDTO>(this.endpoint, uuid, store);
-  }
-
-  // Delete store
-  deleteStore(uuid: string): Observable<void> {
-    return this.apiService.delete(this.endpoint, uuid);
-  }
-
 }

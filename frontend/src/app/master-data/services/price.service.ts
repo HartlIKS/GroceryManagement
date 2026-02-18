@@ -1,16 +1,19 @@
-import { Injectable, Signal } from '@angular/core';
+import { Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiService } from '../../services';
+import { ApiService, CacheService } from '../../services';
 import { CreatePriceListingDTO, ListPriceDTO, PriceListingDTO, UpdatePriceDTO } from '../models';
 import { Page } from '../../models';
+import { HttpResourceRef } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
-export class PriceService {
+export class PriceService extends CacheService<ListPriceDTO, UpdatePriceDTO> {
   private readonly endpoint = '/masterdata/price';
 
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService) {
+    super();
+  }
 
   // Get prices with pagination and filtering
   getPrices(
@@ -27,26 +30,28 @@ export class PriceService {
     });
   }
 
-  // Get single price by UUID
-  getPrice(uuid: Signal<string | undefined> | string) {
+  protected override rawGet(uuid: string): HttpResourceRef<ListPriceDTO | undefined> {
     return this.apiService.getById<ListPriceDTO>(this.endpoint, uuid);
+  }
+
+  protected override rawUpdate(uuid: string, price: UpdatePriceDTO): Observable<ListPriceDTO> {
+    return this.apiService.put<ListPriceDTO>(this.endpoint, uuid, price);
+  }
+
+  protected override rawDelete(uuid: string): Observable<void> {
+    return this.apiService.delete(this.endpoint, uuid);
+  }
+
+// Get single price by UUID
+  getPrice(uuid: Signal<string | undefined> | string) {
+    if(isSignal(uuid)) return this.apiService.getById<ListPriceDTO>(this.endpoint, uuid);
+    return this.get(uuid);
   }
 
   // Create price
   createPrice(price: CreatePriceListingDTO): Observable<ListPriceDTO> {
     return this.apiService.post<ListPriceDTO>(this.endpoint, price);
   }
-
-  // Update price
-  updatePrice(uuid: string, price: UpdatePriceDTO): Observable<ListPriceDTO> {
-    return this.apiService.put<ListPriceDTO>(this.endpoint, uuid, price);
-  }
-
-  // Delete price
-  deletePrice(uuid: string): Observable<void> {
-    return this.apiService.delete(this.endpoint, uuid);
-  }
-
 
   // Search prices for specific products and stores at a specific time
   searchPricesForProductsAndStores(

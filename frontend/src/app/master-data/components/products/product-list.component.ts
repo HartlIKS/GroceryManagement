@@ -59,7 +59,7 @@ export class ProductListComponent {
 
   onDeleteProduct(uuid: string): void {
     if (confirm('Are you sure you want to delete this product?')) {
-      this.productService.deleteProduct(uuid).subscribe({
+      this.productService.delete(uuid).subscribe({
         error: (error) => {
           console.error('Error deleting product:', error);
         }

@@ -1,18 +1,33 @@
-import { Injectable, Signal } from '@angular/core';
+import { Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiService } from '../../services';
+import { ApiService, CacheService } from '../../services';
 import { CreateProductGroupDTO, ListProductGroupDTO } from '../models';
 import { Page } from '../../models';
+import { HttpResourceRef } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
-export class ProductGroupService {
+export class ProductGroupService extends CacheService<ListProductGroupDTO, CreateProductGroupDTO> {
   private readonly endpoint = '/productGroups';
 
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService) {
+    super();
+  }
 
-  // Get product groups with pagination and search
+  protected override rawGet(uuid: string): HttpResourceRef<ListProductGroupDTO | undefined> {
+    return this.apiService.getById<ListProductGroupDTO>(this.endpoint, uuid);
+  }
+
+  protected override rawUpdate(uuid: string, productGroup: CreateProductGroupDTO): Observable<ListProductGroupDTO> {
+    return this.apiService.put<ListProductGroupDTO>(this.endpoint, uuid, productGroup);
+  }
+
+  protected override rawDelete(uuid: string): Observable<void> {
+    return this.apiService.delete(this.endpoint, uuid);
+  }
+
+// Get product groups with pagination and search
   getProductGroups(
     name: Signal<string> | string = '',
     page: Signal<number> | number = 0,
@@ -27,22 +42,12 @@ export class ProductGroupService {
 
   // Get single product group by UUID
   getProductGroup(uuid: Signal<string | undefined> | string) {
-    return this.apiService.getById<ListProductGroupDTO>(this.endpoint, uuid);
+    if(isSignal(uuid)) return this.apiService.getById<ListProductGroupDTO>(this.endpoint, uuid);
+    return this.get(uuid);
   }
 
   // Create product group
   createProductGroup(productGroup: CreateProductGroupDTO): Observable<ListProductGroupDTO> {
     return this.apiService.post<ListProductGroupDTO>(this.endpoint, productGroup);
   }
-
-  // Update product group
-  updateProductGroup(uuid: string, productGroup: CreateProductGroupDTO): Observable<ListProductGroupDTO> {
-    return this.apiService.put<ListProductGroupDTO>(this.endpoint, uuid, productGroup);
-  }
-
-  // Delete product group
-  deleteProductGroup(uuid: string): Observable<void> {
-    return this.apiService.delete(this.endpoint, uuid);
-  }
-
 }

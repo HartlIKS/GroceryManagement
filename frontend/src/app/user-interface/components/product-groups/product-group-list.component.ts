@@ -30,10 +30,10 @@ import { ListProductGroupDTO } from '../../models';
 })
 export class ProductGroupListComponent {
   displayedColumns: string[] = ['name', 'productCount', 'actions'];
-  
+
   // Search signal
   protected readonly searchTerm = signal('');
-  
+
   // Create HTTP resource
   private readonly productGroupService = inject(ProductGroupService);
   protected readonly productGroupsResource = this.productGroupService.getProductGroups(this.searchTerm);
@@ -55,7 +55,7 @@ export class ProductGroupListComponent {
 
   onDeleteProductGroup(uuid: string): void {
     if (confirm('Are you sure you want to delete this product group?')) {
-      this.productGroupService.deleteProductGroup(uuid).subscribe({
+      this.productGroupService.delete(uuid).subscribe({
         error: (error) => {
           console.error('Error deleting product group:', error);
         }

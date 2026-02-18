@@ -54,7 +54,7 @@ export class ShoppingListListComponent {
 
   onDeleteShoppingList(uuid: string): void {
     if (confirm('Are you sure you want to delete this shopping list?')) {
-      this.shoppingListService.deleteShoppingList(uuid).subscribe({
+      this.shoppingListService.delete(uuid).subscribe({
         error: (error) => {
           console.error('Error deleting shopping list:', error);
         }

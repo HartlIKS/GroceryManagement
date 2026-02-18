@@ -1,16 +1,31 @@
-import { Injectable, Signal } from '@angular/core';
+import { Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiService } from '../../services';
+import { ApiService, CacheService } from '../../services';
 import { CreateShoppingListDTO, ListShoppingListDTO } from '../models';
 import { Page } from '../../models';
+import { HttpResourceRef } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
-export class ShoppingListService {
+export class ShoppingListService extends CacheService<ListShoppingListDTO, CreateShoppingListDTO> {
   private readonly endpoint = '/shoppingLists';
 
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService) {
+    super();
+  }
+
+  protected rawGet(uuid: string): HttpResourceRef<ListShoppingListDTO | undefined> {
+    return this.apiService.getById<ListShoppingListDTO>(this.endpoint, uuid);
+  }
+
+  protected rawUpdate(uuid: string, shoppingList: CreateShoppingListDTO): Observable<ListShoppingListDTO> {
+    return this.apiService.put<ListShoppingListDTO>(this.endpoint, uuid, shoppingList);
+  }
+
+  protected rawDelete(uuid: string): Observable<void> {
+    return this.apiService.delete(this.endpoint, uuid);
+  }
 
   // Get shopping lists with pagination and search
   getShoppingLists(
@@ -27,22 +42,12 @@ export class ShoppingListService {
 
   // Get single shopping list by UUID
   getShoppingList(uuid: Signal<string> | string) {
-    return this.apiService.getById<ListShoppingListDTO>(this.endpoint, uuid);
+    if(isSignal(uuid)) return this.apiService.getById<ListShoppingListDTO>(this.endpoint, uuid);
+    return this.get(uuid);
   }
 
   // Create shopping list
   createShoppingList(shoppingList: CreateShoppingListDTO): Observable<ListShoppingListDTO> {
     return this.apiService.post<ListShoppingListDTO>(this.endpoint, shoppingList);
   }
-
-  // Update shopping list
-  updateShoppingList(uuid: string, shoppingList: CreateShoppingListDTO): Observable<ListShoppingListDTO> {
-    return this.apiService.put<ListShoppingListDTO>(this.endpoint, uuid, shoppingList);
-  }
-
-  // Delete shopping list
-  deleteShoppingList(uuid: string): Observable<void> {
-    return this.apiService.delete(this.endpoint, uuid);
-  }
-
 }

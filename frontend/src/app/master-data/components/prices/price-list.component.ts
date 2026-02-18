@@ -110,7 +110,7 @@ export class PriceListComponent {
 
   onDeletePrice(uuid: string): void {
     if (confirm('Are you sure you want to delete this price?')) {
-      this.priceService.deletePrice(uuid).subscribe({
+      this.priceService.delete(uuid).subscribe({
         error: (error: any) => {
           console.error('Error deleting price:', error);
         }

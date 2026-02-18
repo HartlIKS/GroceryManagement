@@ -59,7 +59,7 @@ export class StoreListComponent {
 
   onDeleteStore(uuid: string): void {
     if (confirm('Are you sure you want to delete this store?')) {
-      this.storeService.deleteStore(uuid).subscribe({
+      this.storeService.delete(uuid).subscribe({
         error: (error) => {
           console.error('Error deleting store:', error);
         }

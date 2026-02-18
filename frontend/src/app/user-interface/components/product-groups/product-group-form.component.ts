@@ -171,7 +171,7 @@ export class ProductGroupFormComponent implements OnInit {
     const productGroupService = inject(ProductGroupService);
 
     if (productGroupUuid) {
-      productGroupService.updateProductGroup(productGroupUuid, formData).subscribe({
+      productGroupService.update(productGroupUuid, formData).subscribe({
         next: () => {
           this.router.navigate(['/product-groups']);
         },
