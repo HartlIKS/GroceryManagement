@@ -453,4 +453,32 @@ public class Testdata {
             %s
           ]
         }""", SHOPPING_TRIP_2_JSON);
+
+    public static final String SHOPPING_TRIP_1_ADD_MULTIPLE_JSON = String.format("""
+        {
+          "%s": 3,
+          "%s": 2
+        }""", PRODUCT_GROUP_TEST_2_UUID, PRODUCT_GROUP_TEST_1_UUID);
+
+    public static final String SHOPPING_TRIP_1_ADD_SINGLE_JSON = String.format("""
+        {
+          "%s": 1.5
+        }""", PRODUCT_GROUP_TEST_2_UUID);
+
+    public static final String SHOPPING_TRIP_1_ADD_EXISTING_JSON = String.format("""
+        {
+          "%s": 1
+        }""", PRODUCT_GROUP_TEST_1_UUID);
+
+    public static final String SHOPPING_TRIP_1_ADD_EMPTY_JSON = "{}";
+
+    public static final String SHOPPING_TRIP_1_ADD_ZERO_JSON = String.format("""
+        {
+          "%s": 0
+        }""", PRODUCT_GROUP_TEST_2_UUID);
+
+    public static final String SHOPPING_TRIP_1_ADD_NEGATIVE_JSON = String.format("""
+        {
+          "%s": -1
+        }""", PRODUCT_GROUP_TEST_2_UUID);
 }

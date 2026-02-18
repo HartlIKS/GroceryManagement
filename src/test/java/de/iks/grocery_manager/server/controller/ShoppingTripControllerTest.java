@@ -207,6 +207,138 @@ class ShoppingTripControllerTest {
     }
 
     @Nested
+    class AddToShoppingTrip {
+        @Test
+        void shouldAddProductsToShoppingTripWhenAuthenticatedAndOwned() throws Exception {
+            mockMvc
+                .perform(
+                    post("/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
+                        .content(Testdata.SHOPPING_TRIP_1_ADD_MULTIPLE_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user1_jwt)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.uuid").value(Testdata.SHOPPING_TRIP_1_UUID.toString()))
+                .andExpect(jsonPath("$.store").value(Testdata.STORE_3_UUID.toString()))
+                .andExpect(jsonPath("$.products").isMap())
+                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_GROUP_TEST_1_UUID + "']").value(4)) // 2 (existing) + 2 (added)
+                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_GROUP_TEST_2_UUID + "']").value(3)); // 0 (existing) + 3 (added)
+        }
+
+        @Test
+        void shouldAddSingleProductToShoppingTrip() throws Exception {
+            mockMvc
+                .perform(
+                    post("/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
+                        .content(Testdata.SHOPPING_TRIP_1_ADD_SINGLE_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user1_jwt)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.uuid").value(Testdata.SHOPPING_TRIP_1_UUID.toString()))
+                .andExpect(jsonPath("$.products").isMap())
+                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_GROUP_TEST_1_UUID + "']").value(2)) // unchanged
+                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_GROUP_TEST_2_UUID + "']").value(1.5)); // newly added
+        }
+
+        @Test
+        void shouldAccumulateAmountsWhenAddingExistingProduct() throws Exception {
+            mockMvc
+                .perform(
+                    post("/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
+                        .content(Testdata.SHOPPING_TRIP_1_ADD_EXISTING_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user1_jwt)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_GROUP_TEST_1_UUID + "']").value(3)); // 2 (existing) + 1 (added)
+        }
+
+        @Test
+        void shouldReturn404WhenAddingToNonExistentShoppingTrip() throws Exception {
+            mockMvc
+                .perform(
+                    post("/shoppingTrips/{uuid}/add", Testdata.BAD_UUID)
+                        .content(Testdata.SHOPPING_TRIP_1_ADD_EXISTING_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user1_jwt)
+                )
+                .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void shouldReturn404WhenAddingToOtherUsersShoppingTrip() throws Exception {
+            mockMvc
+                .perform(
+                    post("/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_2_UUID)
+                        .content(Testdata.SHOPPING_TRIP_1_ADD_EXISTING_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user1_jwt)
+                )
+                .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void shouldReturn401WhenAddingToShoppingTripWithoutAuthentication() throws Exception {
+            mockMvc
+                .perform(
+                    post("/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
+                        .content(Testdata.SHOPPING_TRIP_1_ADD_EXISTING_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        void shouldHandleEmptyProductsMap() throws Exception {
+            mockMvc
+                .perform(
+                    post("/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
+                        .content(Testdata.SHOPPING_TRIP_1_ADD_EMPTY_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user1_jwt)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.products").isMap())
+                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_GROUP_TEST_1_UUID + "']").value(2)); // unchanged
+        }
+
+        @Test
+        void shouldHandleZeroAmount() throws Exception {
+            mockMvc
+                .perform(
+                    post("/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
+                        .content(Testdata.SHOPPING_TRIP_1_ADD_ZERO_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user1_jwt)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.products").isMap())
+                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_GROUP_TEST_1_UUID + "']").value(2)); // unchanged
+        }
+
+        @Test
+        void shouldHandleNegativeAmount() throws Exception {
+            mockMvc
+                .perform(
+                    post("/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
+                        .content(Testdata.SHOPPING_TRIP_1_ADD_NEGATIVE_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user1_jwt)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.products").isMap())
+                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_GROUP_TEST_1_UUID + "']").value(2)); // unchanged
+        }
+    }
+
+    @Nested
     class SearchShoppingTrips {
         @Test
         void shouldReturnUserOwnedShoppingTripsWhenSearching() throws Exception {
