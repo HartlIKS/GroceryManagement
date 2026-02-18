@@ -6,6 +6,7 @@ import de.iks.grocery_manager.server.dto.ShoppingTripDTO;
 import de.iks.grocery_manager.server.jpa.ShoppingTripRepository;
 import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
 import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;
+import de.iks.grocery_manager.server.model.masterdata.Product;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,7 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriBuilderFactory;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -78,6 +81,29 @@ public class ShoppingTripController {
                         stores,
                         products
                     );
+                    return p;
+                })
+                .map(trips::saveAndFlush)
+                .map(dtoMapper::map)
+        );
+    }
+
+    @PostMapping("/{uuid}/add")
+    public ResponseEntity<ShoppingTripDTO> addToShoppingTrip(
+        @PathVariable UUID uuid,
+        @RequestBody Map<UUID, BigDecimal> products,
+        @AuthenticationPrincipal Object principal
+    ) {
+        return ResponseEntity.of(
+            trips
+                .findByUuidAndOwner(uuid, getOwner(principal))
+                .map(p -> {
+                    Map<Product, BigDecimal> prods = p.getProducts();
+                    products.forEach((product, amount) -> prods.merge(
+                        dtoMapper.toProduct(product, this.products),
+                        amount,
+                        BigDecimal::add
+                    ));
                     return p;
                 })
                 .map(trips::saveAndFlush)
