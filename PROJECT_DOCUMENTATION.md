@@ -178,7 +178,6 @@ Shopping trips record actual purchases made by users at specific stores, includi
 - **Visual item management** - Organized component structure with dedicated cards for each trip
 - **Planned trip generation** - Create optimized shopping trips
 - **Component Architecture**: Modular design with shared product display components
-- **⚠️ Finalize Planning**: Button exists but backend integration is not yet implemented
 
 ### Product Listing Component
 - **Price display component** for showing product prices across stores
@@ -267,11 +266,11 @@ Shopping trips record actual purchases made by users at specific stores, includi
 - `POST /shoppingTrips` - Create new shopping trip
 - `DELETE /shoppingTrips/{uuid}` - Delete shopping trip (user-owned only)
 - `GET /shoppingTrips` - Search shopping trips (with optional from/to date parameters, paginated, user-owned only)
+- `POST /shoppingTrips/{uuid}/add` - Add products to existing shopping trip (user-owned only)
 
-### Planboard (Frontend-only Feature)
+### Planboard (Frontend Feature)
 - **Route**: `/planboard` - Interactive shopping planning interface
 - **Features**: Shopping list integration, price comparison, store assignment, planned trip generation
-- **Note**: Finalize planning function exists in UI but backend integration is pending implementation
 
 ## Development Setup
 
@@ -364,7 +363,7 @@ This will:
 - Comprehensive test coverage for all CRUD operations
 - Security testing with JWT authentication
 - Data integrity testing with foreign key constraints
-- ShoppingTripController tests with full CRUD coverage and ownership validation
+- ShoppingTripController tests with full CRUD coverage, ownership validation, and add-to-trip functionality
 
 ## API Documentation
 - Swagger UI available at: `http://localhost:8080/swagger-ui.html`
@@ -395,4 +394,3 @@ This will:
 - Planboard component provides advanced shopping planning with price optimization and store assignment
 - Shopping trip checklist feature enables interactive in-store shopping experience
 - Product listing component offers real-time price comparison across multiple stores
-- **⚠️ Known Limitation**: Planboard finalize planning function is not yet connected to backend
