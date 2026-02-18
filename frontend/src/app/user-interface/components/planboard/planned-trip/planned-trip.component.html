@@ -21,11 +21,7 @@
     </mat-card-header>
     <mat-card-content>
       <p [ngClass]="{error: !hasValidity()}">Timespan: {{ validityText() }}</p>
-      <mat-list>
-        @for (product of productEntries(); track product.priceUuid) {
-          <app-product-listing [uuid]="product.priceUuid" isPrice="true" [quantity]="product.quantity"/>
-        }
-      </mat-list>
+      <app-trip-product-display [products]="trip().products" />
     </mat-card-content>
   }
 </mat-card>

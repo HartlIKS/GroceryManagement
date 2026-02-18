@@ -31,6 +31,10 @@ export const routes: Routes = [
       {
         path: 'planboard',
         loadComponent: () => import('./user-interface/components').then(m => m.PlanboardComponent)
+      },
+      {
+        path: 'planboard/trip-planning',
+        loadComponent: () => import('./user-interface/components/planboard').then(m => m.TripPlanningComponent)
       }
     ],
   },

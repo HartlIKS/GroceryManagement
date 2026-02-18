@@ -1,0 +1,48 @@
+<mat-card class="trip-card">
+  <mat-card-header>
+    <mat-card-title>Trip to Store: {{ trip().storeUuid }}</mat-card-title>
+    <mat-card-subtitle>
+      {{ objectKeys(trip().products).length }} products
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <app-trip-product-display [products]="trip().products" />
+
+    <div class="form-row">
+      <!-- Existing Trip Dropdown -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Existing Trip (Optional)</mat-label>
+        <mat-select
+          [(ngModel)]="tripUuid"
+          placeholder="Select existing trip or create new">
+          <mat-option [value]="undefined">Create New Trip</mat-option>
+          @for (existingTrip of existingTrips(); track existingTrip.uuid) {
+            <mat-option [value]="existingTrip.uuid">
+              {{ existingTrip.time | date:'medium' }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Date Time Field -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Planned Date & Time</mat-label>
+        <input
+          type="localdatetime"
+          matInput
+          [matDatepicker]="picker"
+          [min]="trip().validFrom"
+          [max]="trip().validTo"
+          [(ngModel)]="date"
+          [disabled]="tripUuid() !== undefined"
+          placeholder="Select date and time">
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+        @if (tripUuid() !== undefined) {
+          <mat-hint>Disabled because existing trip is selected</mat-hint>
+        }
+      </mat-form-field>
+    </div>
+  </mat-card-content>
+</mat-card>

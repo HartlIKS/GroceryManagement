@@ -7,10 +7,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatBadgeModule } from '@angular/material/badge';
 import { Price } from '../../../../master-data/models';
 import { PriceService, ProductService } from '../../../../master-data/services';
-import { PlannedTrip, ShoppingListItem } from '../planboard.component';
+import { PlannedTrip, ProductGroupService, ShoppingListItem } from '../../../services';
 import { MatListItem, MatListItemMeta } from '@angular/material/list';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
-import { ProductGroupService } from '../../../services';
 import { PriceOptionComponent } from './price-option/price-option.component';
 
 export type PriceEntrySelectionEvent = {

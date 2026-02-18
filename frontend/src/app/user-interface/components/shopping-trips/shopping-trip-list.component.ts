@@ -75,7 +75,8 @@ export class ShoppingTripListComponent {
       this.shoppingTripService.delete(uuid).subscribe({
         error: (error) => {
           console.error('Error deleting shopping trip:', error);
-        }
+        },
+        complete: () => this.shoppingTripsResource.reload(),
       });
     }
   }

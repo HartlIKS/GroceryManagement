@@ -1,0 +1,5 @@
+<mat-list>
+  @for (product of productEntries(); track product.priceUuid) {
+    <app-product-listing [uuid]="product.priceUuid" isPrice="true" [quantity]="product.quantity"/>
+  }
+</mat-list>

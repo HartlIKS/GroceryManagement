@@ -1,9 +1,8 @@
 import { Injectable, isSignal, Signal } from '@angular/core';
-import { Observable } from 'rxjs';
-import { ApiService, CacheService } from '../../services';
+import { Observable, tap } from 'rxjs';
+import { ApiService, CacheService, GetApiEndpoint } from '../../services';
 import { CreateShoppingTripDTO, ListShoppingTripDTO } from '../models';
 import { Page } from '../../models';
-import { HttpResourceRef } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +14,7 @@ export class ShoppingTripService extends CacheService<ListShoppingTripDTO, Creat
     super();
   }
 
-  protected rawGet(uuid: string): HttpResourceRef<ListShoppingTripDTO | undefined> {
+  protected rawGet(uuid: string): GetApiEndpoint<ListShoppingTripDTO> {
     return this.apiService.getById<ListShoppingTripDTO>(this.endpoint, uuid);
   }
 
@@ -51,5 +50,11 @@ export class ShoppingTripService extends CacheService<ListShoppingTripDTO, Creat
   // Create shopping trip
   createShoppingTrip(shoppingTrip: CreateShoppingTripDTO): Observable<ListShoppingTripDTO> {
     return this.apiService.post<ListShoppingTripDTO>(this.endpoint, shoppingTrip);
+  }
+
+  addProducts(uuid: string, products: Record<string, number>): Observable<ListShoppingTripDTO> {
+    return this.apiService.post<ListShoppingTripDTO>(`${this.endpoint}/${uuid}/add`, products).pipe(
+      tap(v => this.postUpdate(uuid, v))
+    );
   }
 }

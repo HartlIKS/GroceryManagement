@@ -1,10 +1,14 @@
-import { computed, Injectable, Signal } from '@angular/core';
-import { HttpClient, HttpParams, httpResource } from '@angular/common/http';
+import { computed, Injectable, isSignal, Signal } from '@angular/core';
+import { HttpClient, HttpParams, httpResource, HttpResourceRef } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { resolve } from '../utils/signalutils';
 
 type ApiParam = string | Date | number | boolean | string[] | undefined;
+export interface GetApiEndpoint<T> {
+  asResource(): HttpResourceRef<T | undefined>;
+  asObservable(): Observable<T>;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -45,12 +49,17 @@ export class ApiService {
     }));
   }
 
-  getById<T>(endpoint: string, id: Signal<string | undefined> | string) {
-    id = resolve(id);
-    return httpResource<T>(() => {
+  getById<T>(endpoint: string, id: Signal<string | undefined>): HttpResourceRef<T | undefined>;
+  getById<T>(endpoint: string, id: string): GetApiEndpoint<T>;
+  getById<T>(endpoint: string, id: Signal<string | undefined> | string): HttpResourceRef<T | undefined> | GetApiEndpoint<T> {
+    if(isSignal(id)) return httpResource<T>(() => {
       const uuid = id();
       return uuid ? `${this.baseUrl}${endpoint}/${uuid}` : undefined
     });
+    return {
+      asResource: (): HttpResourceRef<T | undefined> => this.getById<T>(endpoint, computed(() => id)),
+      asObservable: (): Observable<T> => this.http.get<T>(`${this.baseUrl}${endpoint}/${id}`),
+    };
   }
 
   post<T>(endpoint: string, data: any): Observable<T> {

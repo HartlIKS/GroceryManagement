@@ -1,9 +1,8 @@
 import { Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiService, CacheService } from '../../services';
+import { ApiService, CacheService, GetApiEndpoint } from '../../services';
 import { CreatePriceListingDTO, ListPriceDTO, PriceListingDTO, UpdatePriceDTO } from '../models';
 import { Page } from '../../models';
-import { HttpResourceRef } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -30,7 +29,7 @@ export class PriceService extends CacheService<ListPriceDTO, UpdatePriceDTO> {
     });
   }
 
-  protected override rawGet(uuid: string): HttpResourceRef<ListPriceDTO | undefined> {
+  protected override rawGet(uuid: string): GetApiEndpoint<ListPriceDTO> {
     return this.apiService.getById<ListPriceDTO>(this.endpoint, uuid);
   }
 

@@ -1,0 +1,25 @@
+<div class="trip-planning-container">
+  <div class="header">
+    <h2>Trip Planning - Stage 2</h2>
+    <p>Assign dates to your planned trips or merge with existing trips</p>
+  </div>
+
+  <div class="trips-grid">
+    @for (trip of plannedTrips() | keyvalue; track trip.key) {
+      <app-trip-planning-card
+        [trip]="trip.value"
+        (selection)="onTripChange(trip.key, $event)"/>
+    }
+  </div>
+
+  <div class="actions">
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="createOrMergeTrips()"
+      [disabled]="!allTripsHaveDateTime()">
+      <mat-icon>check_circle</mat-icon>
+      Create or Merge Trips
+    </button>
+  </div>
+</div>

@@ -12,13 +12,14 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatListModule } from '@angular/material/list';
 import { CommonModule } from '@angular/common';
-import { PlanboardService, ShoppingListItem } from '../../services';
-import { ShoppingListItemComponent } from './shopping-list-item';
-import { PlannedTripComponent } from './planned-trip';
-import { PriceEntrySelectionEvent } from './shopping-list-item/shopping-list-item.component';
+import { PlanboardService, ShoppingListItem } from '../../../services';
+import { ShoppingListItemComponent } from '../shopping-list-item';
+import { PlannedTripComponent } from '../planned-trip';
+import { PriceEntrySelectionEvent } from '../shopping-list-item/shopping-list-item.component';
 import { MatCheckbox } from '@angular/material/checkbox';
+import { RouterLink } from '@angular/router';
 
-export type { PlannedTrip, ShoppingListItem } from '../../services/planboard.service';
+export type { PlannedTrip, ShoppingListItem } from '../../../services/planboard.service';
 
 @Component({
   selector: 'app-planboard',
@@ -39,7 +40,8 @@ export type { PlannedTrip, ShoppingListItem } from '../../services/planboard.ser
     MatListModule,
     ShoppingListItemComponent,
     PlannedTripComponent,
-    MatCheckbox
+    MatCheckbox,
+    RouterLink
   ],
   templateUrl: './planboard.component.html',
   styleUrls: ['./planboard.component.css']
@@ -62,17 +64,6 @@ export class PlanboardComponent {
 
   assignItemToPriceEntry(listUuid: string, item: ShoppingListItem, event: PriceEntrySelectionEvent): void {
     this.planboardService.assignItemToPriceEntry(listUuid, item, event.price, event.tripId);
-  }
-
-  finalizePlanning(): void {
-    const trips = this.plannedTrips();
-
-    // Here you would normally send the data to the backend
-    console.log('Finalizing trips:', trips);
-    alert('Planning finalized! Trips would be sent to backend.');
-
-    // Reset after successful finalization
-    this.planboardService.resetAssignments();
   }
 
   objectKeys(o: any): string[] {
