@@ -169,14 +169,16 @@ Shopping trips record actual purchases made by users at specific stores, includi
 - **Product quantity management** with real-time updates
 - **Historical trip tracking** with purchase records
 
-### Planboard (Shopping Planning)
-- **Interactive planning interface** for organizing shopping trips
+### Planboard (Multi-Stage Shopping Planning)
+- **Stage 1 - Interactive Planning**: Main planning interface for organizing shopping trips (`/planboard`)
+- **Stage 2 - Trip Finalization**: Trip planning with existing trip selection and date assignment (`/planboard/trip-planning`)
 - **Shopping list integration** - Import and plan items from existing lists
 - **Store assignment** - Assign items to specific stores based on prices
 - **Price comparison** - View and compare prices across different stores
-- **Visual item management** - Drag-and-drop interface for item assignment
+- **Visual item management** - Organized component structure with dedicated cards for each trip
 - **Planned trip generation** - Create optimized shopping trips
-- **⚠️ Finalize Planning** - Button exists but backend integration is not yet implemented
+- **Component Architecture**: Modular design with shared product display components
+- **⚠️ Finalize Planning**: Button exists but backend integration is not yet implemented
 
 ### Product Listing Component
 - **Price display component** for showing product prices across stores
@@ -206,7 +208,9 @@ Shopping trips record actual purchases made by users at specific stores, includi
 - **Component CSS Optimization**: Leverages global styles to reduce redundancy
 - **On-Demand Loading**: Components loaded only when navigating to specific features
 - **Optimized Bundle Size**: Initial load contains only essential components and navigation
-- **Planboard Integration**: Advanced shopping planning with price optimization and store assignment
+- **Planboard Integration**: Advanced multi-stage shopping planning with price optimization and store assignment
+- **Multi-Stage Architecture**: Stage 1 for planning, Stage 2 for trip finalization
+- **Component Modularity**: Shared product display components across different planboard stages
 - **Shopping Trip Checklists**: Interactive tracking for in-store shopping experience
 - **Real-time Price Fetching**: Dynamic price comparison across multiple stores
 
