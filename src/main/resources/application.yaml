@@ -1,8 +1,9 @@
 spring:
-  application.name: GroceryManager
+  application:
+    name: GroceryManager
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: "http://localhost:8081"
-secured: true
+          issuer-uri: "http://localhost:8081/realms/GroceryManager"
+          jwk-set-uri: "${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs"

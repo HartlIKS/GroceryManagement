@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
     path = "/masterdata/price",
     produces = MediaType.APPLICATION_JSON_VALUE
 )
-@CrossOrigin("*")
 @Transactional
 public class PriceListController {
     private final ProductRepository products;

@@ -23,7 +23,6 @@ import java.util.UUID;
     path = "/masterdata/product",
     produces = MediaType.APPLICATION_JSON_VALUE
 )
-@CrossOrigin("*")
 @Transactional
 public class ProductController {
     private final ProductRepository products;

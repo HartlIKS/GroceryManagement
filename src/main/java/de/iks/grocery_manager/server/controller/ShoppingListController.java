@@ -26,7 +26,6 @@ import java.util.UUID;
     path = "/shoppingLists",
     produces = MediaType.APPLICATION_JSON_VALUE
 )
-@CrossOrigin("*")
 @Transactional
 public class ShoppingListController {
     private final ShoppingListRepository lists;

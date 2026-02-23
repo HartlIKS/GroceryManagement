@@ -22,7 +22,6 @@ import java.util.UUID;
 @RequestMapping(
     path = "/masterdata/store", produces = MediaType.APPLICATION_JSON_VALUE
 )
-@CrossOrigin("*")
 @Transactional
 public class StoreController {
     private final StoreRepository stores;

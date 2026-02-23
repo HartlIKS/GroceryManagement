@@ -31,6 +31,7 @@ class PriceListControllerTest {
 
     private final RequestPostProcessor admin_jwt = jwt()
         .authorities(new SimpleGrantedAuthority(AUTHORITY_MASTERDATA));
+    private final RequestPostProcessor user_jwt = jwt();
 
     @BeforeEach
     void setup(WebApplicationContext ctx) {
@@ -47,6 +48,7 @@ class PriceListControllerTest {
             mockMvc
                 .perform(
                     get("/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
+                        .with(user_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -58,6 +60,7 @@ class PriceListControllerTest {
             mockMvc
                 .perform(
                     get("/masterdata/price/{uuid}", Testdata.BAD_UUID)
+                        .with(user_jwt)
                 )
                 .andExpect(status().isNotFound());
         }
@@ -92,14 +95,15 @@ class PriceListControllerTest {
         }
 
         @Test
-        void shouldReturn401WhenUpdatingPriceWithoutAuthorization() throws Exception {
+        void shouldReturn403WhenUpdatingPriceWithoutAuthorization() throws Exception {
             mockMvc
                 .perform(
                     put("/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
                         .content(Testdata.PRICE_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(user_jwt)
                 )
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
         }
     }
 
@@ -121,14 +125,15 @@ class PriceListControllerTest {
         }
 
         @Test
-        void shouldReturn401WhenCreatingPriceWithoutAuthorization() throws Exception {
+        void shouldReturn403WhenCreatingPriceWithoutAuthorization() throws Exception {
             mockMvc
                 .perform(
                     post("/masterdata/price")
                         .content(Testdata.PRICE_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(user_jwt)
                 )
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
         }
     }
 
@@ -145,12 +150,13 @@ class PriceListControllerTest {
         }
 
         @Test
-        void shouldReturn401WhenDeletingPriceWithoutAuthorization() throws Exception {
+        void shouldReturn403WhenDeletingPriceWithoutAuthorization() throws Exception {
             mockMvc
                 .perform(
                     delete("/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
+                        .with(user_jwt)
                 )
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
         }
     }
 
@@ -161,6 +167,7 @@ class PriceListControllerTest {
             mockMvc
                 .perform(
                     get("/masterdata/price")
+                        .with(user_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -173,6 +180,7 @@ class PriceListControllerTest {
                 .perform(
                     get("/masterdata/price")
                         .queryParam("store", Testdata.STORE_3_UUID.toString())
+                        .with(user_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -187,6 +195,7 @@ class PriceListControllerTest {
                 .perform(
                     get("/masterdata/price")
                         .queryParam("product", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
+                        .with(user_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -202,6 +211,7 @@ class PriceListControllerTest {
                     get("/masterdata/price")
                         .queryParam("store", Testdata.STORE_3_UUID.toString())
                         .queryParam("product", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
+                        .with(user_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -224,6 +234,7 @@ class PriceListControllerTest {
                         .queryParam("at", searchDate.toString())
                         .queryParam("stores", Testdata.STORE_3_UUID.toString())
                         .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
+                        .with(user_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -250,6 +261,7 @@ class PriceListControllerTest {
                         .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID + "," +
                             Testdata.PRODUCT_GROUP_TEST_2_UUID
                         )
+                        .with(user_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -275,6 +287,7 @@ class PriceListControllerTest {
                         .queryParam("at", searchDate.toString())
                         .queryParam("stores", Testdata.STORE_3_UUID.toString())
                         .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
+                        .with(user_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -292,6 +305,7 @@ class PriceListControllerTest {
                         .queryParam("at", searchDate.toString())
                         .queryParam("stores", Testdata.BAD_UUID.toString())
                         .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
+                        .with(user_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -309,6 +323,7 @@ class PriceListControllerTest {
                         .queryParam("at", searchDate.toString())
                         .queryParam("stores", Testdata.STORE_3_UUID.toString())
                         .queryParam("products", Testdata.BAD_UUID.toString())
+                        .with(user_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -326,6 +341,7 @@ class PriceListControllerTest {
                         .queryParam("at", searchDate.toString())
                         .queryParam("stores", Testdata.STORE_3_UUID.toString())
                         .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
+                        .with(user_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -346,6 +362,7 @@ class PriceListControllerTest {
                         .queryParam("at", searchDate.toString())
                         .queryParam("stores", Testdata.STORE_3_UUID.toString())
                         .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
+                        .with(user_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -366,6 +383,7 @@ class PriceListControllerTest {
                         .queryParam("at", searchDate.toString())
                         .queryParam("stores", Testdata.STORE_3_UUID.toString())
                         .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
+                        .with(user_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))

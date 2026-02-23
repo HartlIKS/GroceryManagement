@@ -27,7 +27,6 @@ import java.util.UUID;
     path = "/productGroups",
     produces = MediaType.APPLICATION_JSON_VALUE
 )
-@CrossOrigin("*")
 @Transactional
 public class ProductGroupController {
     private final ProductGroupRepository groups;
