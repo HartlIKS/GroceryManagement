@@ -27,7 +27,8 @@
             "styles": [
               "src/material-theme.scss",
               "src/styles.scss"
-            ]
+            ],
+            "statsJson": true
           },
           "configurations": {
             "production": {

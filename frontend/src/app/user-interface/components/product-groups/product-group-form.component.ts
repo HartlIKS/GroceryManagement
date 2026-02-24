@@ -41,9 +41,10 @@ export class ProductGroupFormComponent implements OnInit {
   isEditMode = computed(() => !!this.productGroupUuid());
   productGroupUuid = signal<string>('');
 
+  private readonly productGroupService = inject(ProductGroupService);
   // Create HTTP resources
   private readonly productsResource = inject(ProductService).getProducts('', 0, 1000);
-  private readonly productGroupResource = inject(ProductGroupService).getProductGroup(this.productGroupUuid);
+  private readonly productGroupResource = this.productGroupService.getProductGroup(this.productGroupUuid);
 
   // Product management properties
   selectedProductUuid: string | null = null;
@@ -168,10 +169,8 @@ export class ProductGroupFormComponent implements OnInit {
     };
 
     const productGroupUuid = this.productGroupUuid();
-    const productGroupService = inject(ProductGroupService);
-
     if (productGroupUuid) {
-      productGroupService.update(productGroupUuid, formData).subscribe({
+      this.productGroupService.update(productGroupUuid, formData).subscribe({
         next: () => {
           this.router.navigate(['/product-groups']);
         },
@@ -180,7 +179,7 @@ export class ProductGroupFormComponent implements OnInit {
         }
       });
     } else {
-      productGroupService.createProductGroup(formData).subscribe({
+      this.productGroupService.createProductGroup(formData).subscribe({
         next: () => {
           this.router.navigate(['/product-groups']);
         },

@@ -1,20 +1,21 @@
 import { Routes } from '@angular/router';
-import { MainNavItemsComponent, MasterDataNavItemsComponent, NavigationComponent } from './components/navigation';
-import { UserDashboardComponent } from './user-interface/components';
+import { authGuard, masterDataGuard } from './guards/auth.guard';
+import { NavigationComponent } from './components/navigation';
 
 export const routes: Routes = [
   {
     path: '',
     component: NavigationComponent,
+    canActivateChild: [authGuard],
     children: [
       {
         path: '',
         outlet: 'navbar',
-        component: MainNavItemsComponent,
+        loadComponent: () => import('./components/navigation/main-nav-items').then(m => m.MainNavItemsComponent),
       },
       {
         path: '',
-        component: UserDashboardComponent,
+        loadComponent: () => import('./user-interface/components/user-dashboard.component').then(m => m.UserDashboardComponent),
       },
       {
         path: 'product-groups',
@@ -30,22 +31,19 @@ export const routes: Routes = [
       },
       {
         path: 'planboard',
-        loadComponent: () => import('./user-interface/components').then(m => m.PlanboardComponent)
-      },
-      {
-        path: 'planboard/trip-planning',
-        loadComponent: () => import('./user-interface/components/planboard').then(m => m.TripPlanningComponent)
+        loadChildren: () => import('./user-interface/planboard.routes').then(m => m.planboardRoutes),
       }
     ],
   },
   {
     path: 'master-data',
     component: NavigationComponent,
+    canActivate: [masterDataGuard],
     children: [
       {
         path: '',
         outlet: 'navbar',
-        component: MasterDataNavItemsComponent,
+        loadComponent: () => import('./components/navigation/master-data-nav-items').then(m => m.MasterDataNavItemsComponent)
       },
       {
         path: '',

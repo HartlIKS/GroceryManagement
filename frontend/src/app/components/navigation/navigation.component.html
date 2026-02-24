@@ -1,19 +1,40 @@
 <nav class="navbar">
   <div class="nav-container">
     <div class="nav-brand">
-      <button mat-icon-button class="menu-toggle" (click)="toggleMenu()">
-        <mat-icon>menu</mat-icon>
-      </button>
-        <span class="brand-text">Grocery Manager</span>
+      <span class="brand-text">Grocery Manager</span>
     </div>
 
-    <div class="nav-menu" [class.menu-open]="isMenuOpen">
+    <div class="nav-menu">
       <router-outlet name="navbar"/>
     </div>
+    <div class="nav-menu">
+      @defer {
+        <a class="nav-item" [matMenuTriggerFor]="profile">
+          <mat-icon>account_circle</mat-icon>
+          {{ authService.username() }}
+        </a>
 
-    @if (isMenuOpen) {
-      <div class="nav-overlay" (click)="closeMenu()"></div>
-    }
+        <mat-menu #profile>
+          @if (authService.hasMasterData()) {
+            @if (isMasterDataRoute()) {
+              <a mat-menu-item routerLink="/">
+                <mat-icon>check_box</mat-icon>
+                <span>Master Data</span>
+              </a>
+            } @else {
+              <a mat-menu-item routerLink="/master-data">
+                <mat-icon>check_box_outline_blank</mat-icon>
+                <span>Master Data</span>
+              </a>
+            }
+          }
+          <button mat-menu-item (click)="authService.logout()">
+            <mat-icon>logout</mat-icon>
+            Logout
+          </button>
+        </mat-menu>
+      }
+    </div>
   </div>
 </nav>
 

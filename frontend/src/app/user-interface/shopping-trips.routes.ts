@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { ShoppingTripChecklistComponent, ShoppingTripFormComponent, ShoppingTripListComponent } from './components';
+import { ShoppingTripChecklistComponent, ShoppingTripFormComponent, ShoppingTripListComponent } from './components/shopping-trips';
 
 export const shoppingTripsRoutes: Routes = [
   {

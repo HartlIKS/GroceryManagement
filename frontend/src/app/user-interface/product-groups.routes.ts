@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { ProductGroupFormComponent, ProductGroupListComponent } from './components';
+import { ProductGroupFormComponent, ProductGroupListComponent } from './components/product-groups';
 
 export const productGroupsRoutes: Routes = [
   {

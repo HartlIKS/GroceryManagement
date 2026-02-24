@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { ShoppingListFormComponent, ShoppingListListComponent } from './components';
+import { ShoppingListFormComponent, ShoppingListListComponent } from './components/shopping-lists';
 
 export const shoppingListsRoutes: Routes = [
   {
