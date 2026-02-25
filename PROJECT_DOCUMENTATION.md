@@ -128,11 +128,12 @@ Product groups allow users to group similar products together that can be substi
 ### ShoppingList
 - **uuid**: Primary identifier (UUID)
 - **name**: List name (required, String)
+- **repeating**: Whether the list repeats periodically (required, boolean, default: false)
 - **owner**: User who owns the list (required, String)
 - **products**: Map of products to quantities (Map<Product, BigDecimal>)
 - **productGroups**: Map of product groups to quantities (Map<ProductGroup, BigDecimal>)
 
-Shopping lists allow users to create personalized grocery lists with specific quantities for individual products or product groups. Users can only access their own shopping lists.
+Shopping lists allow users to create personalized grocery lists with specific quantities for individual products or product groups. Users can only access their own shopping lists. The repeating flag indicates whether this is a recurring shopping list that should be periodically recreated or reminded.
 
 ### ShoppingTrip
 - **uuid**: Primary identifier (UUID)
@@ -154,6 +155,7 @@ Shopping trips record actual purchases made by users at specific stores, includi
 
 ### Shopping Lists Management
 - **Complete CRUD operations** for shopping lists (user-scoped)
+- **Repeating list support** - Flag to indicate recurring shopping lists for periodic reminders
 - **Unified item management** - Single table for both products and product groups
 - **Visual item distinction** - Background colors differentiate item types
 - **Sample images** - Product groups display sample images from contained products
