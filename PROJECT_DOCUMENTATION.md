@@ -133,7 +133,7 @@ Product groups allow users to group similar products together that can be substi
 - **products**: Map of products to quantities (Map<Product, BigDecimal>)
 - **productGroups**: Map of product groups to quantities (Map<ProductGroup, BigDecimal>)
 
-Shopping lists allow users to create personalized grocery lists with specific quantities for individual products or product groups. Users can only access their own shopping lists. The repeating flag indicates whether this is a recurring shopping list that should be periodically recreated or reminded.
+Shopping lists allow users to create personalized grocery lists with specific quantities for individual products or product groups. Users can only access their own shopping lists. The repeating flag determines whether the list should be preserved after being planned to shopping trips - non-repeating lists are automatically deleted after successful trip creation, while repeating lists persist for future use.
 
 ### ShoppingTrip
 - **uuid**: Primary identifier (UUID)
@@ -155,7 +155,9 @@ Shopping trips record actual purchases made by users at specific stores, includi
 
 ### Shopping Lists Management
 - **Complete CRUD operations** for shopping lists (user-scoped)
-- **Repeating list support** - Flag to indicate recurring shopping lists for periodic reminders
+- **Repeating list support** - Flag to control list persistence after trip planning
+- **Automatic cleanup** - Non-repeating lists are deleted after successful trip creation
+- **Visual indicators** - Repeat icons and labels throughout the UI for repeating lists
 - **Unified item management** - Single table for both products and product groups
 - **Visual item distinction** - Background colors differentiate item types
 - **Sample images** - Product groups display sample images from contained products
@@ -175,10 +177,12 @@ Shopping trips record actual purchases made by users at specific stores, includi
 - **Stage 1 - Interactive Planning**: Main planning interface for organizing shopping trips (`/planboard`)
 - **Stage 2 - Trip Finalization**: Trip planning with existing trip selection and date assignment (`/planboard/trip-planning`)
 - **Shopping list integration** - Import and plan items from existing lists
+- **Repeating flag handling** - Non-repeating lists automatically deleted after trip creation
 - **Store assignment** - Assign items to specific stores based on prices
 - **Price comparison** - View and compare prices across different stores
 - **Visual item management** - Organized component structure with dedicated cards for each trip
 - **Planned trip generation** - Create optimized shopping trips
+- **Automatic navigation** - Redirect to shopping trips view after successful planning
 - **Component Architecture**: Modular design with shared product display components
 
 ### Product Listing Component
@@ -214,6 +218,10 @@ Shopping trips record actual purchases made by users at specific stores, includi
 - **Component Modularity**: Shared product display components across different planboard stages
 - **Shopping Trip Checklists**: Interactive tracking for in-store shopping experience
 - **Real-time Price Fetching**: Dynamic price comparison across multiple stores
+- **Repeating List Management**: Automatic cleanup of non-repeating shopping lists after trip planning
+- **Visual Repeating Indicators**: Repeat icons and labels throughout the UI for easy identification
+- **Async Operation Handling**: Proper observable chaining for trip creation and list deletion
+- **Automatic Navigation**: Seamless user flow from planning to shopping trips view
 
 ### Address
 - **country**: Country name (String)
@@ -396,3 +404,7 @@ This will:
 - Planboard component provides advanced shopping planning with price optimization and store assignment
 - Shopping trip checklist feature enables interactive in-store shopping experience
 - Product listing component offers real-time price comparison across multiple stores
+- **Repeating Flag Implementation**: Frontend logic handles automatic deletion of non-repeating lists after trip planning
+- **Observable Chaining**: Proper async handling ensures operations complete before navigation
+- **Global CSS Optimization**: Table column styling and repeating indicators moved to global styles.scss
+- **Material Design Integration**: Leveraging Angular Material's built-in styling and CSS variables
