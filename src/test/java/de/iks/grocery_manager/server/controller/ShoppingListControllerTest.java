@@ -177,10 +177,54 @@ class ShoppingListControllerTest {
         }
 
         @Test
+        void shouldDeleteNonRepeatingShoppingListWhenIfNonRepeatingIsTrue() throws Exception {
+            mockMvc
+                .perform(
+                    delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                        .param("ifNonRepeating", "true")
+                        .with(user1_jwt)
+                )
+                .andExpect(status().isOk());
+        }
+
+        @Test
+        void shouldNotDeleteRepeatingShoppingListWhenIfNonRepeatingIsTrue() throws Exception {
+            mockMvc
+                .perform(
+                    delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
+                        .param("ifNonRepeating", "true")
+                        .with(user2_jwt)
+                )
+                .andExpect(status().isOk());
+        }
+
+        @Test
+        void shouldDeleteRepeatingShoppingListWhenIfNonRepeatingIsFalse() throws Exception {
+            mockMvc
+                .perform(
+                    delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
+                        .param("ifNonRepeating", "false")
+                        .with(user2_jwt)
+                )
+                .andExpect(status().isOk());
+        }
+
+        @Test
         void shouldReturn200WhenDeletingNonExistentShoppingList() throws Exception {
             mockMvc
                 .perform(
                     delete("/shoppingLists/{uuid}", Testdata.BAD_UUID)
+                        .with(user1_jwt)
+                )
+                .andExpect(status().isOk());
+        }
+
+        @Test
+        void shouldReturn200WhenDeletingNonExistentShoppingListWithIfNonRepeatingTrue() throws Exception {
+            mockMvc
+                .perform(
+                    delete("/shoppingLists/{uuid}", Testdata.BAD_UUID)
+                        .param("ifNonRepeating", "true")
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
@@ -197,10 +241,31 @@ class ShoppingListControllerTest {
         }
 
         @Test
+        void shouldReturn200WhenDeletingOtherUsersShoppingListWithIfNonRepeatingTrue() throws Exception {
+            mockMvc
+                .perform(
+                    delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
+                        .param("ifNonRepeating", "true")
+                        .with(user1_jwt)
+                )
+                .andExpect(status().isOk());
+        }
+
+        @Test
         void shouldReturn401WhenDeletingShoppingListWithoutAuthentication() throws Exception {
             mockMvc
                 .perform(
                     delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                )
+                .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        void shouldReturn401WhenDeletingShoppingListWithIfNonRepeatingTrueWithoutAuthentication() throws Exception {
+            mockMvc
+                .perform(
+                    delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                        .param("ifNonRepeating", "true")
                 )
                 .andExpect(status().isUnauthorized());
         }
