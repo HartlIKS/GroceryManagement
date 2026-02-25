@@ -1,13 +1,13 @@
 import { HttpResourceRef } from '@angular/common/http';
 import { Observable, of, tap } from 'rxjs';
-import { GetApiEndpoint } from './api.service';
+import { GetApiEndpoint, ApiParam } from './api.service';
 
 export abstract class CacheService<T, U = T> {
   private cache: Record<string, HttpResourceRef<T | undefined>> = {};
 
   protected abstract rawGet(uuid: string): GetApiEndpoint<T>;
   protected abstract rawUpdate(uuid: string, update: U): Observable<T>;
-  protected abstract rawDelete(uuid: string): Observable<void>;
+  protected abstract rawDelete(uuid: string, params?: Record<string, ApiParam>): Observable<void>;
 
   public get(uuid: string): HttpResourceRef<T | undefined> {
     return this.cache[uuid] ??= this.rawGet(uuid).asResource();
@@ -29,8 +29,8 @@ export abstract class CacheService<T, U = T> {
     this.cache[uuid]?.set(updated);
   }
 
-  public delete(uuid: string): Observable<void> {
-    return this.rawDelete(uuid).pipe(
+  public delete(uuid: string, params?: Record<string, ApiParam>): Observable<void> {
+    return this.rawDelete(uuid, params).pipe(
       tap(() => {
         this.cache[uuid]?.set(undefined);
         delete this.cache[uuid];

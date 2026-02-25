@@ -90,27 +90,21 @@ export class TripPlanningComponent {
   }
 
   private deleteNonRepeatingShoppingLists(): Observable<void> {
-    const selectedListUuids = this.planboardService.selectedShoppingListUuids();
-    const allLists = this.planboardService.shoppingLists();
-
-    // Find non-repeating lists that were selected for planning
-    const nonRepeatingLists = allLists
-      .filter(list => selectedListUuids.includes(list.uuid) && !list.repeating)
-      .map(list => list.uuid);
-
-    // Delete each non-repeating list and wait for all to complete
-    const deleteOperations = nonRepeatingLists.map(listUuid =>
-      this.shoppingListService.delete(listUuid).pipe(
-        map(() => {
-          console.log(`Deleted non-repeating shopping list: ${listUuid}`);
-          return listUuid;
-        })
-      )
-    );
+    // Delete each non-repeating list using the new deleteNonRepeating method and wait for all to complete
+    const deleteOperations = this.planboardService.selectedShoppingListUuids()
+      .map(listUuid =>
+        this.shoppingListService.deleteNonRepeating(listUuid).pipe(
+          map(() => {
+            console.log(`Deleted non-repeating shopping list: ${listUuid}`);
+            return listUuid;
+          })
+        )
+      );
 
     return from(deleteOperations).pipe(
       combineLatestAll(),
-      map(() => {}) // Return empty object when all deletions complete
+      map(() => {
+      }) // Return empty object when all deletions complete
     );
   }
 }

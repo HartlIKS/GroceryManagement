@@ -1,6 +1,6 @@
 import { Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiService, CacheService, GetApiEndpoint } from '../../services';
+import { ApiParam, ApiService, CacheService, GetApiEndpoint } from '../../services';
 import { CreateShoppingListDTO, ListShoppingListDTO } from '../models';
 import { Page } from '../../models';
 
@@ -22,8 +22,8 @@ export class ShoppingListService extends CacheService<ListShoppingListDTO, Creat
     return this.apiService.put<ListShoppingListDTO>(this.endpoint, uuid, shoppingList);
   }
 
-  protected rawDelete(uuid: string): Observable<void> {
-    return this.apiService.delete(this.endpoint, uuid);
+  protected rawDelete(uuid: string, params?: Record<string, ApiParam>): Observable<void> {
+    return this.apiService.delete(this.endpoint, uuid, params);
   }
 
   // Get shopping lists with pagination and search
@@ -48,5 +48,11 @@ export class ShoppingListService extends CacheService<ListShoppingListDTO, Creat
   // Create shopping list
   createShoppingList(shoppingList: CreateShoppingListDTO): Observable<ListShoppingListDTO> {
     return this.apiService.post<ListShoppingListDTO>(this.endpoint, shoppingList);
+  }
+
+  deleteNonRepeating(uuid: string) {
+    return this.delete(uuid, {
+      ifNonRepeating: true,
+    })
   }
 }

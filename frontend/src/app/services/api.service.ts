@@ -5,7 +5,7 @@ import { environment } from '../../environments/environment';
 import { resolve } from '../utils/signalutils';
 import { AuthService } from './auth.service';
 
-type ApiParam = string | Date | number | boolean | string[] | undefined;
+export type ApiParam = string | Date | number | boolean | string[] | undefined;
 export interface GetApiEndpoint<T> {
   asResource(): HttpResourceRef<T | undefined>;
   asObservable(): Observable<T>;
@@ -24,20 +24,19 @@ export class ApiService {
     return {};
   });
 
-  // Generic CRUD operations
-  get<T>(endpoint: string, params?: Record<string, Signal<ApiParam> | ApiParam>) {
+  private toParamSignal(params: Record<string, Signal<ApiParam> | ApiParam> = {}): Signal<HttpParams> {
     const resolvedParams: Record<string, Signal<ApiParam>> = Object.fromEntries(
       Object.entries(params ?? {})
         .map(([k, v]) => [k, resolve(v)])
     );
-    const httpParams = computed(() => {
+    return computed(() => {
       let httpParams = new HttpParams();
       for (const [key, valueSignal] of Object.entries(resolvedParams)) {
         let value = valueSignal();
         if (value !== null && value !== undefined) {
           if (Array.isArray(value)) {
-            for(const item of value) httpParams = httpParams.append(key, String(item));
-          } else if(value instanceof Date) {
+            for (const item of value) httpParams = httpParams.append(key, String(item));
+          } else if (value instanceof Date) {
             httpParams = httpParams.set(key, value.toISOString());
           } else {
             httpParams = httpParams.set(key, String(value));
@@ -47,6 +46,11 @@ export class ApiService {
       this.accessToken();
       return httpParams;
     });
+  }
+
+  // Generic CRUD operations
+  get<T>(endpoint: string, params?: Record<string, Signal<ApiParam> | ApiParam>) {
+    const httpParams = this.toParamSignal(params);
 
     return httpResource<T>(() => ({
       url: `${this.baseUrl}${endpoint}`,
@@ -91,15 +95,19 @@ export class ApiService {
     });
   }
 
-  delete(endpoint: string, id: string): Observable<void> {
+  delete(endpoint: string, id: string, params?: Record<string, ApiParam>): Observable<void> {
+    const httpParams = this.toParamSignal(params);
     return this.http.delete<void>(`${this.baseUrl}${endpoint}/${id}`, {
+      params: httpParams(),
       headers: this.headers(),
       withCredentials: true,
     });
   }
 
-  deleteWithData<T>(endpoint: string, id: string): Observable<T> {
+  deleteWithData<T>(endpoint: string, id: string, params?: Record<string, ApiParam>): Observable<T> {
+    const httpParams = this.toParamSignal(params);
     return this.http.delete<T>(`${this.baseUrl}${endpoint}/${id}`, {
+      params: httpParams(),
       headers: this.headers(),
       withCredentials: true,
     });
