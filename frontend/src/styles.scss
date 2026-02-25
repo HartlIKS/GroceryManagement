@@ -283,6 +283,10 @@
 }
 
 /* Tables */
+mat-cell, mat-header-cell {
+  justify-content: center;
+}
+
 .table-container {
   position: relative;
 }

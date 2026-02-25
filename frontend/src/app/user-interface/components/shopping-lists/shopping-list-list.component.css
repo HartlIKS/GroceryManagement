@@ -2,20 +2,14 @@
 
 /* Angular Material table column width optimization */
 .mat-column-name {
-  flex: 1 1 50%;
+  flex: 1 1 40%;
+  justify-content: left;
 }
 
-.mat-column-productCount {
+.mat-column-repeating, .mat-column-productCount, .mat-column-groupCount {
   flex: 0 0 120px;
-  justify-content: center;
-}
-
-.mat-column-groupCount {
-  flex: 0 0 120px;
-  justify-content: center;
 }
 
 .mat-column-actions {
   flex: 0 0 100px;
-  justify-content: center;
 }

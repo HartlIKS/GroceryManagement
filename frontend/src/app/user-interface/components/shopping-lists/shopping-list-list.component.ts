@@ -29,7 +29,7 @@ import { ListShoppingListDTO } from '../../models';
   styleUrls: ['./shopping-list-list.component.css']
 })
 export class ShoppingListListComponent {
-  displayedColumns: string[] = ['name', 'productCount', 'groupCount', 'actions'];
+  displayedColumns: string[] = ['name', 'repeating', 'productCount', 'groupCount', 'actions'];
 
   // Search signal
   protected readonly searchTerm = signal('');

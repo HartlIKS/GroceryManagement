@@ -4,10 +4,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CommonModule } from '@angular/common';
-import { PlanboardService, ShoppingTripService } from '../../../services';
+import { PlanboardService, ShoppingListService, ShoppingTripService } from '../../../services';
 import { selectionEvent, TripPlanningCardComponent } from '../trip-planning/trip-planning-card.component';
-import { combineLatestAll, from, map, switchMap } from 'rxjs';
+import { combineLatestAll, from, map, Observable, switchMap } from 'rxjs';
 import { PriceService } from '../../../../master-data/services';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-trip-planning',
@@ -26,7 +27,9 @@ import { PriceService } from '../../../../master-data/services';
 export class TripPlanningComponent {
   private readonly planboardService = inject(PlanboardService);
   private readonly shoppingTripService = inject(ShoppingTripService);
+  private readonly shoppingListService = inject(ShoppingListService);
   private readonly priceService = inject(PriceService);
+  private readonly router = inject(Router);
 
   readonly plannedTrips = this.planboardService.plannedTrips;
 
@@ -68,12 +71,46 @@ export class TripPlanningComponent {
         })
     ).pipe(
       combineLatestAll(),
-    ).subscribe(v => {
-      console.log(v);
-      // Reset assignments after successful creation/merge
-      this.planboardService.resetAssignments();
-      this.tripPlanningStates.set({});
-    });
+      switchMap(() => this.deleteNonRepeatingShoppingLists())
+    ).subscribe({
+      next: () => {
+        console.log('Trips created and non-repeating lists deleted successfully');
 
+        // Reset assignments after successful completion
+        this.planboardService.resetAssignments();
+        this.tripPlanningStates.set({});
+
+        // Navigate to shopping trips view
+        this.router.navigate(['/shopping-trips']);
+      },
+      error: (error) => {
+        console.error('Error during trip planning:', error);
+      }
+    });
+  }
+
+  private deleteNonRepeatingShoppingLists(): Observable<void> {
+    const selectedListUuids = this.planboardService.selectedShoppingListUuids();
+    const allLists = this.planboardService.shoppingLists();
+
+    // Find non-repeating lists that were selected for planning
+    const nonRepeatingLists = allLists
+      .filter(list => selectedListUuids.includes(list.uuid) && !list.repeating)
+      .map(list => list.uuid);
+
+    // Delete each non-repeating list and wait for all to complete
+    const deleteOperations = nonRepeatingLists.map(listUuid =>
+      this.shoppingListService.delete(listUuid).pipe(
+        map(() => {
+          console.log(`Deleted non-repeating shopping list: ${listUuid}`);
+          return listUuid;
+        })
+      )
+    );
+
+    return from(deleteOperations).pipe(
+      combineLatestAll(),
+      map(() => {}) // Return empty object when all deletions complete
+    );
   }
 }

@@ -1,5 +1,11 @@
 /* Planboard-specific styles - only keep what's unique to this component */
 
+/* Repeating indicators */
+.repeating-label {
+  color: var(--color-primary);
+  vertical-align: bottom;
+}
+
 /* Layout specific to planboard */
 .planboard-layout {
   display: grid;

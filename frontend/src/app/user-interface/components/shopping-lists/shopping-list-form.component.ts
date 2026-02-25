@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { ProductGroupService, ShoppingListService } from '../../services';
 import { CreateShoppingListDTO } from '../../models';
 import { ProductService } from '../../../master-data/services';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -31,6 +32,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     MatIconModule,
     MatTableModule,
     MatSelectModule,
+    MatCheckboxModule,
     MatTooltip,
     MatDividerModule,
     RouterLink
@@ -43,10 +45,12 @@ export class ShoppingListFormComponent implements OnInit {
   isEditMode = computed(() => !!this.shoppingListUuid());
   shoppingListUuid = signal<string>('');
 
+  private readonly shoppingListService = inject(ShoppingListService);
+
   // Create HTTP resources
   private readonly productsResource = inject(ProductService).getProducts('', 0, 1000);
   private readonly productGroupsResource = inject(ProductGroupService).getProductGroups('', 0, 1000);
-  private readonly shoppingListResource = inject(ShoppingListService).getShoppingList(this.shoppingListUuid);
+  private readonly shoppingListResource = this.shoppingListService.getShoppingList(this.shoppingListUuid);
 
   // Product management properties
   selectedProductUuid: string | null = null;
@@ -160,14 +164,16 @@ export class ShoppingListFormComponent implements OnInit {
     private readonly destroyRef: DestroyRef,
   ) {
     this.shoppingListForm = this.fb.group({
-      name: ['', Validators.required]
+      name: ['', Validators.required],
+      repeating: [false]
     });
     // Watch for changes in the shopping list resource
     effect(() => {
       const shoppingList = this.shoppingListResource.value();
       if (shoppingList) {
         this.shoppingListForm.patchValue({
-          name: shoppingList.name
+          name: shoppingList.name,
+          repeating: shoppingList.repeating
         });
         this.shoppingListProducts.set(shoppingList.products || {});
         this.shoppingListProductGroups.set(shoppingList.productGroups || {});
@@ -336,16 +342,16 @@ export class ShoppingListFormComponent implements OnInit {
     if (this.shoppingListForm.valid) {
       const formData: CreateShoppingListDTO = {
         name: this.shoppingListForm.value.name,
+        repeating: this.shoppingListForm.value.repeating,
         products: this.shoppingListProducts(),
         productGroups: this.shoppingListProductGroups()
       };
 
       const shoppingListUuid = this.shoppingListUuid();
-      const shoppingListService = inject(ShoppingListService);
 
       const operation = shoppingListUuid
-        ? shoppingListService.update(shoppingListUuid, formData)
-        : shoppingListService.createShoppingList(formData);
+        ? this.shoppingListService.update(shoppingListUuid, formData)
+        : this.shoppingListService.createShoppingList(formData);
 
       operation.subscribe({
         next: () => {

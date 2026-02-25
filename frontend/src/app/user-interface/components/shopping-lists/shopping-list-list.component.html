@@ -30,6 +30,16 @@
             </mat-cell>
           </ng-container>
 
+          <!-- Repeating Column -->
+          <ng-container matColumnDef="repeating">
+            <mat-header-cell *matHeaderCellDef>Repeating</mat-header-cell>
+            <mat-cell *matCellDef="let shoppingList">
+              @if (shoppingList.repeating) {
+                <mat-icon>repeat</mat-icon>
+              }
+            </mat-cell>
+          </ng-container>
+
           <!-- Product Count Column -->
           <ng-container matColumnDef="productCount">
             <mat-header-cell *matHeaderCellDef>Products</mat-header-cell>
