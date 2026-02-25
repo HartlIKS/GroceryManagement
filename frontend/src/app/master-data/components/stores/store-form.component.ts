@@ -4,9 +4,8 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { CommonModule } from '@angular/common';
+import { MatInput } from '@angular/material/input';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { StoreService } from '../../services';
 import { CreateStoreDTO } from '../../models';
 
@@ -14,13 +13,12 @@ import { CreateStoreDTO } from '../../models';
   selector: 'app-store-form',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
-    MatInputModule,
-    MatProgressSpinnerModule,
+    MatInput,
+    MatProgressSpinner,
     RouterLink
   ],
   templateUrl: './store-form.component.html',

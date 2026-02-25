@@ -1,11 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatProgressBar } from '@angular/material/progress-bar';
 import { CommonModule } from '@angular/common';
 import { ShoppingTripService } from '../../services';
 import { PriceService, ProductService, StoreService } from '../../../master-data/services';
@@ -25,11 +24,10 @@ interface ChecklistItem {
   imports: [
     CommonModule,
     MatButtonModule,
-    MatIconModule,
     MatCardModule,
-    MatCheckboxModule,
-    MatProgressSpinnerModule,
-    MatProgressBarModule,
+    MatCheckbox,
+    MatProgressSpinner,
+    MatProgressBar,
   ],
   templateUrl: './shopping-trip-checklist.component.html',
   styleUrls: ['./shopping-trip-checklist.component.css']

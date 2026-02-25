@@ -3,8 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { MatIconModule } from '@angular/material/icon';
-import { MatBadgeModule } from '@angular/material/badge';
 import { Price } from '../../../../master-data/models';
 import { PriceService, ProductService } from '../../../../master-data/services';
 import { PlannedTrip, ProductGroupService, ShoppingListItem } from '../../../services';
@@ -28,8 +26,6 @@ export type PriceEntrySelectionEvent = {
     FormsModule,
     MatFormFieldModule,
     MatSelectModule,
-    MatIconModule,
-    MatBadgeModule,
     MatListItem,
     MatProgressSpinner,
     PriceOptionComponent,
@@ -139,4 +135,8 @@ export class ShoppingListItemComponent {
     if (index === -1) return undefined;
     return index;
   });
+
+  protected onPriceSelection($event: number | undefined) {
+    return this.priceEntrySelected.emit(this.availablePriceEntries()[$event ?? -1] ?? {})
+  }
 }

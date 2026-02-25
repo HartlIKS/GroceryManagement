@@ -1,13 +1,12 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatIconModule } from '@angular/material/icon';
 
 import { PlannedTrip } from '../../../services';
 import { StoreService } from '../../../../master-data/services';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
-import { ProductListComponent } from '../product-list/product-list.component';
+import { ProductListComponent } from '../product-list';
 
 @Component({
   selector: 'app-planned-trip',
@@ -15,7 +14,6 @@ import { ProductListComponent } from '../product-list/product-list.component';
   imports: [
     CommonModule,
     FormsModule,
-    MatIconModule,
     MatProgressSpinner,
     MatCardModule,
     ProductListComponent,

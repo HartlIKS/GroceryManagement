@@ -3,10 +3,10 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
+import { MatIcon } from '@angular/material/icon';
+import { MatInput } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { CommonModule } from '@angular/common';
@@ -22,10 +22,10 @@ import { toDate } from '../../../utils/signalutils';
     CommonModule,
     MatTableModule,
     MatButtonModule,
-    MatIconModule,
-    MatInputModule,
+    MatIcon,
+    MatInput,
     MatFormFieldModule,
-    MatProgressSpinnerModule,
+    MatProgressSpinner,
     MatSelectModule,
     RouterLink,
     MatCardModule,

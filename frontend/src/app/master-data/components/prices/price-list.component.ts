@@ -2,15 +2,16 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIcon } from '@angular/material/icon';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { CommonModule } from '@angular/common';
+import { MatInput } from '@angular/material/input';
 import { PriceService, ProductService, StoreService } from '../../services';
 import { ListPriceDTO } from '../../models';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 // Enhanced price item with validity status
 type PriceWithValidity = ListPriceDTO & {
@@ -25,13 +26,14 @@ type PriceWithValidity = ListPriceDTO & {
     CommonModule,
     MatTableModule,
     MatButtonModule,
-    MatIconModule,
-    MatPaginatorModule,
-    MatProgressSpinnerModule,
+    MatIcon,
+    MatPaginator,
+    MatProgressSpinner,
     MatSelectModule,
     MatFormFieldModule,
-    MatInputModule,
-    RouterLink
+    MatInput,
+    RouterLink,
+    FormsModule
   ],
   templateUrl: './price-list.component.html',
   styleUrls: ['./price-list.component.css']
@@ -147,10 +149,5 @@ export class PriceListComponent {
     } else {
       return 'future';
     }
-  }
-
-  onReferenceTimestampChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.referenceTimestamp.set(input.value);
   }
 }

@@ -18,7 +18,7 @@
       <mat-label>Reference Timestamp</mat-label>
       <input matInput
              type="datetime-local"
-             [value]="referenceTimestamp">
+             [(ngModel)]="referenceTimestamp">
       <mat-hint>Prices are highlighted relative to this time</mat-hint>
     </mat-form-field>
 

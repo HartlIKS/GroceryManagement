@@ -2,10 +2,10 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
+import { MatIcon } from '@angular/material/icon';
+import { MatInput } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ProductGroupService } from '../../services';
@@ -18,10 +18,10 @@ import { ListProductGroupDTO } from '../../models';
     CommonModule,
     MatTableModule,
     MatButtonModule,
-    MatIconModule,
-    MatInputModule,
+    MatIcon,
+    MatInput,
     MatFormFieldModule,
-    MatProgressSpinnerModule,
+    MatProgressSpinner,
     FormsModule,
     RouterLink
   ],

@@ -1,15 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { CommonModule } from '@angular/common';
-import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
+import { MatIcon } from '@angular/material/icon';
 import { AuthService } from '../../services/auth.service';
+import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 
 @Component({
   selector: 'app-navigation',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule, RouterOutlet, MatMenuTrigger, MatMenu, MatMenuItem, RouterLink],
+  imports: [MatIcon, RouterOutlet, RouterLink, MatMenuTrigger, MatMenu, MatMenuItem],
   templateUrl: './navigation.component.html',
   styleUrls: ['./navigation.component.css']
 })

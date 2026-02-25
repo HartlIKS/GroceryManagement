@@ -3,19 +3,18 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
+import { MatInput } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatIcon } from '@angular/material/icon';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { ProductGroupService, ShoppingListService } from '../../services';
 import { CreateShoppingListDTO } from '../../models';
 import { ProductService } from '../../../master-data/services';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatCheckbox } from '@angular/material/checkbox';
 import { MatTooltip } from '@angular/material/tooltip';
-import { MatDividerModule } from '@angular/material/divider';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
@@ -26,15 +25,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     ReactiveFormsModule,
     MatCardModule,
     MatButtonModule,
-    MatInputModule,
+    MatInput,
     MatFormFieldModule,
-    MatProgressSpinnerModule,
-    MatIconModule,
+    MatProgressSpinner,
+    MatIcon,
     MatTableModule,
     MatSelectModule,
-    MatCheckboxModule,
+    MatCheckbox,
     MatTooltip,
-    MatDividerModule,
     RouterLink
   ],
   templateUrl: './shopping-list-form.component.html',

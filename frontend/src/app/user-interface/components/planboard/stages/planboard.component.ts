@@ -1,16 +1,12 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
+import { MatIcon } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
-import { MatDialogModule } from '@angular/material/dialog';
-import { MatListModule } from '@angular/material/list';
 import { CommonModule } from '@angular/common';
 import { PlanboardService, ShoppingListItem } from '../../../services';
 import { ShoppingListItemComponent } from '../shopping-list-item';
@@ -18,6 +14,7 @@ import { PlannedTripComponent } from '../planned-trip';
 import { PriceEntrySelectionEvent } from '../shopping-list-item/shopping-list-item.component';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { RouterLink } from '@angular/router';
+import { MatList } from '@angular/material/list';
 
 export type { PlannedTrip, ShoppingListItem } from '../../../services/planboard.service';
 
@@ -28,20 +25,17 @@ export type { PlannedTrip, ShoppingListItem } from '../../../services/planboard.
     CommonModule,
     FormsModule,
     MatButtonModule,
-    MatIconModule,
-    MatInputModule,
+    MatIcon,
     MatFormFieldModule,
-    MatProgressSpinnerModule,
+    MatProgressSpinner,
     MatSelectModule,
     MatCardModule,
     MatDatepickerModule,
-    MatNativeDateModule,
-    MatDialogModule,
-    MatListModule,
     ShoppingListItemComponent,
     PlannedTripComponent,
     MatCheckbox,
-    RouterLink
+    RouterLink,
+    MatList
   ],
   templateUrl: './planboard.component.html',
   styleUrls: ['./planboard.component.css']

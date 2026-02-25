@@ -16,7 +16,7 @@
       <mat-label>Select Price Entry</mat-label>
       <mat-select
         [value]="selectedPriceEntry()"
-        (valueChange)="priceEntrySelected.emit(availablePriceEntries()[$event ?? -1] ?? {})"
+        (valueChange)="onPriceSelection($event)"
       >
         <mat-select-trigger>
           Trip {{availablePriceEntries()[selectedPriceEntry() ?? -1]?.tripId}}

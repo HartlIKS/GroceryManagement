@@ -1,8 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIcon } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { PlanboardService, ShoppingListService, ShoppingTripService } from '../../../services';
 import { selectionEvent, TripPlanningCardComponent } from '../trip-planning/trip-planning-card.component';
@@ -17,8 +16,7 @@ import { Router } from '@angular/router';
     CommonModule,
     FormsModule,
     MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
+    MatIcon,
     TripPlanningCardComponent,
   ],
   templateUrl: './trip-planning.component.html',

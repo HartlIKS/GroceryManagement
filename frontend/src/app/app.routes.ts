@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 import { authGuard, masterDataGuard } from './guards/auth.guard';
 import { NavigationComponent } from './components/navigation';
+import { MainNavItemsComponent } from './components/navigation/main-nav-items';
+import { MasterDataNavItemsComponent } from './components/navigation/master-data-nav-items';
 
 export const routes: Routes = [
   {
@@ -11,7 +13,7 @@ export const routes: Routes = [
       {
         path: '',
         outlet: 'navbar',
-        loadComponent: () => import('./components/navigation/main-nav-items').then(m => m.MainNavItemsComponent),
+        component: MainNavItemsComponent,
       },
       {
         path: '',
@@ -43,7 +45,7 @@ export const routes: Routes = [
       {
         path: '',
         outlet: 'navbar',
-        loadComponent: () => import('./components/navigation/master-data-nav-items').then(m => m.MasterDataNavItemsComponent)
+        component: MasterDataNavItemsComponent
       },
       {
         path: '',

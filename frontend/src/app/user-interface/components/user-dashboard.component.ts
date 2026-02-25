@@ -1,16 +1,19 @@
 import { Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { CommonModule } from '@angular/common';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { ProductGroupService, ShoppingListService, ShoppingTripService } from '../services';
 import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-user-dashboard',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule, MatCardModule, MatProgressSpinnerModule, RouterLink],
+  imports: [
+    MatButtonModule,
+    MatCardModule,
+    MatProgressSpinner,
+    RouterLink
+  ],
   templateUrl: './user-dashboard.component.html',
   styleUrls: ['./user-dashboard.component.css']
 })

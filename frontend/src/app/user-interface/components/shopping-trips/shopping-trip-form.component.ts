@@ -3,10 +3,10 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
+import { MatInput } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatIcon } from '@angular/material/icon';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
@@ -14,7 +14,6 @@ import { ShoppingTripService } from '../../services';
 import { CreateShoppingTripDTO } from '../../models';
 import { ProductService, StoreService } from '../../../master-data/services';
 import { MatTooltip } from '@angular/material/tooltip';
-import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-shopping-trip-form',
@@ -24,14 +23,13 @@ import { MatDividerModule } from '@angular/material/divider';
     ReactiveFormsModule,
     MatCardModule,
     MatButtonModule,
-    MatInputModule,
+    MatInput,
     MatFormFieldModule,
-    MatProgressSpinnerModule,
-    MatIconModule,
+    MatProgressSpinner,
+    MatIcon,
     MatTableModule,
     MatSelectModule,
     MatTooltip,
-    MatDividerModule,
     RouterLink
   ],
   templateUrl: './shopping-trip-form.component.html'

@@ -1,16 +1,14 @@
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
+import { MatInput } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
 import { CommonModule } from '@angular/common';
 import { PlannedTrip, ShoppingTripService } from '../../../services';
-import { ProductListComponent } from '../product-list/product-list.component';
+import { ProductListComponent } from '../product-list';
 
 export interface TripPlanningState {
   tripId: number;
@@ -28,13 +26,11 @@ export type selectionEvent =
     CommonModule,
     FormsModule,
     MatButtonModule,
-    MatIconModule,
-    MatInputModule,
+    MatInput,
     MatFormFieldModule,
     MatSelectModule,
     MatCardModule,
     MatDatepickerModule,
-    MatNativeDateModule,
     ProductListComponent,
   ],
   templateUrl: './trip-planning-card.component.html',
