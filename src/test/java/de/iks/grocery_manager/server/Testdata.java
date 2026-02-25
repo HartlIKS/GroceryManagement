@@ -296,6 +296,7 @@ public class Testdata {
         {
           "uuid": "%s",
           "name": "List 1",
+          "repeating": false,
           "products": {
             "%s": 2
           },
@@ -304,6 +305,7 @@ public class Testdata {
     public static final String SHOPPING_LIST_1_UPDATE_JSON = String.format("""
         {
           "name": "List 1b",
+          "repeating": true,
           "products": {
             "%s": 2,
             "%s": 1
@@ -314,6 +316,7 @@ public class Testdata {
         {
           "uuid": "%s",
           "name": "List 1b",
+          "repeating": true,
           "products": {
             "%s": 2,
             "%s": 1
@@ -325,12 +328,14 @@ public class Testdata {
         {
           "uuid": "%s",
           "name": "List 2",
+          "repeating": true,
           "products": {},
           "productGroups": {}
         }""", SHOPPING_LIST_2_UUID);
     public static final String SHOPPING_LIST_3_CREATE_JSON = String.format("""
         {
           "name": "List 3",
+          "repeating": false,
           "products": {
             "%s": 3
           },
@@ -339,6 +344,7 @@ public class Testdata {
     public static final String SHOPPING_LIST_3_JSON = String.format("""
         {
           "name": "List 3",
+          "repeating": false,
           "products": {
             "%s": 3
           },
