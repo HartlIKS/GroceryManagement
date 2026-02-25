@@ -82,8 +82,13 @@ public class ShoppingListController {
     }
 
     @DeleteMapping("/{uuid}")
-    public void deleteShoppingList(@PathVariable UUID uuid, @AuthenticationPrincipal Object principal) {
-        lists.deleteByUuidAndOwner(uuid, getOwner(principal));
+    public void deleteShoppingList(
+        @PathVariable UUID uuid,
+        @RequestParam(required = false, defaultValue = "false") boolean ifNonRepeating,
+        @AuthenticationPrincipal Object principal
+    ) {
+        if(ifNonRepeating) lists.deleteByUuidAndOwnerAndRepeatingIsFalse(uuid, getOwner(principal));
+        else lists.deleteByUuidAndOwner(uuid, getOwner(principal));
     }
 
     @PostMapping

@@ -11,5 +11,6 @@ import java.util.UUID;
 public interface ShoppingListRepository extends JpaRepository<ShoppingList, UUID> {
     Optional<? extends ShoppingList> findByUuidAndOwner(UUID uuid, String owner);
     void deleteByUuidAndOwner(UUID uuid, String owner);
+    void deleteByUuidAndOwnerAndRepeatingIsFalse(UUID uuid, String owner);
     Page<? extends ShoppingList> findAllByOwnerAndNameContainingIgnoreCase(String owner, String name, Pageable pageable);
 }
