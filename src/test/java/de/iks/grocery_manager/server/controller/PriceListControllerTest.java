@@ -1,9 +1,11 @@
 package de.iks.grocery_manager.server.controller;
 
 import de.iks.grocery_manager.server.Testdata;
+import de.iks.grocery_manager.server.jpa.masterdata.PriceRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -18,6 +20,7 @@ import java.time.ZonedDateTime;
 
 import static de.iks.grocery_manager.server.config.SecurityConfiguration.AUTHORITY_MASTERDATA;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -28,6 +31,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Sql(Testdata.SCRIPT)
 class PriceListControllerTest {
     private MockMvc mockMvc;
+    
+    @Autowired
+    private PriceRepository priceRepository;
 
     private final RequestPostProcessor admin_jwt = jwt()
         .authorities(new SimpleGrantedAuthority(AUTHORITY_MASTERDATA));
@@ -70,6 +76,8 @@ class PriceListControllerTest {
     class UpdatePrice {
         @Test
         void shouldUpdatePriceWhenAuthorizedAndFound() throws Exception {
+            long initialCount = priceRepository.count();
+            
             mockMvc
                 .perform(
                     put("/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
@@ -80,10 +88,17 @@ class PriceListControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(Testdata.PRICE_1_JSON2));
+            
+            // Verify update was applied and other price unaffected
+            assertTrue(priceRepository.findById(Testdata.PRICE_1_UUID).isPresent());
+            assertTrue(priceRepository.findById(Testdata.PRICE_2_UUID).isPresent());
+            assertEquals(initialCount, priceRepository.count());
         }
 
         @Test
         void shouldReturn404WhenUpdatingNonExistentPrice() throws Exception {
+            long initialCount = priceRepository.count();
+            
             mockMvc
                 .perform(
                     put("/masterdata/price/{uuid}", Testdata.BAD_UUID)
@@ -92,10 +107,17 @@ class PriceListControllerTest {
                         .with(admin_jwt)
                 )
                 .andExpect(status().isNotFound());
+            
+            // Verify no changes to existing prices
+            assertTrue(priceRepository.findById(Testdata.PRICE_1_UUID).isPresent());
+            assertTrue(priceRepository.findById(Testdata.PRICE_2_UUID).isPresent());
+            assertEquals(initialCount, priceRepository.count());
         }
 
         @Test
         void shouldReturn403WhenUpdatingPriceWithoutAuthorization() throws Exception {
+            long initialCount = priceRepository.count();
+            
             mockMvc
                 .perform(
                     put("/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
@@ -104,6 +126,11 @@ class PriceListControllerTest {
                         .with(user_jwt)
                 )
                 .andExpect(status().isForbidden());
+            
+            // Verify no changes when unauthorized
+            assertTrue(priceRepository.findById(Testdata.PRICE_1_UUID).isPresent());
+            assertTrue(priceRepository.findById(Testdata.PRICE_2_UUID).isPresent());
+            assertEquals(initialCount, priceRepository.count());
         }
     }
 
@@ -111,6 +138,8 @@ class PriceListControllerTest {
     class CreatePrice {
         @Test
         void shouldCreatePriceWhenAuthorized() throws Exception {
+            long initialCount = priceRepository.count();
+            
             mockMvc
                 .perform(
                     post("/masterdata/price")
@@ -122,10 +151,18 @@ class PriceListControllerTest {
                 .andExpect(header().string("location", matchesRegex("/price/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(Testdata.PRICE_3_JSON));
+            
+            // Verify creation - count should increase by 1
+            assertEquals(initialCount + 1, priceRepository.count());
+            // Verify existing prices unaffected
+            assertTrue(priceRepository.findById(Testdata.PRICE_1_UUID).isPresent());
+            assertTrue(priceRepository.findById(Testdata.PRICE_2_UUID).isPresent());
         }
 
         @Test
         void shouldReturn403WhenCreatingPriceWithoutAuthorization() throws Exception {
+            long initialCount = priceRepository.count();
+            
             mockMvc
                 .perform(
                     post("/masterdata/price")
@@ -134,6 +171,11 @@ class PriceListControllerTest {
                         .with(user_jwt)
                 )
                 .andExpect(status().isForbidden());
+            
+            // Verify no changes when unauthorized
+            assertEquals(initialCount, priceRepository.count());
+            assertTrue(priceRepository.findById(Testdata.PRICE_1_UUID).isPresent());
+            assertTrue(priceRepository.findById(Testdata.PRICE_2_UUID).isPresent());
         }
     }
 
@@ -141,22 +183,37 @@ class PriceListControllerTest {
     class DeletePrice {
         @Test
         void shouldDeletePriceWhenAuthorized() throws Exception {
+            long initialCount = priceRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
                         .with(admin_jwt)
                 )
                 .andExpect(status().isOk());
+            
+            // Verify deletion
+            assertFalse(priceRepository.findById(Testdata.PRICE_1_UUID).isPresent());
+            assertEquals(initialCount - 1, priceRepository.count());
+            // Verify other price unaffected
+            assertTrue(priceRepository.findById(Testdata.PRICE_2_UUID).isPresent());
         }
 
         @Test
         void shouldReturn403WhenDeletingPriceWithoutAuthorization() throws Exception {
+            long initialCount = priceRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
                         .with(user_jwt)
                 )
                 .andExpect(status().isForbidden());
+            
+            // Verify no changes when unauthorized
+            assertEquals(initialCount, priceRepository.count());
+            assertTrue(priceRepository.findById(Testdata.PRICE_1_UUID).isPresent());
+            assertTrue(priceRepository.findById(Testdata.PRICE_2_UUID).isPresent());
         }
     }
 

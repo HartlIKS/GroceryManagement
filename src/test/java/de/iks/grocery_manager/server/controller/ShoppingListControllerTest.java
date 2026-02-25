@@ -1,9 +1,11 @@
 package de.iks.grocery_manager.server.controller;
 
 import de.iks.grocery_manager.server.Testdata;
+import de.iks.grocery_manager.server.jpa.ShoppingListRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -14,6 +16,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -24,6 +27,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Sql(Testdata.SCRIPT)
 class ShoppingListControllerTest {
     private MockMvc mockMvc;
+    
+    @Autowired
+    private ShoppingListRepository shoppingListRepository;
 
     private final RequestPostProcessor user1_jwt = jwt()
         .jwt(b -> b.subject("user1"));
@@ -168,16 +174,26 @@ class ShoppingListControllerTest {
     class DeleteShoppingList {
         @Test
         void shouldDeleteShoppingListWhenAuthenticatedAndOwned() throws Exception {
+            long initialCount = shoppingListRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
+            
+            // Verify deletion
+            assertFalse(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
+            assertEquals(initialCount - 1, shoppingListRepository.count());
+            // Verify other list unaffected
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
         }
 
         @Test
         void shouldDeleteNonRepeatingShoppingListWhenIfNonRepeatingIsTrue() throws Exception {
+            long initialCount = shoppingListRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
@@ -185,10 +201,18 @@ class ShoppingListControllerTest {
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
+            
+            // Verify deletion (non-repeating list should be deleted)
+            assertFalse(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
+            assertEquals(initialCount - 1, shoppingListRepository.count());
+            // Verify other list unaffected
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
         }
 
         @Test
         void shouldNotDeleteRepeatingShoppingListWhenIfNonRepeatingIsTrue() throws Exception {
+            long initialCount = shoppingListRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
@@ -196,10 +220,18 @@ class ShoppingListControllerTest {
                         .with(user2_jwt)
                 )
                 .andExpect(status().isOk());
+            
+            // Verify list was NOT deleted (repeating list should not be deleted when ifNonRepeating=true)
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
+            assertEquals(initialCount, shoppingListRepository.count());
+            // Verify other list unaffected
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
         }
 
         @Test
         void shouldDeleteRepeatingShoppingListWhenIfNonRepeatingIsFalse() throws Exception {
+            long initialCount = shoppingListRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
@@ -207,20 +239,35 @@ class ShoppingListControllerTest {
                         .with(user2_jwt)
                 )
                 .andExpect(status().isOk());
+            
+            // Verify deletion (repeating list should be deleted when ifNonRepeating=false)
+            assertFalse(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
+            assertEquals(initialCount - 1, shoppingListRepository.count());
+            // Verify other list unaffected
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
         }
 
         @Test
         void shouldReturn200WhenDeletingNonExistentShoppingList() throws Exception {
+            long initialCount = shoppingListRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/shoppingLists/{uuid}", Testdata.BAD_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
+            
+            // Verify no changes to existing lists
+            assertEquals(initialCount, shoppingListRepository.count());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
         }
 
         @Test
         void shouldReturn200WhenDeletingNonExistentShoppingListWithIfNonRepeatingTrue() throws Exception {
+            long initialCount = shoppingListRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/shoppingLists/{uuid}", Testdata.BAD_UUID)
@@ -228,20 +275,34 @@ class ShoppingListControllerTest {
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
+            
+            // Verify no changes to existing lists
+            assertEquals(initialCount, shoppingListRepository.count());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
         }
 
         @Test
         void shouldReturn200WhenDeletingOtherUsersShoppingList() throws Exception {
+            long initialCount = shoppingListRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
+            
+            // Verify no changes (user1 cannot delete user2's list)
+            assertEquals(initialCount, shoppingListRepository.count());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
         }
 
         @Test
         void shouldReturn200WhenDeletingOtherUsersShoppingListWithIfNonRepeatingTrue() throws Exception {
+            long initialCount = shoppingListRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
@@ -249,25 +310,44 @@ class ShoppingListControllerTest {
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
+            
+            // Verify no changes (user1 cannot delete user2's list)
+            assertEquals(initialCount, shoppingListRepository.count());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
         }
 
         @Test
         void shouldReturn401WhenDeletingShoppingListWithoutAuthentication() throws Exception {
+            long initialCount = shoppingListRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
                 )
                 .andExpect(status().isUnauthorized());
+            
+            // Verify no changes when unauthorized
+            assertEquals(initialCount, shoppingListRepository.count());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
         }
 
         @Test
         void shouldReturn401WhenDeletingShoppingListWithIfNonRepeatingTrueWithoutAuthentication() throws Exception {
+            long initialCount = shoppingListRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
                         .param("ifNonRepeating", "true")
                 )
                 .andExpect(status().isUnauthorized());
+
+            // Verify no changes when unauthorized
+            assertEquals(initialCount, shoppingListRepository.count());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
         }
     }
 

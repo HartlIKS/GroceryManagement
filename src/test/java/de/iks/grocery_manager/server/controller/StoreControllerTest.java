@@ -1,9 +1,11 @@
 package de.iks.grocery_manager.server.controller;
 
 import de.iks.grocery_manager.server.Testdata;
+import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -16,6 +18,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import static de.iks.grocery_manager.server.config.SecurityConfiguration.AUTHORITY_MASTERDATA;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -26,6 +29,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Sql(Testdata.SCRIPT)
 class StoreControllerTest {
     private MockMvc mockMvc;
+    
+    @Autowired
+    private StoreRepository storeRepository;
 
     private final RequestPostProcessor admin_jwt = jwt()
         .authorities(new SimpleGrantedAuthority(AUTHORITY_MASTERDATA));
@@ -68,6 +74,8 @@ class StoreControllerTest {
     class UpdateStore {
         @Test
         void shouldUpdateStoreWhenAuthorizedAndFound() throws Exception {
+            long initialCount = storeRepository.count();
+            
             mockMvc
                 .perform(
                     put("/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
@@ -78,10 +86,17 @@ class StoreControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(Testdata.STORE_1_JSON2));
+            
+            // Verify update was applied and other store unaffected
+            assertTrue(storeRepository.findById(Testdata.STORE_1_UUID).isPresent());
+            assertTrue(storeRepository.findById(Testdata.STORE_2_UUID).isPresent());
+            assertEquals(initialCount, storeRepository.count());
         }
 
         @Test
         void shouldReturn404WhenUpdatingNonExistentStore() throws Exception {
+            long initialCount = storeRepository.count();
+            
             mockMvc
                 .perform(
                     put("/masterdata/store/{uuid}", Testdata.BAD_UUID)
@@ -90,10 +105,17 @@ class StoreControllerTest {
                         .with(admin_jwt)
                 )
                 .andExpect(status().isNotFound());
+            
+            // Verify no changes to existing stores
+            assertTrue(storeRepository.findById(Testdata.STORE_1_UUID).isPresent());
+            assertTrue(storeRepository.findById(Testdata.STORE_2_UUID).isPresent());
+            assertEquals(initialCount, storeRepository.count());
         }
 
         @Test
         void shouldReturn403WhenUpdatingStoreWithoutAuthorization() throws Exception {
+            long initialCount = storeRepository.count();
+            
             mockMvc
                 .perform(
                     put("/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
@@ -102,6 +124,11 @@ class StoreControllerTest {
                         .with(user_jwt)
                 )
                 .andExpect(status().isForbidden());
+            
+            // Verify no changes when unauthorized
+            assertTrue(storeRepository.findById(Testdata.STORE_1_UUID).isPresent());
+            assertTrue(storeRepository.findById(Testdata.STORE_2_UUID).isPresent());
+            assertEquals(initialCount, storeRepository.count());
         }
     }
 
@@ -109,6 +136,8 @@ class StoreControllerTest {
     class CreateStore {
         @Test
         void shouldCreateStoreWhenAuthorized() throws Exception {
+            long initialCount = storeRepository.count();
+            
             mockMvc
                 .perform(
                     post("/masterdata/store")
@@ -120,10 +149,18 @@ class StoreControllerTest {
                 .andExpect(header().string("location", matchesRegex("/store/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(Testdata.STORE_3_JSON));
+            
+            // Verify creation - count should increase by 1
+            assertEquals(initialCount + 1, storeRepository.count());
+            // Verify existing stores unaffected
+            assertTrue(storeRepository.findById(Testdata.STORE_1_UUID).isPresent());
+            assertTrue(storeRepository.findById(Testdata.STORE_2_UUID).isPresent());
         }
 
         @Test
         void shouldReturn403WhenCreatingStoreWithoutAuthorization() throws Exception {
+            long initialCount = storeRepository.count();
+            
             mockMvc
                 .perform(
                     post("/masterdata/store")
@@ -132,6 +169,11 @@ class StoreControllerTest {
                         .with(user_jwt)
                 )
                 .andExpect(status().isForbidden());
+            
+            // Verify no changes when unauthorized
+            assertEquals(initialCount, storeRepository.count());
+            assertTrue(storeRepository.findById(Testdata.STORE_1_UUID).isPresent());
+            assertTrue(storeRepository.findById(Testdata.STORE_2_UUID).isPresent());
         }
     }
 
@@ -139,22 +181,37 @@ class StoreControllerTest {
     class DeleteStore {
         @Test
         void shouldDeleteStoreWhenAuthorized() throws Exception {
+            long initialCount = storeRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
                         .with(admin_jwt)
                 )
                 .andExpect(status().isOk());
+            
+            // Verify deletion
+            assertFalse(storeRepository.findById(Testdata.STORE_1_UUID).isPresent());
+            assertEquals(initialCount - 1, storeRepository.count());
+            // Verify other store unaffected
+            assertTrue(storeRepository.findById(Testdata.STORE_2_UUID).isPresent());
         }
 
         @Test
         void shouldReturn403WhenDeletingStoreWithoutAuthorization() throws Exception {
+            long initialCount = storeRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
                         .with(user_jwt)
                 )
                 .andExpect(status().isForbidden());
+            
+            // Verify no changes when unauthorized
+            assertEquals(initialCount, storeRepository.count());
+            assertTrue(storeRepository.findById(Testdata.STORE_1_UUID).isPresent());
+            assertTrue(storeRepository.findById(Testdata.STORE_2_UUID).isPresent());
         }
     }
 

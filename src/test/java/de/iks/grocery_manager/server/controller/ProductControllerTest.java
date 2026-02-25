@@ -1,9 +1,11 @@
 package de.iks.grocery_manager.server.controller;
 
 import de.iks.grocery_manager.server.Testdata;
+import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -16,6 +18,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import static de.iks.grocery_manager.server.config.SecurityConfiguration.AUTHORITY_MASTERDATA;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -26,6 +29,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Sql(Testdata.SCRIPT)
 class ProductControllerTest {
     private MockMvc mockMvc;
+    
+    @Autowired
+    private ProductRepository productRepository;
 
     private final RequestPostProcessor admin_jwt = jwt()
         .authorities(new SimpleGrantedAuthority(AUTHORITY_MASTERDATA));
@@ -68,6 +74,8 @@ class ProductControllerTest {
     class UpdateProduct {
         @Test
         void shouldUpdateProductWhenAuthorizedAndFound() throws Exception {
+            long initialCount = productRepository.count();
+            
             mockMvc
                 .perform(
                     put("/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
@@ -78,10 +86,17 @@ class ProductControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(Testdata.PRODUCT_1_JSON2));
+            
+            // Verify update was applied and other product unaffected
+            assertTrue(productRepository.findById(Testdata.PRODUCT_1_UUID).isPresent());
+            assertTrue(productRepository.findById(Testdata.PRODUCT_2_UUID).isPresent());
+            assertEquals(initialCount, productRepository.count());
         }
 
         @Test
         void shouldReturn404WhenUpdatingNonExistentProduct() throws Exception {
+            long initialCount = productRepository.count();
+            
             mockMvc
                 .perform(
                     put("/masterdata/product/{uuid}", Testdata.BAD_UUID)
@@ -90,10 +105,17 @@ class ProductControllerTest {
                         .with(admin_jwt)
                 )
                 .andExpect(status().isNotFound());
+            
+            // Verify no changes to existing products
+            assertTrue(productRepository.findById(Testdata.PRODUCT_1_UUID).isPresent());
+            assertTrue(productRepository.findById(Testdata.PRODUCT_2_UUID).isPresent());
+            assertEquals(initialCount, productRepository.count());
         }
 
         @Test
         void shouldReturn403WhenUpdatingProductWithoutAuthorization() throws Exception {
+            long initialCount = productRepository.count();
+            
             mockMvc
                 .perform(
                     put("/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
@@ -102,6 +124,11 @@ class ProductControllerTest {
                         .with(user_jwt)
                 )
                 .andExpect(status().isForbidden());
+            
+            // Verify no changes when unauthorized
+            assertTrue(productRepository.findById(Testdata.PRODUCT_1_UUID).isPresent());
+            assertTrue(productRepository.findById(Testdata.PRODUCT_2_UUID).isPresent());
+            assertEquals(initialCount, productRepository.count());
         }
     }
 
@@ -109,6 +136,8 @@ class ProductControllerTest {
     class CreateProduct {
         @Test
         void shouldCreateProductWhenAuthorized() throws Exception {
+            long initialCount = productRepository.count();
+            
             mockMvc
                 .perform(
                     post("/masterdata/product")
@@ -120,10 +149,18 @@ class ProductControllerTest {
                 .andExpect(header().string("location", matchesRegex("/product/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(Testdata.PRODUCT_3_JSON));
+            
+            // Verify creation - count should increase by 1
+            assertEquals(initialCount + 1, productRepository.count());
+            // Verify existing products unaffected
+            assertTrue(productRepository.findById(Testdata.PRODUCT_1_UUID).isPresent());
+            assertTrue(productRepository.findById(Testdata.PRODUCT_2_UUID).isPresent());
         }
 
         @Test
         void shouldReturn403WhenCreatingProductWithoutAuthorization() throws Exception {
+            long initialCount = productRepository.count();
+            
             mockMvc
                 .perform(
                     post("/masterdata/product")
@@ -132,6 +169,11 @@ class ProductControllerTest {
                         .with(user_jwt)
                 )
                 .andExpect(status().isForbidden());
+            
+            // Verify no changes when unauthorized
+            assertEquals(initialCount, productRepository.count());
+            assertTrue(productRepository.findById(Testdata.PRODUCT_1_UUID).isPresent());
+            assertTrue(productRepository.findById(Testdata.PRODUCT_2_UUID).isPresent());
         }
     }
 
@@ -139,22 +181,37 @@ class ProductControllerTest {
     class DeleteProduct {
         @Test
         void shouldDeleteProductWhenAuthorized() throws Exception {
+            long initialCount = productRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
                         .with(admin_jwt)
                 )
                 .andExpect(status().isOk());
+            
+            // Verify deletion
+            assertFalse(productRepository.findById(Testdata.PRODUCT_1_UUID).isPresent());
+            assertEquals(initialCount - 1, productRepository.count());
+            // Verify other product unaffected
+            assertTrue(productRepository.findById(Testdata.PRODUCT_2_UUID).isPresent());
         }
 
         @Test
         void shouldReturn403WhenDeletingProductWithoutAuthorization() throws Exception {
+            long initialCount = productRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
                         .with(user_jwt)
                 )
                 .andExpect(status().isForbidden());
+            
+            // Verify no changes when unauthorized
+            assertEquals(initialCount, productRepository.count());
+            assertTrue(productRepository.findById(Testdata.PRODUCT_1_UUID).isPresent());
+            assertTrue(productRepository.findById(Testdata.PRODUCT_2_UUID).isPresent());
         }
     }
 

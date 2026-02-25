@@ -1,9 +1,11 @@
 package de.iks.grocery_manager.server.controller;
 
 import de.iks.grocery_manager.server.Testdata;
+import de.iks.grocery_manager.server.jpa.ShoppingTripRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -14,6 +16,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -24,6 +27,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Sql(Testdata.SCRIPT)
 class ShoppingTripControllerTest {
     private MockMvc mockMvc;
+    
+    @Autowired
+    private ShoppingTripRepository shoppingTripRepository;
 
     private final RequestPostProcessor user1_jwt = jwt()
         .jwt(b -> b.subject("user1"));
@@ -87,6 +93,8 @@ class ShoppingTripControllerTest {
     class UpdateShoppingTrip {
         @Test
         void shouldUpdateShoppingTripWhenAuthenticatedAndFound() throws Exception {
+            long initialCount = shoppingTripRepository.count();
+            
             mockMvc
                 .perform(
                     put("/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
@@ -97,10 +105,17 @@ class ShoppingTripControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(Testdata.SHOPPING_TRIP_1_JSON2));
+            
+            // Verify update was applied and other trip unaffected
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
+            assertEquals(initialCount, shoppingTripRepository.count());
         }
 
         @Test
         void shouldReturn404WhenUpdatingNonExistentShoppingTrip() throws Exception {
+            long initialCount = shoppingTripRepository.count();
+            
             mockMvc
                 .perform(
                     put("/shoppingTrips/{uuid}", Testdata.BAD_UUID)
@@ -109,10 +124,17 @@ class ShoppingTripControllerTest {
                         .with(user1_jwt)
                 )
                 .andExpect(status().isNotFound());
+            
+            // Verify no changes to existing trips
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
+            assertEquals(initialCount, shoppingTripRepository.count());
         }
 
         @Test
         void shouldReturn404WhenUpdatingOtherUsersShoppingTrip() throws Exception {
+            long initialCount = shoppingTripRepository.count();
+            
             mockMvc
                 .perform(
                     put("/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_2_UUID)
@@ -121,10 +143,17 @@ class ShoppingTripControllerTest {
                         .with(user1_jwt)
                 )
                 .andExpect(status().isNotFound());
+            
+            // Verify no changes (user1 cannot update user2's trip)
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
+            assertEquals(initialCount, shoppingTripRepository.count());
         }
 
         @Test
         void shouldReturn401WhenUpdatingShoppingTripWithoutAuthentication() throws Exception {
+            long initialCount = shoppingTripRepository.count();
+            
             mockMvc
                 .perform(
                     put("/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
@@ -132,6 +161,11 @@ class ShoppingTripControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isUnauthorized());
+            
+            // Verify no changes when unauthorized
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
+            assertEquals(initialCount, shoppingTripRepository.count());
         }
     }
 
@@ -139,6 +173,8 @@ class ShoppingTripControllerTest {
     class CreateShoppingTrip {
         @Test
         void shouldCreateShoppingTripWhenAuthenticated() throws Exception {
+            long initialCount = shoppingTripRepository.count();
+            
             mockMvc
                 .perform(
                     post("/shoppingTrips")
@@ -150,10 +186,18 @@ class ShoppingTripControllerTest {
                 .andExpect(header().string("location", matchesRegex("/shoppingLists/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(Testdata.SHOPPING_TRIP_3_JSON));
+            
+            // Verify creation - count should increase by 1
+            assertEquals(initialCount + 1, shoppingTripRepository.count());
+            // Verify existing trips unaffected
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
         }
 
         @Test
         void shouldReturn401WhenCreatingShoppingTripWithoutAuthentication() throws Exception {
+            long initialCount = shoppingTripRepository.count();
+            
             mockMvc
                 .perform(
                     post("/shoppingTrips")
@@ -161,6 +205,11 @@ class ShoppingTripControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isUnauthorized());
+            
+            // Verify no changes when unauthorized
+            assertEquals(initialCount, shoppingTripRepository.count());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
         }
     }
 
@@ -168,41 +217,70 @@ class ShoppingTripControllerTest {
     class DeleteShoppingTrip {
         @Test
         void shouldDeleteShoppingTripWhenAuthenticatedAndOwned() throws Exception {
+            long initialCount = shoppingTripRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
+            
+            // Verify deletion
+            assertFalse(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
+            assertEquals(initialCount - 1, shoppingTripRepository.count());
+            // Verify other trip unaffected
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
         }
 
         @Test
         void shouldReturn200WhenDeletingNonExistentShoppingTrip() throws Exception {
+            long initialCount = shoppingTripRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/shoppingTrips/{uuid}", Testdata.BAD_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
+            
+            // Verify no changes to existing trips
+            assertEquals(initialCount, shoppingTripRepository.count());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
         }
 
         @Test
         void shouldReturn200WhenDeletingOtherUsersShoppingTrip() throws Exception {
+            long initialCount = shoppingTripRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_2_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
+            
+            // Verify no changes (user1 cannot delete user2's trip)
+            assertEquals(initialCount, shoppingTripRepository.count());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
         }
 
         @Test
         void shouldReturn401WhenDeletingShoppingTripWithoutAuthentication() throws Exception {
+            long initialCount = shoppingTripRepository.count();
+            
             mockMvc
                 .perform(
                     delete("/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
                 )
                 .andExpect(status().isUnauthorized());
+            
+            // Verify no changes when unauthorized
+            assertEquals(initialCount, shoppingTripRepository.count());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
         }
     }
 
