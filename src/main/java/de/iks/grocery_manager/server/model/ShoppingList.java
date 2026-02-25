@@ -22,6 +22,9 @@ public class ShoppingList {
     @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
+    private boolean repeating;
+
     @ElementCollection
     @MapKeyJoinColumn(name = "product_uuid")
     @Column(name = "amount", nullable = false)
