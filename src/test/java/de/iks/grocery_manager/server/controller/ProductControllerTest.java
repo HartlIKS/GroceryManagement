@@ -51,7 +51,7 @@ class ProductControllerTest {
         void shouldReturnProductWhenFound() throws Exception {
             mockMvc
                 .perform(
-                    get("/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
+                    get("/api/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
                         .with(user_jwt)
                 )
                 .andExpect(status().isOk())
@@ -63,7 +63,7 @@ class ProductControllerTest {
         void shouldReturn404WhenProductNotFound() throws Exception {
             mockMvc
                 .perform(
-                    get("/masterdata/product/{uuid}", Testdata.BAD_UUID)
+                    get("/api/masterdata/product/{uuid}", Testdata.BAD_UUID)
                         .with(user_jwt)
                 )
                 .andExpect(status().isNotFound());
@@ -78,7 +78,7 @@ class ProductControllerTest {
             
             mockMvc
                 .perform(
-                    put("/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
+                    put("/api/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
                         .content(Testdata.PRODUCT_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
@@ -99,7 +99,7 @@ class ProductControllerTest {
             
             mockMvc
                 .perform(
-                    put("/masterdata/product/{uuid}", Testdata.BAD_UUID)
+                    put("/api/masterdata/product/{uuid}", Testdata.BAD_UUID)
                         .content(Testdata.PRODUCT_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
@@ -118,7 +118,7 @@ class ProductControllerTest {
             
             mockMvc
                 .perform(
-                    put("/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
+                    put("/api/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
                         .content(Testdata.PRODUCT_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user_jwt)
@@ -140,13 +140,13 @@ class ProductControllerTest {
             
             mockMvc
                 .perform(
-                    post("/masterdata/product")
+                    post("/api/masterdata/product")
                         .content(Testdata.PRODUCT_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
                 )
                 .andExpect(status().isCreated())
-                .andExpect(header().string("location", matchesRegex("/product/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
+                .andExpect(header().string("location", matchesRegex("/api/product/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(Testdata.PRODUCT_3_JSON));
             
@@ -163,7 +163,7 @@ class ProductControllerTest {
             
             mockMvc
                 .perform(
-                    post("/masterdata/product")
+                    post("/api/masterdata/product")
                         .content(Testdata.PRODUCT_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user_jwt)
@@ -185,7 +185,7 @@ class ProductControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
+                    delete("/api/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
                         .with(admin_jwt)
                 )
                 .andExpect(status().isOk());
@@ -203,7 +203,7 @@ class ProductControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
+                    delete("/api/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
                         .with(user_jwt)
                 )
                 .andExpect(status().isForbidden());
@@ -221,7 +221,7 @@ class ProductControllerTest {
         void shouldReturnAllProductsWhenSearching() throws Exception {
             mockMvc
                 .perform(
-                    get("/masterdata/product")
+                    get("/api/masterdata/product")
                         .with(user_jwt)
                 )
                 .andExpect(status().isOk())

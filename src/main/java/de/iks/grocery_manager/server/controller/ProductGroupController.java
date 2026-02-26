@@ -24,7 +24,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping(
-    path = "/productGroups",
+    path = "/api/productGroups",
     produces = MediaType.APPLICATION_JSON_VALUE
 )
 @Transactional
@@ -100,7 +100,7 @@ public class ProductGroupController {
             .created(
                 uriBuilderFactory
                     .builder()
-                    .pathSegment("productGroups", "{uuid}")
+                    .pathSegment("api", "productGroups", "{uuid}")
                     .build(ret.uuid())
             )
             .body(ret);

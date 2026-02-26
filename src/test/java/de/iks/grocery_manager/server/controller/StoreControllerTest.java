@@ -51,7 +51,7 @@ class StoreControllerTest {
         void shouldReturnStoreWhenFound() throws Exception {
             mockMvc
                 .perform(
-                    get("/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
+                    get("/api/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
                         .with(user_jwt)
                 )
                 .andExpect(status().isOk())
@@ -63,7 +63,7 @@ class StoreControllerTest {
         void shouldReturn404WhenStoreNotFound() throws Exception {
             mockMvc
                 .perform(
-                    get("/masterdata/store/{uuid}", Testdata.BAD_UUID)
+                    get("/api/masterdata/store/{uuid}", Testdata.BAD_UUID)
                         .with(user_jwt)
                 )
                 .andExpect(status().isNotFound());
@@ -78,7 +78,7 @@ class StoreControllerTest {
             
             mockMvc
                 .perform(
-                    put("/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
+                    put("/api/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
                         .content(Testdata.STORE_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
@@ -99,7 +99,7 @@ class StoreControllerTest {
             
             mockMvc
                 .perform(
-                    put("/masterdata/store/{uuid}", Testdata.BAD_UUID)
+                    put("/api/masterdata/store/{uuid}", Testdata.BAD_UUID)
                         .content(Testdata.STORE_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
@@ -118,7 +118,7 @@ class StoreControllerTest {
             
             mockMvc
                 .perform(
-                    put("/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
+                    put("/api/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
                         .content(Testdata.STORE_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user_jwt)
@@ -140,13 +140,13 @@ class StoreControllerTest {
             
             mockMvc
                 .perform(
-                    post("/masterdata/store")
+                    post("/api/masterdata/store")
                         .content(Testdata.STORE_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
                 )
                 .andExpect(status().isCreated())
-                .andExpect(header().string("location", matchesRegex("/store/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
+                .andExpect(header().string("location", matchesRegex("/api/store/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(Testdata.STORE_3_JSON));
             
@@ -163,7 +163,7 @@ class StoreControllerTest {
             
             mockMvc
                 .perform(
-                    post("/masterdata/store")
+                    post("/api/masterdata/store")
                         .content(Testdata.STORE_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user_jwt)
@@ -185,7 +185,7 @@ class StoreControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
+                    delete("/api/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
                         .with(admin_jwt)
                 )
                 .andExpect(status().isOk());
@@ -203,7 +203,7 @@ class StoreControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
+                    delete("/api/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
                         .with(user_jwt)
                 )
                 .andExpect(status().isForbidden());
@@ -221,7 +221,7 @@ class StoreControllerTest {
         void shouldReturnStoresWhenSearchingByName() throws Exception {
             mockMvc
                 .perform(
-                    get("/masterdata/store")
+                    get("/api/masterdata/store")
                         .queryParam("name", "Store")
                         .with(user_jwt)
                 )

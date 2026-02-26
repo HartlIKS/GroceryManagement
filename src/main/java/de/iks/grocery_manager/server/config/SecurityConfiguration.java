@@ -26,28 +26,26 @@ public class SecurityConfiguration {
         corsConfiguration.addAllowedHeader("*");
         corsConfiguration.addAllowedMethod("*");
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", corsConfiguration);
+        source.registerCorsConfiguration("/api/**", corsConfiguration);
         return source;
     }
 
     @Bean
     public SecurityFilterChain masterDataFilterChain(HttpSecurity http) {
         return http
-            .securityMatcher("/**")
+            .securityMatcher("/api/**")
             .cors(c -> corsConfigurationSource())
             .csrf(CsrfConfigurer::disable)
             .oauth2ResourceServer(o -> o
                 .jwt(withDefaults())
             )
             .authorizeHttpRequests(r -> r
-                .requestMatchers(HttpMethod.GET, "/masterdata/**")
+                .requestMatchers(HttpMethod.GET, "/api/masterdata/**")
                 .authenticated()
-                .requestMatchers("/masterdata/**")
+                .requestMatchers("/api/masterdata/**")
                 .hasAuthority(AUTHORITY_MASTERDATA)
-                .requestMatchers("/productGroups/**", "/productGroups", "/shoppingLists/**", "/shoppingLists", "/shoppingTrips/**", "/shoppingTrips")
-                .authenticated()
                 .anyRequest()
-                .denyAll()
+                .authenticated()
             )
             .build();
     }

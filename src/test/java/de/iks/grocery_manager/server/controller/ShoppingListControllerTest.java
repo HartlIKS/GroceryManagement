@@ -51,7 +51,7 @@ class ShoppingListControllerTest {
         void shouldReturnShoppingListWhenFoundAndOwned() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                    get("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
@@ -63,7 +63,7 @@ class ShoppingListControllerTest {
         void shouldReturn404WhenShoppingListNotFound() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingLists/{uuid}", Testdata.BAD_UUID)
+                    get("/api/shoppingLists/{uuid}", Testdata.BAD_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isNotFound());
@@ -73,7 +73,7 @@ class ShoppingListControllerTest {
         void shouldReturn404WhenAccessingOtherUsersShoppingList() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
+                    get("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isNotFound());
@@ -83,7 +83,7 @@ class ShoppingListControllerTest {
         void shouldReturn401WhenGettingShoppingListWithoutAuthentication() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                    get("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
                 )
                 .andExpect(status().isUnauthorized());
         }
@@ -95,7 +95,7 @@ class ShoppingListControllerTest {
         void shouldUpdateShoppingListWhenAuthenticatedAndFound() throws Exception {
             mockMvc
                 .perform(
-                    put("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                    put("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
                         .content(Testdata.SHOPPING_LIST_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -109,7 +109,7 @@ class ShoppingListControllerTest {
         void shouldReturn404WhenUpdatingNonExistentShoppingList() throws Exception {
             mockMvc
                 .perform(
-                    put("/shoppingLists/{uuid}", Testdata.BAD_UUID)
+                    put("/api/shoppingLists/{uuid}", Testdata.BAD_UUID)
                         .content(Testdata.SHOPPING_LIST_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -121,7 +121,7 @@ class ShoppingListControllerTest {
         void shouldReturn404WhenUpdatingOtherUsersShoppingList() throws Exception {
             mockMvc
                 .perform(
-                    put("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
+                    put("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
                         .content(Testdata.SHOPPING_LIST_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -133,7 +133,7 @@ class ShoppingListControllerTest {
         void shouldReturn401WhenUpdatingShoppingListWithoutAuthentication() throws Exception {
             mockMvc
                 .perform(
-                    put("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                    put("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
                         .content(Testdata.SHOPPING_LIST_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -147,13 +147,13 @@ class ShoppingListControllerTest {
         void shouldCreateShoppingListWhenAuthenticated() throws Exception {
             mockMvc
                 .perform(
-                    post("/shoppingLists")
+                    post("/api/shoppingLists")
                         .content(Testdata.SHOPPING_LIST_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isCreated())
-                .andExpect(header().string("location", matchesRegex("/shoppingLists/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
+                .andExpect(header().string("location", matchesRegex("/api/shoppingLists/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(Testdata.SHOPPING_LIST_3_JSON));
         }
@@ -162,7 +162,7 @@ class ShoppingListControllerTest {
         void shouldReturn401WhenCreatingShoppingListWithoutAuthentication() throws Exception {
             mockMvc
                 .perform(
-                    post("/shoppingLists")
+                    post("/api/shoppingLists")
                         .content(Testdata.SHOPPING_LIST_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -178,7 +178,7 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                    delete("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
@@ -196,7 +196,7 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                    delete("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
                         .param("ifNonRepeating", "true")
                         .with(user1_jwt)
                 )
@@ -215,7 +215,7 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
+                    delete("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
                         .param("ifNonRepeating", "true")
                         .with(user2_jwt)
                 )
@@ -234,7 +234,7 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
+                    delete("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
                         .param("ifNonRepeating", "false")
                         .with(user2_jwt)
                 )
@@ -253,7 +253,7 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/shoppingLists/{uuid}", Testdata.BAD_UUID)
+                    delete("/api/shoppingLists/{uuid}", Testdata.BAD_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
@@ -270,7 +270,7 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/shoppingLists/{uuid}", Testdata.BAD_UUID)
+                    delete("/api/shoppingLists/{uuid}", Testdata.BAD_UUID)
                         .param("ifNonRepeating", "true")
                         .with(user1_jwt)
                 )
@@ -288,7 +288,7 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
+                    delete("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
@@ -305,7 +305,7 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
+                    delete("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
                         .param("ifNonRepeating", "true")
                         .with(user1_jwt)
                 )
@@ -323,7 +323,7 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                    delete("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
                 )
                 .andExpect(status().isUnauthorized());
             
@@ -339,7 +339,7 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                    delete("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
                         .param("ifNonRepeating", "true")
                 )
                 .andExpect(status().isUnauthorized());
@@ -357,7 +357,7 @@ class ShoppingListControllerTest {
         void shouldReturnUserOwnedShoppingListsWhenSearching() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingLists")
+                    get("/api/shoppingLists")
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
@@ -369,7 +369,7 @@ class ShoppingListControllerTest {
         void shouldReturnUserOwnedShoppingListsWhenSearchingWithName() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingLists?name=List")
+                    get("/api/shoppingLists?name=List")
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
@@ -381,7 +381,7 @@ class ShoppingListControllerTest {
         void shouldReturnEmptyResultForUserWithNoLists() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingLists")
+                    get("/api/shoppingLists")
                         .with(user2_jwt)
                 )
                 .andExpect(status().isOk())
@@ -393,7 +393,7 @@ class ShoppingListControllerTest {
         void shouldReturn401WhenSearchingShoppingListsWithoutAuthentication() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingLists")
+                    get("/api/shoppingLists")
                 )
                 .andExpect(status().isUnauthorized());
         }

@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping(
-    path = "/masterdata/price",
+    path = "/api/masterdata/price",
     produces = MediaType.APPLICATION_JSON_VALUE
 )
 @Transactional
@@ -85,7 +85,7 @@ public class PriceListController {
                 .created(
                     uriBuilderFactory
                         .builder()
-                        .pathSegment("price", "{uuid}")
+                        .pathSegment("api", "price", "{uuid}")
                         .build(ret.uuid())
                 )
                 .body(ret)

@@ -51,7 +51,7 @@ class ShoppingTripControllerTest {
         void shouldReturnShoppingTripWhenFoundAndOwned() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
+                    get("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
@@ -63,7 +63,7 @@ class ShoppingTripControllerTest {
         void shouldReturn404WhenShoppingTripNotFound() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingTrips/{uuid}", Testdata.BAD_UUID)
+                    get("/api/shoppingTrips/{uuid}", Testdata.BAD_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isNotFound());
@@ -73,7 +73,7 @@ class ShoppingTripControllerTest {
         void shouldReturn404WhenAccessingOtherUsersShoppingTrip() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_2_UUID)
+                    get("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_2_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isNotFound());
@@ -83,7 +83,7 @@ class ShoppingTripControllerTest {
         void shouldReturn401WhenGettingShoppingTripWithoutAuthentication() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
+                    get("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
                 )
                 .andExpect(status().isUnauthorized());
         }
@@ -97,7 +97,7 @@ class ShoppingTripControllerTest {
             
             mockMvc
                 .perform(
-                    put("/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
+                    put("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
                         .content(Testdata.SHOPPING_TRIP_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -118,7 +118,7 @@ class ShoppingTripControllerTest {
             
             mockMvc
                 .perform(
-                    put("/shoppingTrips/{uuid}", Testdata.BAD_UUID)
+                    put("/api/shoppingTrips/{uuid}", Testdata.BAD_UUID)
                         .content(Testdata.SHOPPING_TRIP_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -137,7 +137,7 @@ class ShoppingTripControllerTest {
             
             mockMvc
                 .perform(
-                    put("/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_2_UUID)
+                    put("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_2_UUID)
                         .content(Testdata.SHOPPING_TRIP_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -156,7 +156,7 @@ class ShoppingTripControllerTest {
             
             mockMvc
                 .perform(
-                    put("/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
+                    put("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
                         .content(Testdata.SHOPPING_TRIP_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -177,13 +177,13 @@ class ShoppingTripControllerTest {
             
             mockMvc
                 .perform(
-                    post("/shoppingTrips")
+                    post("/api/shoppingTrips")
                         .content(Testdata.SHOPPING_TRIP_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isCreated())
-                .andExpect(header().string("location", matchesRegex("/shoppingLists/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
+                .andExpect(header().string("location", matchesRegex("/api/shoppingLists/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(Testdata.SHOPPING_TRIP_3_JSON));
             
@@ -200,7 +200,7 @@ class ShoppingTripControllerTest {
             
             mockMvc
                 .perform(
-                    post("/shoppingTrips")
+                    post("/api/shoppingTrips")
                         .content(Testdata.SHOPPING_TRIP_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -221,7 +221,7 @@ class ShoppingTripControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
+                    delete("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
@@ -239,7 +239,7 @@ class ShoppingTripControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/shoppingTrips/{uuid}", Testdata.BAD_UUID)
+                    delete("/api/shoppingTrips/{uuid}", Testdata.BAD_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
@@ -256,7 +256,7 @@ class ShoppingTripControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_2_UUID)
+                    delete("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_2_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
@@ -273,7 +273,7 @@ class ShoppingTripControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
+                    delete("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
                 )
                 .andExpect(status().isUnauthorized());
             
@@ -290,7 +290,7 @@ class ShoppingTripControllerTest {
         void shouldAddProductsToShoppingTripWhenAuthenticatedAndOwned() throws Exception {
             mockMvc
                 .perform(
-                    post("/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
+                    post("/api/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
                         .content(Testdata.SHOPPING_TRIP_1_ADD_MULTIPLE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -308,7 +308,7 @@ class ShoppingTripControllerTest {
         void shouldAddSingleProductToShoppingTrip() throws Exception {
             mockMvc
                 .perform(
-                    post("/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
+                    post("/api/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
                         .content(Testdata.SHOPPING_TRIP_1_ADD_SINGLE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -325,7 +325,7 @@ class ShoppingTripControllerTest {
         void shouldAccumulateAmountsWhenAddingExistingProduct() throws Exception {
             mockMvc
                 .perform(
-                    post("/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
+                    post("/api/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
                         .content(Testdata.SHOPPING_TRIP_1_ADD_EXISTING_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -339,7 +339,7 @@ class ShoppingTripControllerTest {
         void shouldReturn404WhenAddingToNonExistentShoppingTrip() throws Exception {
             mockMvc
                 .perform(
-                    post("/shoppingTrips/{uuid}/add", Testdata.BAD_UUID)
+                    post("/api/shoppingTrips/{uuid}/add", Testdata.BAD_UUID)
                         .content(Testdata.SHOPPING_TRIP_1_ADD_EXISTING_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -351,7 +351,7 @@ class ShoppingTripControllerTest {
         void shouldReturn404WhenAddingToOtherUsersShoppingTrip() throws Exception {
             mockMvc
                 .perform(
-                    post("/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_2_UUID)
+                    post("/api/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_2_UUID)
                         .content(Testdata.SHOPPING_TRIP_1_ADD_EXISTING_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -363,7 +363,7 @@ class ShoppingTripControllerTest {
         void shouldReturn401WhenAddingToShoppingTripWithoutAuthentication() throws Exception {
             mockMvc
                 .perform(
-                    post("/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
+                    post("/api/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
                         .content(Testdata.SHOPPING_TRIP_1_ADD_EXISTING_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -374,7 +374,7 @@ class ShoppingTripControllerTest {
         void shouldHandleEmptyProductsMap() throws Exception {
             mockMvc
                 .perform(
-                    post("/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
+                    post("/api/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
                         .content(Testdata.SHOPPING_TRIP_1_ADD_EMPTY_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -389,7 +389,7 @@ class ShoppingTripControllerTest {
         void shouldHandleZeroAmount() throws Exception {
             mockMvc
                 .perform(
-                    post("/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
+                    post("/api/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
                         .content(Testdata.SHOPPING_TRIP_1_ADD_ZERO_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -404,7 +404,7 @@ class ShoppingTripControllerTest {
         void shouldHandleNegativeAmount() throws Exception {
             mockMvc
                 .perform(
-                    post("/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
+                    post("/api/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
                         .content(Testdata.SHOPPING_TRIP_1_ADD_NEGATIVE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -422,7 +422,7 @@ class ShoppingTripControllerTest {
         void shouldReturnUserOwnedShoppingTripsWhenSearching() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingTrips?from=2024-01-01T00:00:00Z&to=2024-01-31T23:59:59Z")
+                    get("/api/shoppingTrips?from=2024-01-01T00:00:00Z&to=2024-01-31T23:59:59Z")
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
@@ -434,7 +434,7 @@ class ShoppingTripControllerTest {
         void shouldReturnUserOwnedShoppingTripsWhenSearchingWithFrom() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingTrips?from=2024-01-01T00:00:00Z&to=2024-01-31T23:59:59Z")
+                    get("/api/shoppingTrips?from=2024-01-01T00:00:00Z&to=2024-01-31T23:59:59Z")
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
@@ -446,7 +446,7 @@ class ShoppingTripControllerTest {
         void shouldReturnUserOwnedShoppingTripsWhenSearchingWithTo() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingTrips?from=2024-01-01T00:00:00Z&to=2024-01-31T23:59:59Z")
+                    get("/api/shoppingTrips?from=2024-01-01T00:00:00Z&to=2024-01-31T23:59:59Z")
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
@@ -458,7 +458,7 @@ class ShoppingTripControllerTest {
         void shouldReturnEmptyResultForUserWithNoTrips() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingTrips?from=2024-01-01T00:00:00Z&to=2024-01-31T23:59:59Z")
+                    get("/api/shoppingTrips?from=2024-01-01T00:00:00Z&to=2024-01-31T23:59:59Z")
                         .with(user2_jwt)
                 )
                 .andExpect(status().isOk())
@@ -470,7 +470,7 @@ class ShoppingTripControllerTest {
         void shouldReturn401WhenSearchingShoppingTripsWithoutAuthentication() throws Exception {
             mockMvc
                 .perform(
-                    get("/shoppingTrips")
+                    get("/api/shoppingTrips")
                 )
                 .andExpect(status().isUnauthorized());
         }

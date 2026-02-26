@@ -20,7 +20,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping(
-    path = "/masterdata/store", produces = MediaType.APPLICATION_JSON_VALUE
+    path = "/api/masterdata/store", produces = MediaType.APPLICATION_JSON_VALUE
 )
 @Transactional
 public class StoreController {
@@ -59,7 +59,7 @@ public class StoreController {
             .created(
                 uriBuilderFactory
                     .builder()
-                    .pathSegment("store", "{uuid}")
+                    .pathSegment("api", "store", "{uuid}")
                     .build(ret.uuid())
             )
             .body(ret);

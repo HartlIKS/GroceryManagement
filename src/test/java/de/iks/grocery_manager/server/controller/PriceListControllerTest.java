@@ -53,7 +53,7 @@ class PriceListControllerTest {
         void shouldReturnPriceWhenFound() throws Exception {
             mockMvc
                 .perform(
-                    get("/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
+                    get("/api/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
                         .with(user_jwt)
                 )
                 .andExpect(status().isOk())
@@ -65,7 +65,7 @@ class PriceListControllerTest {
         void shouldReturn404WhenPriceNotFound() throws Exception {
             mockMvc
                 .perform(
-                    get("/masterdata/price/{uuid}", Testdata.BAD_UUID)
+                    get("/api/masterdata/price/{uuid}", Testdata.BAD_UUID)
                         .with(user_jwt)
                 )
                 .andExpect(status().isNotFound());
@@ -80,7 +80,7 @@ class PriceListControllerTest {
             
             mockMvc
                 .perform(
-                    put("/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
+                    put("/api/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
                         .content(Testdata.PRICE_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
@@ -101,7 +101,7 @@ class PriceListControllerTest {
             
             mockMvc
                 .perform(
-                    put("/masterdata/price/{uuid}", Testdata.BAD_UUID)
+                    put("/api/masterdata/price/{uuid}", Testdata.BAD_UUID)
                         .content(Testdata.PRICE_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
@@ -120,7 +120,7 @@ class PriceListControllerTest {
             
             mockMvc
                 .perform(
-                    put("/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
+                    put("/api/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
                         .content(Testdata.PRICE_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user_jwt)
@@ -142,13 +142,13 @@ class PriceListControllerTest {
             
             mockMvc
                 .perform(
-                    post("/masterdata/price")
+                    post("/api/masterdata/price")
                         .content(Testdata.PRICE_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
                 )
                 .andExpect(status().isCreated())
-                .andExpect(header().string("location", matchesRegex("/price/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
+                .andExpect(header().string("location", matchesRegex("/api/price/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(Testdata.PRICE_3_JSON));
             
@@ -165,7 +165,7 @@ class PriceListControllerTest {
             
             mockMvc
                 .perform(
-                    post("/masterdata/price")
+                    post("/api/masterdata/price")
                         .content(Testdata.PRICE_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user_jwt)
@@ -187,7 +187,7 @@ class PriceListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
+                    delete("/api/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
                         .with(admin_jwt)
                 )
                 .andExpect(status().isOk());
@@ -205,7 +205,7 @@ class PriceListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
+                    delete("/api/masterdata/price/{uuid}", Testdata.PRICE_1_UUID)
                         .with(user_jwt)
                 )
                 .andExpect(status().isForbidden());
@@ -223,7 +223,7 @@ class PriceListControllerTest {
         void shouldReturnAllPricesWhenSearching() throws Exception {
             mockMvc
                 .perform(
-                    get("/masterdata/price")
+                    get("/api/masterdata/price")
                         .with(user_jwt)
                 )
                 .andExpect(status().isOk())
@@ -235,7 +235,7 @@ class PriceListControllerTest {
         void shouldReturnPricesWhenSearchingByStore() throws Exception {
             mockMvc
                 .perform(
-                    get("/masterdata/price")
+                    get("/api/masterdata/price")
                         .queryParam("store", Testdata.STORE_3_UUID.toString())
                         .with(user_jwt)
                 )
@@ -250,7 +250,7 @@ class PriceListControllerTest {
         void shouldReturnPricesWhenSearchingByProduct() throws Exception {
             mockMvc
                 .perform(
-                    get("/masterdata/price")
+                    get("/api/masterdata/price")
                         .queryParam("product", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
                         .with(user_jwt)
                 )
@@ -265,7 +265,7 @@ class PriceListControllerTest {
         void shouldReturnPricesWhenSearchingByStoreAndProduct() throws Exception {
             mockMvc
                 .perform(
-                    get("/masterdata/price")
+                    get("/api/masterdata/price")
                         .queryParam("store", Testdata.STORE_3_UUID.toString())
                         .queryParam("product", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
                         .with(user_jwt)
@@ -287,7 +287,7 @@ class PriceListControllerTest {
             
             mockMvc
                 .perform(
-                    get("/masterdata/price")
+                    get("/api/masterdata/price")
                         .queryParam("at", searchDate.toString())
                         .queryParam("stores", Testdata.STORE_3_UUID.toString())
                         .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
@@ -312,7 +312,7 @@ class PriceListControllerTest {
             
             mockMvc
                 .perform(
-                    get("/masterdata/price")
+                    get("/api/masterdata/price")
                         .queryParam("at", searchDate.toString())
                         .queryParam("stores", Testdata.STORE_3_UUID + "," + Testdata.STORE_4_UUID)
                         .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID + "," +
@@ -340,7 +340,7 @@ class PriceListControllerTest {
             
             mockMvc
                 .perform(
-                    get("/masterdata/price")
+                    get("/api/masterdata/price")
                         .queryParam("at", searchDate.toString())
                         .queryParam("stores", Testdata.STORE_3_UUID.toString())
                         .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
@@ -358,7 +358,7 @@ class PriceListControllerTest {
             
             mockMvc
                 .perform(
-                    get("/masterdata/price")
+                    get("/api/masterdata/price")
                         .queryParam("at", searchDate.toString())
                         .queryParam("stores", Testdata.BAD_UUID.toString())
                         .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
@@ -376,7 +376,7 @@ class PriceListControllerTest {
             
             mockMvc
                 .perform(
-                    get("/masterdata/price")
+                    get("/api/masterdata/price")
                         .queryParam("at", searchDate.toString())
                         .queryParam("stores", Testdata.STORE_3_UUID.toString())
                         .queryParam("products", Testdata.BAD_UUID.toString())
@@ -394,7 +394,7 @@ class PriceListControllerTest {
             
             mockMvc
                 .perform(
-                    get("/masterdata/price")
+                    get("/api/masterdata/price")
                         .queryParam("at", searchDate.toString())
                         .queryParam("stores", Testdata.STORE_3_UUID.toString())
                         .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
@@ -415,7 +415,7 @@ class PriceListControllerTest {
             
             mockMvc
                 .perform(
-                    get("/masterdata/price")
+                    get("/api/masterdata/price")
                         .queryParam("at", searchDate.toString())
                         .queryParam("stores", Testdata.STORE_3_UUID.toString())
                         .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())
@@ -436,7 +436,7 @@ class PriceListControllerTest {
             
             mockMvc
                 .perform(
-                    get("/masterdata/price")
+                    get("/api/masterdata/price")
                         .queryParam("at", searchDate.toString())
                         .queryParam("stores", Testdata.STORE_3_UUID.toString())
                         .queryParam("products", Testdata.PRODUCT_GROUP_TEST_1_UUID.toString())

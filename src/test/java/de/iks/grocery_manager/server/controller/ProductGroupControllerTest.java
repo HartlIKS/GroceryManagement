@@ -51,7 +51,7 @@ class ProductGroupControllerTest {
         void shouldReturnProductGroupWhenFoundAndOwned() throws Exception {
             mockMvc
                 .perform(
-                    get("/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
+                    get("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
@@ -63,7 +63,7 @@ class ProductGroupControllerTest {
         void shouldReturn404WhenProductGroupNotFound() throws Exception {
             mockMvc
                 .perform(
-                    get("/productGroups/{uuid}", Testdata.BAD_UUID)
+                    get("/api/productGroups/{uuid}", Testdata.BAD_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isNotFound());
@@ -73,7 +73,7 @@ class ProductGroupControllerTest {
         void shouldReturn404WhenAccessingOtherUsersProductGroup() throws Exception {
             mockMvc
                 .perform(
-                    get("/productGroups/{uuid}", Testdata.PRODUCT_GROUP_2_UUID)
+                    get("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_2_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isNotFound());
@@ -83,7 +83,7 @@ class ProductGroupControllerTest {
         void shouldReturn401WhenGettingProductGroupWithoutAuthentication() throws Exception {
             mockMvc
                 .perform(
-                    get("/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
+                    get("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
                 )
                 .andExpect(status().isUnauthorized());
         }
@@ -97,7 +97,7 @@ class ProductGroupControllerTest {
             
             mockMvc
                 .perform(
-                    put("/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
+                    put("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
                         .content(Testdata.PRODUCT_GROUP_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -118,7 +118,7 @@ class ProductGroupControllerTest {
             
             mockMvc
                 .perform(
-                    put("/productGroups/{uuid}", Testdata.BAD_UUID)
+                    put("/api/productGroups/{uuid}", Testdata.BAD_UUID)
                         .content(Testdata.PRODUCT_GROUP_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -137,7 +137,7 @@ class ProductGroupControllerTest {
             
             mockMvc
                 .perform(
-                    put("/productGroups/{uuid}", Testdata.PRODUCT_GROUP_2_UUID)
+                    put("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_2_UUID)
                         .content(Testdata.PRODUCT_GROUP_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
@@ -156,7 +156,7 @@ class ProductGroupControllerTest {
             
             mockMvc
                 .perform(
-                    put("/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
+                    put("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
                         .content(Testdata.PRODUCT_GROUP_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -177,13 +177,13 @@ class ProductGroupControllerTest {
             
             mockMvc
                 .perform(
-                    post("/productGroups")
+                    post("/api/productGroups")
                         .content(Testdata.PRODUCT_GROUP_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isCreated())
-                .andExpect(header().string("location", matchesRegex("/productGroups/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
+                .andExpect(header().string("location", matchesRegex("/api/productGroups/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(Testdata.PRODUCT_GROUP_3_JSON));
             
@@ -200,7 +200,7 @@ class ProductGroupControllerTest {
             
             mockMvc
                 .perform(
-                    post("/productGroups")
+                    post("/api/productGroups")
                         .content(Testdata.PRODUCT_GROUP_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -221,7 +221,7 @@ class ProductGroupControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
+                    delete("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
@@ -239,7 +239,7 @@ class ProductGroupControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/productGroups/{uuid}", Testdata.BAD_UUID)
+                    delete("/api/productGroups/{uuid}", Testdata.BAD_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
@@ -256,7 +256,7 @@ class ProductGroupControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/productGroups/{uuid}", Testdata.PRODUCT_GROUP_2_UUID)
+                    delete("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_2_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
@@ -273,7 +273,7 @@ class ProductGroupControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
+                    delete("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
                 )
                 .andExpect(status().isUnauthorized());
             
@@ -290,7 +290,7 @@ class ProductGroupControllerTest {
         void shouldReturnUserOwnedProductGroupsWhenSearching() throws Exception {
             mockMvc
                 .perform(
-                    get("/productGroups")
+                    get("/api/productGroups")
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
@@ -302,7 +302,7 @@ class ProductGroupControllerTest {
         void shouldReturnEmptyResultForUserWithNoGroups() throws Exception {
             mockMvc
                 .perform(
-                    get("/productGroups")
+                    get("/api/productGroups")
                         .with(user2_jwt)
                 )
                 .andExpect(status().isOk())
@@ -314,7 +314,7 @@ class ProductGroupControllerTest {
         void shouldReturn401WhenSearchingProductGroupsWithoutAuthentication() throws Exception {
             mockMvc
                 .perform(
-                    get("/productGroups")
+                    get("/api/productGroups")
                 )
                 .andExpect(status().isUnauthorized());
         }

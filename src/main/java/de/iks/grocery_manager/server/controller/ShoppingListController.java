@@ -23,7 +23,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping(
-    path = "/shoppingLists",
+    path = "/api/shoppingLists",
     produces = MediaType.APPLICATION_JSON_VALUE
 )
 @Transactional
@@ -107,7 +107,7 @@ public class ShoppingListController {
             .created(
                 uriBuilderFactory
                     .builder()
-                    .pathSegment("shoppingLists", "{uuid}")
+                    .pathSegment("api", "shoppingLists", "{uuid}")
                     .build(ret.uuid())
             )
             .body(ret);

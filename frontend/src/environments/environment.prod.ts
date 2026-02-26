@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: '',
+  apiUrl: '/api',
   issuer: 'http://localhost:8081/realms/GroceryManager'
 };
