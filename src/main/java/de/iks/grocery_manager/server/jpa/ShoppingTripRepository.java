@@ -5,12 +5,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface ShoppingTripRepository extends JpaRepository<ShoppingTrip, UUID> {
     Optional<? extends ShoppingTrip> findByUuidAndOwner(UUID uuid, String owner);
     void deleteByUuidAndOwner(UUID uuid, String owner);
-    Page<ShoppingTrip> findByOwnerAndTimeBetween(String owner, ZonedDateTime timeAfter, ZonedDateTime timeBefore, Pageable pageable);
+    Page<ShoppingTrip> findByOwnerAndTimeBetween(String owner, Instant timeAfter, Instant timeBefore, Pageable pageable);
 }

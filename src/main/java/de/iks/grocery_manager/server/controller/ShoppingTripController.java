@@ -22,7 +22,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriBuilderFactory;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.UUID;
 
@@ -140,13 +141,13 @@ public class ShoppingTripController {
     @GetMapping
     @Transactional(readOnly = true)
     public ResponseEntity<Page<ShoppingTripDTO>> search(
-        @RequestParam(required = false) ZonedDateTime from,
-        @RequestParam(required = false) ZonedDateTime to,
+        @RequestParam(required = false) Instant from,
+        @RequestParam(required = false) Instant to,
         @PageableDefault Pageable pageable,
         @AuthenticationPrincipal Object principal
     ) {
-        if(from == null) from = ZonedDateTime.now();
-        if(to == null) to = from.plusWeeks(1);
+        if(from == null) from = Instant.now();
+        if(to == null) to = from.plus(1, ChronoUnit.WEEKS);
         return ResponseEntity.ok(
             trips
                 .findByOwnerAndTimeBetween(getOwner(principal), from, to, pageable)

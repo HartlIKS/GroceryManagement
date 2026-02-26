@@ -1,6 +1,6 @@
 package de.iks.grocery_manager.server.controller.masterdata;
 
-import de.iks.grocery_manager.server.dto.*;
+import de.iks.grocery_manager.server.dto.DTOMapper;
 import de.iks.grocery_manager.server.dto.masterdata.CreatePriceListingDTO;
 import de.iks.grocery_manager.server.dto.masterdata.ListPriceDTO;
 import de.iks.grocery_manager.server.dto.masterdata.PriceListingDTO;
@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriBuilderFactory;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -128,11 +128,11 @@ public class PriceListController {
     }
 
     @GetMapping(
-        params = {"at", "products", "stores"}
+        params = {"at"}
     )
     @Transactional(readOnly = true)
     public ResponseEntity<Map<UUID, Map<UUID, List<PriceListingDTO>>>> searchPrices(
-        ZonedDateTime at,
+        Instant at,
         UUID[] products,
         UUID[] stores
     ) {

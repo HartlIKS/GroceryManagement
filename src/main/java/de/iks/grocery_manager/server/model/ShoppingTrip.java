@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
@@ -23,7 +23,7 @@ public class ShoppingTrip {
     @JoinColumn(nullable = false)
     private Store store;
     @Column(nullable = false)
-    private ZonedDateTime time;
+    private Instant time;
 
     @ElementCollection
     @MapKeyJoinColumn(name = "product_uuid")

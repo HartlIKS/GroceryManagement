@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Data
@@ -22,9 +22,9 @@ public class PriceListing {
     @JoinColumn(nullable = false)
     private Store store;
     @Column(nullable = false)
-    private ZonedDateTime validFrom;
+    private Instant validFrom;
     @Column(nullable = false)
-    private ZonedDateTime validTo;
+    private Instant validTo;
 
     @Column(nullable = false)
     private BigDecimal price;
