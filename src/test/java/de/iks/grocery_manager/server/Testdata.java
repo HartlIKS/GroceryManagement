@@ -235,8 +235,8 @@ public class Testdata {
           "uuid": "%s",
           "store": "%s",
           "product": "%s",
-          "validFrom": "2024-01-01T01:00:00+01:00",
-          "validTo": "2025-01-01T00:59:59+01:00",
+          "validFrom": "2024-01-01T00:00:00Z",
+          "validTo": "2024-12-31T23:59:59Z",
           "price": 11
         }""", PRICE_1_UUID, STORE_3_UUID, PRODUCT_GROUP_TEST_1_UUID);
     public static final String PRICE_1_UPDATE_JSON = """
@@ -261,8 +261,8 @@ public class Testdata {
           "uuid": "%s",
           "store": "%s",
           "product": "%s",
-          "validFrom": "2024-01-01T01:00:00+01:00",
-          "validTo": "2025-01-01T00:59:59+01:00",
+          "validFrom": "2024-01-01T00:00:00Z",
+          "validTo": "2024-12-31T23:59:59Z",
           "price": 5
         }""", PRICE_2_UUID, STORE_4_UUID, PRODUCT_GROUP_TEST_2_UUID);
 
@@ -380,7 +380,7 @@ public class Testdata {
         {
           "uuid": "%s",
           "store": "%s",
-          "time": "2024-01-15T10:00:00+01:00",
+          "time": "2024-01-15T09:00:00Z",
           "products": {
             "%s": 2
           }
@@ -411,7 +411,7 @@ public class Testdata {
         {
           "uuid": "%s",
           "store": "%s",
-          "time": "2024-01-20T15:30:00+01:00",
+          "time": "2024-01-20T14:30:00Z",
           "products": {}
         }""", SHOPPING_TRIP_2_UUID, STORE_3_UUID);
     

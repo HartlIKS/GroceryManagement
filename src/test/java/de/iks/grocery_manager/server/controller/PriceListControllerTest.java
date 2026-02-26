@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 
 import static de.iks.grocery_manager.server.config.SecurityConfiguration.AUTHORITY_MASTERDATA;
 import static org.hamcrest.Matchers.*;
@@ -283,7 +283,7 @@ class PriceListControllerTest {
     class SearchPricesWithDateStoresAndProducts {
         @Test
         void shouldReturnPricesWhenSearchingWithValidDateStoresAndProducts() throws Exception {
-            ZonedDateTime searchDate = ZonedDateTime.parse("2024-06-15T10:00:00Z");
+            Instant searchDate = Instant.parse("2024-06-15T10:00:00Z");
             
             mockMvc
                 .perform(
@@ -308,7 +308,7 @@ class PriceListControllerTest {
 
         @Test
         void shouldReturnMultiplePricesWhenSearchingWithMultipleStoresAndProducts() throws Exception {
-            ZonedDateTime searchDate = ZonedDateTime.parse("2024-06-15T10:00:00Z");
+            Instant searchDate = Instant.parse("2024-06-15T10:00:00Z");
             
             mockMvc
                 .perform(
@@ -336,7 +336,7 @@ class PriceListControllerTest {
 
         @Test
         void shouldReturnEmptyMapWhenSearchingWithDateOutsideValidRange() throws Exception {
-            ZonedDateTime searchDate = ZonedDateTime.parse("2023-06-15T10:00:00Z");
+            Instant searchDate = Instant.parse("2023-06-15T10:00:00Z");
             
             mockMvc
                 .perform(
@@ -354,7 +354,7 @@ class PriceListControllerTest {
 
         @Test
         void shouldReturnEmptyMapWhenSearchingWithNonExistentStore() throws Exception {
-            ZonedDateTime searchDate = ZonedDateTime.parse("2024-06-15T10:00:00Z");
+            Instant searchDate = Instant.parse("2024-06-15T10:00:00Z");
             
             mockMvc
                 .perform(
@@ -372,7 +372,7 @@ class PriceListControllerTest {
 
         @Test
         void shouldReturnEmptyMapWhenSearchingWithNonExistentProduct() throws Exception {
-            ZonedDateTime searchDate = ZonedDateTime.parse("2024-06-15T10:00:00Z");
+            Instant searchDate = Instant.parse("2024-06-15T10:00:00Z");
             
             mockMvc
                 .perform(
@@ -390,7 +390,7 @@ class PriceListControllerTest {
 
         @Test
         void shouldReturnPricesWhenSearchingWithDateAtValidFromBoundary() throws Exception {
-            ZonedDateTime searchDate = ZonedDateTime.parse("2024-01-01T00:00:00Z");
+            Instant searchDate = Instant.parse("2024-01-01T00:00:00Z");
             
             mockMvc
                 .perform(
@@ -411,7 +411,7 @@ class PriceListControllerTest {
 
         @Test
         void shouldReturnPricesWhenSearchingWithDateAtValidToBoundary() throws Exception {
-            ZonedDateTime searchDate = ZonedDateTime.parse("2024-12-31T23:59:59Z");
+            Instant searchDate = Instant.parse("2024-12-31T23:59:59Z");
             
             mockMvc
                 .perform(
@@ -432,7 +432,7 @@ class PriceListControllerTest {
 
         @Test
         void shouldReturnEmptyMapWhenSearchingWithDateJustAfterValidTo() throws Exception {
-            ZonedDateTime searchDate = ZonedDateTime.parse("2025-01-01T00:00:00Z");
+            Instant searchDate = Instant.parse("2025-01-01T00:00:00Z");
             
             mockMvc
                 .perform(
