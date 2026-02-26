@@ -3,8 +3,11 @@ services:
     image: postgres:18-alpine
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_pass
       POSTGRES_DB: GroceryManager
+    secrets:
+      - source: postgres_pw
+        target: pg_pass
     ports:
       - "5432:5432"
     volumes:
@@ -32,6 +35,25 @@ services:
     configs:
       - target: /opt/keycloak/data/import
         source: realms
+  grocery-manager:
+    image: hartliks/grocery-manager
+    build:
+      context: .
+      target: run
+    depends_on:
+      - postgres
+      - keycloak
+    environment:
+      SPRING_CONFIG_IMPORT: "optional:configtree:/run/secrets/"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/GroceryManager"
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI: "http://keycloak:8081/realms/GroceryManager/protocol/openid-connect/certs"
+    secrets:
+      - source: postgres_pw
+        target: spring.datasource.password
+    ports:
+      - "8080:8080"
+
 
 volumes:
   pg-data:
@@ -40,3 +62,7 @@ volumes:
 configs:
   realms:
     file: realms
+
+secrets:
+  postgres_pw:
+    file: secrets/pg_pass

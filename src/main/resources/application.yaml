@@ -1,6 +1,9 @@
 spring:
   application:
     name: GroceryManager
+  web:
+    resources:
+      static-locations: file:public
   security:
     oauth2:
       resourceserver:
