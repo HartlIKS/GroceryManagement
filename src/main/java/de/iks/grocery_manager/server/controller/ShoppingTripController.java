@@ -15,8 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -25,6 +23,8 @@ import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.UUID;
+
+import static de.iks.grocery_manager.server.util.OwnerUtils.getOwner;
 
 @RequiredArgsConstructor
 @RestController
@@ -38,17 +38,6 @@ public class ShoppingTripController {
     private final StoreRepository stores;
     private final ProductRepository products;
     private final DTOMapper dtoMapper;
-
-    private String getOwner(Object principal) {
-        return switch(principal) {
-            case User u -> u.getUsername();
-            case Jwt j -> j.getSubject();
-            case String s -> s;
-            case null -> "";
-            default ->
-                throw new RuntimeException(String.format("Principal type not supported: %s", principal.getClass()));
-        };
-    }
 
     @GetMapping("/{uuid}")
     @Transactional(readOnly = true)
