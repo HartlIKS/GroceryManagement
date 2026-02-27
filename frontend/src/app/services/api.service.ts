@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, isSignal, Signal } from '@angular/core';
+import { computed, inject, Injectable, Injector, isSignal, Signal } from '@angular/core';
 import { HttpClient, HttpParams, httpResource, HttpResourceRef } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -15,6 +15,7 @@ export interface GetApiEndpoint<T> {
   providedIn: 'root'
 })
 export class ApiService {
+  private readonly injector = inject(Injector);
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
   private readonly accessToken = inject(AuthService).accessToken;
@@ -57,7 +58,9 @@ export class ApiService {
       params: httpParams(),
       headers: this.headers(),
       credentials: 'include',
-    }));
+    }), {
+      injector: this.injector,
+    });
   }
 
   getById<T>(endpoint: string, id: Signal<string | undefined>): HttpResourceRef<T | undefined>;
@@ -71,6 +74,8 @@ export class ApiService {
         headers: this.headers(),
         credentials: 'include',
       };
+    }, {
+      injector: this.injector,
     });
     return {
       asResource: (): HttpResourceRef<T | undefined> => this.getById<T>(endpoint, computed(() => id)),
