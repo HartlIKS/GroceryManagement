@@ -1,6 +1,7 @@
 package de.iks.grocery_manager.server.controller;
 
 import de.iks.grocery_manager.server.Testdata;
+import de.iks.grocery_manager.server.config.AuthorityConfiguration;
 import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -16,7 +17,6 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import static de.iks.grocery_manager.server.config.SecurityConfiguration.AUTHORITY_MASTERDATA;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -33,12 +33,16 @@ class StoreControllerTest {
     @Autowired
     private StoreRepository storeRepository;
 
-    private final RequestPostProcessor admin_jwt = jwt()
-        .authorities(new SimpleGrantedAuthority(AUTHORITY_MASTERDATA));
+    @Autowired
+    private AuthorityConfiguration authorityConfiguration;
+
+    private RequestPostProcessor admin_jwt;
     private final RequestPostProcessor user_jwt = jwt();
 
     @BeforeEach
     void setup(WebApplicationContext ctx) {
+        admin_jwt = jwt()
+            .authorities(new SimpleGrantedAuthority(authorityConfiguration.getMasterdataAuthority()));
         mockMvc = MockMvcBuilders
             .webAppContextSetup(ctx)
             .apply(springSecurity())

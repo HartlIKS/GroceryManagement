@@ -1,5 +1,6 @@
 package de.iks.grocery_manager.server.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,10 +14,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
+@RequiredArgsConstructor
 @Configuration
 @EnableWebSecurity
 public class SecurityConfiguration {
-    public static final String AUTHORITY_MASTERDATA = "SCOPE_MASTERDATA";
+    private final AuthorityConfiguration authorityConfiguration;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -31,10 +33,10 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public SecurityFilterChain masterDataFilterChain(HttpSecurity http) {
+    public SecurityFilterChain apiFilterChain(HttpSecurity http) {
         return http
             .securityMatcher("/api/**")
-            .cors(c -> corsConfigurationSource())
+            .cors(c -> c.configurationSource(corsConfigurationSource()))
             .csrf(CsrfConfigurer::disable)
             .oauth2ResourceServer(o -> o
                 .jwt(withDefaults())
@@ -43,7 +45,7 @@ public class SecurityConfiguration {
                 .requestMatchers(HttpMethod.GET, "/api/masterdata/**")
                 .authenticated()
                 .requestMatchers("/api/masterdata/**")
-                .hasAuthority(AUTHORITY_MASTERDATA)
+                .hasAuthority(authorityConfiguration.getMasterdataAuthority())
                 .anyRequest()
                 .authenticated()
             )
