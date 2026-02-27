@@ -1,6 +1,8 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
-import { OAuthService } from 'angular-oauth2-oidc';
+import { AuthConfig, OAuthService } from 'angular-oauth2-oidc';
 import { environment } from '../../environments/environment';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -23,20 +25,22 @@ export class AuthService {
   readonly eff = effect(() => console.log(this.scopes(), this.claims()));
 
   constructor() {
-    this.oauthService.configure({
-      issuer: environment.issuer,
-      redirectUri: `${window.location.origin}/index.html`,
-      clientId: 'grocery-manager-frontend',
-      responseType: 'code',
-      scope: 'openid profile offline_access MASTERDATA',
-      showDebugInformation: true,
-    });
+    this.settle = this.setup();
+  }
+
+  private async setup() {
+    const config = await firstValueFrom(inject(HttpClient).get<AuthConfig>(environment.authConfigSource))
+    config.redirectUri ??= `${window.location.origin}/index.html`;
+    config.clientId ??= 'grocery-manager-frontend';
+    config.responseType ??= 'code';
+    config.scope ??= 'openid profile offline_access';
+    this.oauthService.configure(config);
     this.oauthService.setupAutomaticSilentRefresh();
     this.oauthService.events.subscribe(() => {
       if(!this.oauthService.hasValidAccessToken()) this.accessToken_.set(undefined);
       else this.accessToken_.set(this.oauthService.getAccessToken());
     })
-    this.settle = this.oauthService.loadDiscoveryDocumentAndTryLogin().then(() => {});
+    await this.oauthService.loadDiscoveryDocumentAndTryLogin();
   }
 
   logout(): void {
