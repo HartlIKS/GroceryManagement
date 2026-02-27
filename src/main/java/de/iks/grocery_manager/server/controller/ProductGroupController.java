@@ -17,7 +17,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriBuilderFactory;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.UUID;
 
@@ -32,7 +32,6 @@ public class ProductGroupController {
     private final ProductGroupRepository groups;
     private final ProductRepository products;
     private final DTOMapper dtoMapper;
-    private final UriBuilderFactory uriBuilderFactory;
 
     private String getOwner(Object principal) {
         return switch(principal) {
@@ -89,7 +88,8 @@ public class ProductGroupController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ListProductGroupDTO> createProductGroup(
         @RequestBody CreateProductGroupDTO createProductGroupDTO,
-        @AuthenticationPrincipal Object principal
+        @AuthenticationPrincipal Object principal,
+        UriComponentsBuilder uriBuilder
     ) {
         ListProductGroupDTO ret = dtoMapper.map(groups.saveAndFlush(dtoMapper.create(
             createProductGroupDTO,
@@ -98,8 +98,7 @@ public class ProductGroupController {
         )));
         return ResponseEntity
             .created(
-                uriBuilderFactory
-                    .builder()
+                uriBuilder
                     .pathSegment("api", "productGroups", "{uuid}")
                     .build(ret.uuid())
             )

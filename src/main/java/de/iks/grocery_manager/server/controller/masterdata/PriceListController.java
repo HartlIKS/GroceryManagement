@@ -17,7 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriBuilderFactory;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.Instant;
 import java.util.List;
@@ -38,7 +38,6 @@ public class PriceListController {
     private final StoreRepository stores;
     private final PriceRepository priceList;
     private final DTOMapper dtoMapper;
-    private final UriBuilderFactory uriBuilderFactory;
 
     @GetMapping("/{uuid}")
     @Transactional(readOnly = true)
@@ -68,7 +67,10 @@ public class PriceListController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<ListPriceDTO> postPrice(@RequestBody CreatePriceListingDTO createPriceListingDTO) {
+    public ResponseEntity<ListPriceDTO> postPrice(
+        @RequestBody CreatePriceListingDTO createPriceListingDTO,
+        UriComponentsBuilder uriBuilder
+    ) {
         return products
             .findById(createPriceListingDTO.product())
             .flatMap(product -> stores
@@ -83,8 +85,7 @@ public class PriceListController {
             )
             .map(ret -> ResponseEntity
                 .created(
-                    uriBuilderFactory
-                        .builder()
+                    uriBuilder
                         .pathSegment("api", "price", "{uuid}")
                         .build(ret.uuid())
                 )

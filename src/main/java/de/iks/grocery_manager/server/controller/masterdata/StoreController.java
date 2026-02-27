@@ -1,7 +1,7 @@
 package de.iks.grocery_manager.server.controller.masterdata;
 
-import de.iks.grocery_manager.server.dto.masterdata.CreateStoreDTO;
 import de.iks.grocery_manager.server.dto.DTOMapper;
+import de.iks.grocery_manager.server.dto.masterdata.CreateStoreDTO;
 import de.iks.grocery_manager.server.dto.masterdata.ListStoreDTO;
 import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriBuilderFactory;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.UUID;
 
@@ -26,7 +26,6 @@ import java.util.UUID;
 public class StoreController {
     private final StoreRepository stores;
     private final DTOMapper dtoMapper;
-    private final UriBuilderFactory uriBuilderFactory;
 
     @GetMapping("/{uuid}")
     @Transactional(readOnly = true)
@@ -53,12 +52,11 @@ public class StoreController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<ListStoreDTO> createStore(@RequestBody CreateStoreDTO createStoreDTO) {
+    public ResponseEntity<ListStoreDTO> createStore(@RequestBody CreateStoreDTO createStoreDTO, UriComponentsBuilder uriBuilder) {
         ListStoreDTO ret = dtoMapper.map(stores.saveAndFlush(dtoMapper.create(createStoreDTO)));
         return ResponseEntity
             .created(
-                uriBuilderFactory
-                    .builder()
+                uriBuilder
                     .pathSegment("api", "store", "{uuid}")
                     .build(ret.uuid())
             )

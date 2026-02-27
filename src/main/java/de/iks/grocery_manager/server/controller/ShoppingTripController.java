@@ -19,7 +19,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriBuilderFactory;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -38,7 +38,6 @@ public class ShoppingTripController {
     private final StoreRepository stores;
     private final ProductRepository products;
     private final DTOMapper dtoMapper;
-    private final UriBuilderFactory uriBuilderFactory;
 
     private String getOwner(Object principal) {
         return switch(principal) {
@@ -119,7 +118,8 @@ public class ShoppingTripController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ShoppingTripDTO> createShoppingTrip(
         @RequestBody CreateShoppingTripDTO CreateShoppingTripDTO,
-        @AuthenticationPrincipal Object principal
+        @AuthenticationPrincipal Object principal,
+        UriComponentsBuilder uriBuilder
     ) {
         ShoppingTripDTO ret = dtoMapper.map(trips.saveAndFlush(dtoMapper.create(
             CreateShoppingTripDTO,
@@ -129,8 +129,7 @@ public class ShoppingTripController {
         )));
         return ResponseEntity
             .created(
-                uriBuilderFactory
-                    .builder()
+                uriBuilder
                     .pathSegment("api", "shoppingLists", "{uuid}")
                     .build(ret.uuid())
             )
