@@ -1,19 +1,22 @@
 FROM --platform=$BUILDPLATFORM node:24-alpine AS frontend-build
 WORKDIR /opt/build
-ADD frontend/package.json .
-ADD frontend/package-lock.json .
+COPY frontend/package.json .
+COPY frontend/package-lock.json .
 RUN npm install
-ADD frontend/tsconfig.* .
-ADD frontend/angular.json .
-ADD frontend/public/ public
-ADD frontend/src src
+COPY frontend/tsconfig.* .
+COPY frontend/angular.json .
+COPY frontend/public/ public
+COPY frontend/src src
 RUN npm run build
 
 FROM --platform=$BUILDPLATFORM maven:3-eclipse-temurin-17-alpine AS backend-build
 WORKDIR /opt/build
-ADD pom.xml .
+COPY pom.xml .
 RUN mvn dependency:go-offline dependency:resolve-plugins
-ADD src/ src
+COPY --parents src/main/java/de/iks/grocery_manager/server/GroceryManagementApplication.java .
+COPY --parents src/test/java/de/iks/grocery_manager/server/GroceryManagementApplicationTests.java .
+RUN mvn test -fn
+COPY --parents src/ .
 RUN mvn package
 
 FROM eclipse-temurin:17-jre AS run
