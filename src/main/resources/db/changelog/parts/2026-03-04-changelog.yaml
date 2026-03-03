@@ -1,0 +1,105 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1772623332726-1
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_share
+                  name: uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+            tableName: share
+  - changeSet:
+      id: 1772623332726-2
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_joinlink
+                  name: uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: share_uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: permissions
+                  type: SMALLINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: active
+                  type: BOOLEAN
+              - column:
+                  constraints:
+                    nullable: false
+                  name: single_use
+                  type: BOOLEAN
+              - column:
+                  name: valid_to
+                  type: DATETIME
+            tableName: join_link
+  - changeSet:
+      id: 1772623332726-3
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: join_link_uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: users
+                  type: VARCHAR(255)
+            tableName: join_link_users
+  - changeSet:
+      id: 1772623332726-4
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: share_uuid
+            baseTableName: join_link
+            constraintName: FK_JOINLINK_ON_SHARE_UUID
+            referencedColumnNames: uuid
+            referencedTableName: share
+  - changeSet:
+      id: 1772623332726-5
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: join_link_uuid
+            baseTableName: join_link_users
+            constraintName: fk_joinlink_users_on_join_link
+            referencedColumnNames: uuid
+            referencedTableName: join_link
+

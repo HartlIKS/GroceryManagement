@@ -1,6 +1,10 @@
 package de.iks.grocery_manager.server.dto;
 
 import de.iks.grocery_manager.server.dto.masterdata.*;
+import de.iks.grocery_manager.server.dto.share.CreateJoinLinkDTO;
+import de.iks.grocery_manager.server.dto.share.CreateShareDTO;
+import de.iks.grocery_manager.server.dto.share.JoinLinkDTO;
+import de.iks.grocery_manager.server.dto.share.ShareDTO;
 import de.iks.grocery_manager.server.jpa.mapping.CrudRepositoryMapper;
 import de.iks.grocery_manager.server.model.HasUUID;
 import de.iks.grocery_manager.server.model.ProductGroup;
@@ -10,12 +14,17 @@ import de.iks.grocery_manager.server.model.masterdata.Address;
 import de.iks.grocery_manager.server.model.masterdata.PriceListing;
 import de.iks.grocery_manager.server.model.masterdata.Product;
 import de.iks.grocery_manager.server.model.masterdata.Store;
+import de.iks.grocery_manager.server.model.share.JoinLink;
+import de.iks.grocery_manager.server.model.share.Share;
+import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants.ComponentModel;
 import org.mapstruct.MappingTarget;
 
 import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -124,4 +133,42 @@ public interface DTOMapper {
         @MappingTarget ShoppingTrip target,
         CreateShoppingTripDTO update
     );
+
+    @Mapping(target = "permissions", expression = "java(share.getPermissionsFor(user))")
+    ShareDTO map(Share share, @Context String user);
+
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "links", ignore = true)
+    Share create(CreateShareDTO shareDTO);
+
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "links", ignore = true)
+    void update(
+        @MappingTarget Share target,
+        CreateShareDTO update
+    );
+
+    default int toSize(Collection<?> collection) {
+        return collection.size();
+    }
+
+    @Mapping(target = "numUsers", source = "users")
+    JoinLinkDTO map(JoinLink link);
+
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "users", ignore = true)
+    @Mapping(target = "name", source = "linkDTO.name")
+    @Mapping(target = "use", ignore = true)
+    JoinLink create(CreateJoinLinkDTO linkDTO, Share share);
+
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "share", ignore = true)
+    @Mapping(target = "users", ignore = true)
+    @Mapping(target = "use", ignore = true)
+    void update(
+        @MappingTarget JoinLink target,
+        CreateJoinLinkDTO update
+    );
+
+    List<JoinLinkDTO> map(List<JoinLink> links);
 }

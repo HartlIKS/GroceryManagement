@@ -13,4 +13,6 @@ public interface ProductGroupRepository extends JpaRepository<ProductGroup, UUID
     Optional<? extends ProductGroup> findByUuidAndOwner(UUID uuid, String owner);
     void deleteByUuidAndOwner(UUID uuid, String owner);
     Page<? extends ProductGroup> findAllByOwnerAndNameContainingIgnoreCase(String owner, String name, Pageable pageable);
+
+    void deleteAllByOwner(String owner);
 }

@@ -14,4 +14,6 @@ public interface ShoppingTripRepository extends JpaRepository<ShoppingTrip, UUID
     Optional<? extends ShoppingTrip> findByUuidAndOwner(UUID uuid, String owner);
     void deleteByUuidAndOwner(UUID uuid, String owner);
     Page<ShoppingTrip> findByOwnerAndTimeBetween(String owner, Instant timeAfter, Instant timeBefore, Pageable pageable);
+
+    void deleteAllByOwner(String owner);
 }

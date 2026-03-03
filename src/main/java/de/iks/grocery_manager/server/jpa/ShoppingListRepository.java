@@ -14,4 +14,6 @@ public interface ShoppingListRepository extends JpaRepository<ShoppingList, UUID
     void deleteByUuidAndOwner(UUID uuid, String owner);
     void deleteByUuidAndOwnerAndRepeatingIsFalse(UUID uuid, String owner);
     Page<? extends ShoppingList> findAllByOwnerAndNameContainingIgnoreCase(String owner, String name, Pageable pageable);
+
+    void deleteAllByOwner(String owner);
 }
