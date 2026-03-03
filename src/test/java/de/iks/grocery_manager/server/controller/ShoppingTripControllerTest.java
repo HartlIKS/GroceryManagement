@@ -107,8 +107,8 @@ class ShoppingTripControllerTest {
                 .andExpect(content().json(Testdata.SHOPPING_TRIP_1_JSON2));
             
             // Verify update was applied and other trip unaffected
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, shoppingTripRepository.count());
         }
 
@@ -126,8 +126,8 @@ class ShoppingTripControllerTest {
                 .andExpect(status().isNotFound());
             
             // Verify no changes to existing trips
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, shoppingTripRepository.count());
         }
 
@@ -145,8 +145,8 @@ class ShoppingTripControllerTest {
                 .andExpect(status().isNotFound());
             
             // Verify no changes (user1 cannot update user2's trip)
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, shoppingTripRepository.count());
         }
 
@@ -163,8 +163,8 @@ class ShoppingTripControllerTest {
                 .andExpect(status().isUnauthorized());
             
             // Verify no changes when unauthorized
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, shoppingTripRepository.count());
         }
     }
@@ -190,8 +190,8 @@ class ShoppingTripControllerTest {
             // Verify creation - count should increase by 1
             assertEquals(initialCount + 1, shoppingTripRepository.count());
             // Verify existing trips unaffected
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -208,8 +208,8 @@ class ShoppingTripControllerTest {
             
             // Verify no changes when unauthorized
             assertEquals(initialCount, shoppingTripRepository.count());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
         }
     }
 
@@ -227,10 +227,10 @@ class ShoppingTripControllerTest {
                 .andExpect(status().isOk());
             
             // Verify deletion
-            assertFalse(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
+            assertFalse(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
             assertEquals(initialCount - 1, shoppingTripRepository.count());
             // Verify other trip unaffected
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -246,8 +246,8 @@ class ShoppingTripControllerTest {
             
             // Verify no changes to existing trips
             assertEquals(initialCount, shoppingTripRepository.count());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -263,8 +263,8 @@ class ShoppingTripControllerTest {
             
             // Verify no changes (user1 cannot delete user2's trip)
             assertEquals(initialCount, shoppingTripRepository.count());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -279,8 +279,8 @@ class ShoppingTripControllerTest {
             
             // Verify no changes when unauthorized
             assertEquals(initialCount, shoppingTripRepository.count());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
         }
     }
 

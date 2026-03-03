@@ -184,10 +184,10 @@ class ShoppingListControllerTest {
                 .andExpect(status().isOk());
             
             // Verify deletion
-            assertFalse(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
+            assertFalse(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
             assertEquals(initialCount - 1, shoppingListRepository.count());
             // Verify other list unaffected
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -203,10 +203,10 @@ class ShoppingListControllerTest {
                 .andExpect(status().isOk());
             
             // Verify deletion (non-repeating list should be deleted)
-            assertFalse(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
+            assertFalse(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
             assertEquals(initialCount - 1, shoppingListRepository.count());
             // Verify other list unaffected
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -222,10 +222,10 @@ class ShoppingListControllerTest {
                 .andExpect(status().isOk());
             
             // Verify list was NOT deleted (repeating list should not be deleted when ifNonRepeating=true)
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, shoppingListRepository.count());
             // Verify other list unaffected
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
         }
 
         @Test
@@ -241,10 +241,10 @@ class ShoppingListControllerTest {
                 .andExpect(status().isOk());
             
             // Verify deletion (repeating list should be deleted when ifNonRepeating=false)
-            assertFalse(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
+            assertFalse(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount - 1, shoppingListRepository.count());
             // Verify other list unaffected
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
         }
 
         @Test
@@ -260,8 +260,8 @@ class ShoppingListControllerTest {
             
             // Verify no changes to existing lists
             assertEquals(initialCount, shoppingListRepository.count());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -278,8 +278,8 @@ class ShoppingListControllerTest {
             
             // Verify no changes to existing lists
             assertEquals(initialCount, shoppingListRepository.count());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -295,8 +295,8 @@ class ShoppingListControllerTest {
             
             // Verify no changes (user1 cannot delete user2's list)
             assertEquals(initialCount, shoppingListRepository.count());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -313,8 +313,8 @@ class ShoppingListControllerTest {
             
             // Verify no changes (user1 cannot delete user2's list)
             assertEquals(initialCount, shoppingListRepository.count());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -329,8 +329,8 @@ class ShoppingListControllerTest {
             
             // Verify no changes when unauthorized
             assertEquals(initialCount, shoppingListRepository.count());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -346,8 +346,8 @@ class ShoppingListControllerTest {
 
             // Verify no changes when unauthorized
             assertEquals(initialCount, shoppingListRepository.count());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "user1").isPresent());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
         }
     }
 

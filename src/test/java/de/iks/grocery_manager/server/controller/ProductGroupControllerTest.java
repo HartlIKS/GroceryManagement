@@ -107,8 +107,8 @@ class ProductGroupControllerTest {
                 .andExpect(content().json(Testdata.PRODUCT_GROUP_1_JSON2));
             
             // Verify update was applied and other product group unaffected
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, productGroupRepository.count());
         }
 
@@ -126,8 +126,8 @@ class ProductGroupControllerTest {
                 .andExpect(status().isNotFound());
             
             // Verify no changes to existing product groups
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, productGroupRepository.count());
         }
 
@@ -145,8 +145,8 @@ class ProductGroupControllerTest {
                 .andExpect(status().isNotFound());
             
             // Verify no changes (user1 cannot update user2's group)
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, productGroupRepository.count());
         }
 
@@ -163,8 +163,8 @@ class ProductGroupControllerTest {
                 .andExpect(status().isUnauthorized());
             
             // Verify no changes when unauthorized
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, productGroupRepository.count());
         }
     }
@@ -190,8 +190,8 @@ class ProductGroupControllerTest {
             // Verify creation - count should increase by 1
             assertEquals(initialCount + 1, productGroupRepository.count());
             // Verify existing groups unaffected
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -208,8 +208,8 @@ class ProductGroupControllerTest {
             
             // Verify no changes when unauthorized
             assertEquals(initialCount, productGroupRepository.count());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
         }
     }
 
@@ -227,10 +227,10 @@ class ProductGroupControllerTest {
                 .andExpect(status().isOk());
             
             // Verify deletion
-            assertFalse(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "user1").isPresent());
+            assertFalse(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
             assertEquals(initialCount - 1, productGroupRepository.count());
             // Verify other group unaffected
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -246,8 +246,8 @@ class ProductGroupControllerTest {
             
             // Verify no changes to existing groups
             assertEquals(initialCount, productGroupRepository.count());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -263,8 +263,8 @@ class ProductGroupControllerTest {
             
             // Verify no changes (user1 cannot delete user2's group)
             assertEquals(initialCount, productGroupRepository.count());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -279,8 +279,8 @@ class ProductGroupControllerTest {
             
             // Verify no changes when unauthorized
             assertEquals(initialCount, productGroupRepository.count());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
         }
     }
 

@@ -29,8 +29,8 @@ VALUES
 
 INSERT INTO product_group(uuid, name, owner)
 VALUES
-    (UUID '20000000-0000-0000-0000-000000000000', 'Group 1', 'user1'),
-    (UUID '20000000-0000-0000-0000-000000000001', 'Group 2', 'user2');
+    (UUID '20000000-0000-0000-0000-000000000000', 'Group 1', 'sub: user1'),
+    (UUID '20000000-0000-0000-0000-000000000001', 'Group 2', 'sub: user2');
 
 INSERT INTO product_group_products(product_group_uuid, product_uuid, amount)
 VALUES
@@ -43,8 +43,8 @@ VALUES
 
 INSERT INTO shopping_list(uuid, name, owner, repeating)
 VALUES
-    (UUID '30000000-0000-0000-0000-000000000000', 'List 1', 'user1', false),
-    (UUID '30000000-0000-0000-0000-000000000001', 'List 2', 'user2', true);
+    (UUID '30000000-0000-0000-0000-000000000000', 'List 1', 'sub: user1', false),
+    (UUID '30000000-0000-0000-0000-000000000001', 'List 2', 'sub: user2', true);
 
 INSERT INTO shopping_list_products(shopping_list_uuid, product_uuid, amount)
 VALUES
@@ -52,8 +52,8 @@ VALUES
 
 INSERT INTO shopping_trip(uuid, store_uuid, time, owner)
 VALUES
-    (UUID '50000000-0000-0000-0000-000000000000', UUID '00000000-0000-0000-0000-000000000002', TIMESTAMP WITH TIME ZONE '2024-01-15 09:00:00Z', 'user1'),
-    (UUID '50000000-0000-0000-0000-000000000001', UUID '00000000-0000-0000-0000-000000000002', TIMESTAMP WITH TIME ZONE '2024-01-20 14:30:00Z', 'user2');
+    (UUID '50000000-0000-0000-0000-000000000000', UUID '00000000-0000-0000-0000-000000000002', TIMESTAMP WITH TIME ZONE '2024-01-15 09:00:00Z', 'sub: user1'),
+    (UUID '50000000-0000-0000-0000-000000000001', UUID '00000000-0000-0000-0000-000000000002', TIMESTAMP WITH TIME ZONE '2024-01-20 14:30:00Z', 'sub: user2');
 
 INSERT INTO shopping_trip_products(shopping_trip_uuid, product_uuid, amount)
 VALUES
