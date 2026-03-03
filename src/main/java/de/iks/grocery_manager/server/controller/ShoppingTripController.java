@@ -4,8 +4,6 @@ import de.iks.grocery_manager.server.dto.CreateShoppingTripDTO;
 import de.iks.grocery_manager.server.dto.DTOMapper;
 import de.iks.grocery_manager.server.dto.ShoppingTripDTO;
 import de.iks.grocery_manager.server.jpa.ShoppingTripRepository;
-import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
-import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;
 import de.iks.grocery_manager.server.model.masterdata.Product;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -35,8 +33,6 @@ import static de.iks.grocery_manager.server.util.OwnerUtils.getOwner;
 @Transactional
 public class ShoppingTripController {
     private final ShoppingTripRepository trips;
-    private final StoreRepository stores;
-    private final ProductRepository products;
     private final DTOMapper dtoMapper;
 
     @GetMapping("/{uuid}")
@@ -64,9 +60,7 @@ public class ShoppingTripController {
                 .map(p -> {
                     dtoMapper.update(
                         p,
-                        createShoppingTripDTO,
-                        stores,
-                        products
+                        createShoppingTripDTO
                     );
                     return p;
                 })
@@ -86,8 +80,9 @@ public class ShoppingTripController {
                 .findByUuidAndOwner(uuid, getOwner(principal))
                 .map(p -> {
                     Map<Product, BigDecimal> prods = p.getProducts();
-                    products.forEach((product, amount) -> prods.merge(
-                        dtoMapper.toProduct(product, this.products),
+                    Map<Product, BigDecimal> newProds = dtoMapper.toProducts(products);
+                    newProds.forEach((product, amount) -> prods.merge(
+                        product,
                         amount,
                         BigDecimal::add
                     ));
@@ -112,9 +107,7 @@ public class ShoppingTripController {
     ) {
         ShoppingTripDTO ret = dtoMapper.map(trips.saveAndFlush(dtoMapper.create(
             CreateShoppingTripDTO,
-            getOwner(principal),
-            stores,
-            products
+            getOwner(principal)
         )));
         return ResponseEntity
             .created(

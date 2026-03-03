@@ -11,7 +11,7 @@ import java.util.UUID;
 @Data
 @Entity
 @Table
-public class ShoppingList {
+public class ShoppingList implements HasUUID {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;

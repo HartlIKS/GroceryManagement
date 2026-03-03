@@ -4,7 +4,6 @@ import de.iks.grocery_manager.server.dto.CreateProductGroupDTO;
 import de.iks.grocery_manager.server.dto.DTOMapper;
 import de.iks.grocery_manager.server.dto.ListProductGroupDTO;
 import de.iks.grocery_manager.server.jpa.ProductGroupRepository;
-import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,7 +29,6 @@ import static de.iks.grocery_manager.server.util.OwnerUtils.getOwner;
 @Transactional
 public class ProductGroupController {
     private final ProductGroupRepository groups;
-    private final ProductRepository products;
     private final DTOMapper dtoMapper;
 
     @GetMapping("/{uuid}")
@@ -58,8 +56,7 @@ public class ProductGroupController {
                 .map(p -> {
                     dtoMapper.update(
                         p,
-                        createProductGroupDTO,
-                        products
+                        createProductGroupDTO
                     );
                     return p;
                 })
@@ -82,8 +79,7 @@ public class ProductGroupController {
     ) {
         ListProductGroupDTO ret = dtoMapper.map(groups.saveAndFlush(dtoMapper.create(
             createProductGroupDTO,
-            getOwner(principal),
-            products
+            getOwner(principal)
         )));
         return ResponseEntity
             .created(
