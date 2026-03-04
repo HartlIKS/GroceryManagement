@@ -1,4 +1,4 @@
-package de.iks.grocery_manager.server.controller;
+package de.iks.grocery_manager.server.controller.masterdata;
 
 import de.iks.grocery_manager.server.Testdata;
 import de.iks.grocery_manager.server.config.AuthorityConfiguration;
