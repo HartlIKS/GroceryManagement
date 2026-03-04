@@ -15,6 +15,8 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.UUID;
+
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -26,6 +28,35 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureTestDatabase
 @Sql(Testdata.SCRIPT)
 class ProductGroupControllerTest {
+    private static final String PRODUCT_GROUP_3_CREATE_JSON = String.format("""
+        {
+          "name": "Group 3",
+          "products": {
+            "%s": 1
+          }
+        }""", Testdata.PRODUCT_3_UUID
+    );
+    public static final UUID PRODUCT_GROUP_2_UUID = UUID.fromString("20000000-0000-0000-0000-000000000001");
+    public static final UUID PRODUCT_GROUP_1_UUID = UUID.fromString("20000000-0000-0000-0000-000000000000");
+    private static final String PRODUCT_GROUP_1_UPDATE_JSON = String.format("""
+        {
+          "name": "Group 1b",
+          "products": {
+            "%s": 1,
+            "%s": 2
+          }
+        }""", Testdata.PRODUCT_3_UUID, Testdata.PRODUCT_4_UUID
+    );
+    private static final String PRODUCT_GROUP_1_JSON = String.format("""
+        {
+          "uuid": "%s",
+          "name": "Group 1",
+          "products": {
+            "%s": 1
+          }
+        }""", PRODUCT_GROUP_1_UUID, Testdata.PRODUCT_3_UUID
+    );
+
     private MockMvc mockMvc;
     
     @Autowired
@@ -51,12 +82,12 @@ class ProductGroupControllerTest {
         void shouldReturnProductGroupWhenFoundAndOwned() throws Exception {
             mockMvc
                 .perform(
-                    get("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
+                    get("/api/productGroups/{uuid}", PRODUCT_GROUP_1_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.PRODUCT_GROUP_1_JSON));
+                .andExpect(content().json(PRODUCT_GROUP_1_JSON));
         }
 
         @Test
@@ -73,7 +104,7 @@ class ProductGroupControllerTest {
         void shouldReturn404WhenAccessingOtherUsersProductGroup() throws Exception {
             mockMvc
                 .perform(
-                    get("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_2_UUID)
+                    get("/api/productGroups/{uuid}", PRODUCT_GROUP_2_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isNotFound());
@@ -83,7 +114,7 @@ class ProductGroupControllerTest {
         void shouldReturn401WhenGettingProductGroupWithoutAuthentication() throws Exception {
             mockMvc
                 .perform(
-                    get("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
+                    get("/api/productGroups/{uuid}", PRODUCT_GROUP_1_UUID)
                 )
                 .andExpect(status().isUnauthorized());
         }
@@ -97,18 +128,27 @@ class ProductGroupControllerTest {
             
             mockMvc
                 .perform(
-                    put("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
-                        .content(Testdata.PRODUCT_GROUP_1_UPDATE_JSON)
+                    put("/api/productGroups/{uuid}", PRODUCT_GROUP_1_UUID)
+                        .content(PRODUCT_GROUP_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.PRODUCT_GROUP_1_JSON2));
+                .andExpect(content().json(String.format("""
+                    {
+                      "uuid": "%s",
+                      "name": "Group 1b",
+                      "products": {
+                        "%s": 1,
+                        "%s": 2
+                      }
+                    }""", PRODUCT_GROUP_1_UUID, Testdata.PRODUCT_3_UUID, Testdata.PRODUCT_4_UUID
+                )));
             
             // Verify update was applied and other product group unaffected
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, productGroupRepository.count());
         }
 
@@ -119,15 +159,15 @@ class ProductGroupControllerTest {
             mockMvc
                 .perform(
                     put("/api/productGroups/{uuid}", Testdata.BAD_UUID)
-                        .content(Testdata.PRODUCT_GROUP_1_UPDATE_JSON)
+                        .content(PRODUCT_GROUP_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isNotFound());
             
             // Verify no changes to existing product groups
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, productGroupRepository.count());
         }
 
@@ -137,16 +177,16 @@ class ProductGroupControllerTest {
             
             mockMvc
                 .perform(
-                    put("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_2_UUID)
-                        .content(Testdata.PRODUCT_GROUP_1_UPDATE_JSON)
+                    put("/api/productGroups/{uuid}", PRODUCT_GROUP_2_UUID)
+                        .content(PRODUCT_GROUP_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isNotFound());
             
             // Verify no changes (user1 cannot update user2's group)
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, productGroupRepository.count());
         }
 
@@ -156,15 +196,15 @@ class ProductGroupControllerTest {
             
             mockMvc
                 .perform(
-                    put("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
-                        .content(Testdata.PRODUCT_GROUP_1_UPDATE_JSON)
+                    put("/api/productGroups/{uuid}", PRODUCT_GROUP_1_UUID)
+                        .content(PRODUCT_GROUP_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isUnauthorized());
             
             // Verify no changes when unauthorized
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, productGroupRepository.count());
         }
     }
@@ -178,20 +218,27 @@ class ProductGroupControllerTest {
             mockMvc
                 .perform(
                     post("/api/productGroups")
-                        .content(Testdata.PRODUCT_GROUP_3_CREATE_JSON)
+                        .content(PRODUCT_GROUP_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isCreated())
                 .andExpect(header().string("location", matchesRegex("http://localhost/api/productGroups/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.PRODUCT_GROUP_3_JSON));
+                .andExpect(content().json(String.format("""
+                    {
+                      "name": "Group 3",
+                      "products": {
+                        "%s": 1
+                      }
+                    }""", Testdata.PRODUCT_3_UUID
+                )));
             
             // Verify creation - count should increase by 1
             assertEquals(initialCount + 1, productGroupRepository.count());
             // Verify existing groups unaffected
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -201,15 +248,15 @@ class ProductGroupControllerTest {
             mockMvc
                 .perform(
                     post("/api/productGroups")
-                        .content(Testdata.PRODUCT_GROUP_3_CREATE_JSON)
+                        .content(PRODUCT_GROUP_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isUnauthorized());
             
             // Verify no changes when unauthorized
             assertEquals(initialCount, productGroupRepository.count());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
         }
     }
 
@@ -221,16 +268,16 @@ class ProductGroupControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
+                    delete("/api/productGroups/{uuid}", PRODUCT_GROUP_1_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
             
             // Verify deletion
-            assertFalse(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertFalse(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
             assertEquals(initialCount - 1, productGroupRepository.count());
             // Verify other group unaffected
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -246,8 +293,8 @@ class ProductGroupControllerTest {
             
             // Verify no changes to existing groups
             assertEquals(initialCount, productGroupRepository.count());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -256,15 +303,15 @@ class ProductGroupControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_2_UUID)
+                    delete("/api/productGroups/{uuid}", PRODUCT_GROUP_2_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
             
             // Verify no changes (user1 cannot delete user2's group)
             assertEquals(initialCount, productGroupRepository.count());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -273,14 +320,14 @@ class ProductGroupControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/api/productGroups/{uuid}", Testdata.PRODUCT_GROUP_1_UUID)
+                    delete("/api/productGroups/{uuid}", PRODUCT_GROUP_1_UUID)
                 )
                 .andExpect(status().isUnauthorized());
             
             // Verify no changes when unauthorized
             assertEquals(initialCount, productGroupRepository.count());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
-            assertTrue(productGroupRepository.findByUuidAndOwner(Testdata.PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_1_UUID, "sub: user1").isPresent());
+            assertTrue(productGroupRepository.findByUuidAndOwner(PRODUCT_GROUP_2_UUID, "sub: user2").isPresent());
         }
     }
 
@@ -295,7 +342,24 @@ class ProductGroupControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.PRODUCT_GROUP_SEARCH_RESULT_JSON));
+                .andExpect(content().json(
+                    String.format(
+                        """
+                        {
+                          "page": {
+                            "number": 0,
+                            "size": 10,
+                            "totalElements": 1,
+                            "totalPages": 1
+                          },
+                          "content": [
+                            %s
+                          ]
+                        }
+                        """,
+                        PRODUCT_GROUP_1_JSON
+                    )
+                ));
         }
 
         @Test
@@ -307,7 +371,28 @@ class ProductGroupControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.PRODUCT_GROUP_SEARCH_RESULT_USER2_JSON));
+                .andExpect(content().json(
+                    String.format(
+                        """
+                        {
+                          "page": {
+                            "number": 0,
+                            "size": 10,
+                            "totalElements": 1,
+                            "totalPages": 1
+                          },
+                          "content": [
+                            {
+                              "uuid": "%s",
+                              "name": "Group 2",
+                              "products": {}
+                            }
+                          ]
+                        }
+                        """,
+                        PRODUCT_GROUP_2_UUID
+                    )
+                ));
         }
 
         @Test

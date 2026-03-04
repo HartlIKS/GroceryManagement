@@ -15,6 +15,8 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.UUID;
+
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -26,6 +28,56 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureTestDatabase
 @Sql(Testdata.SCRIPT)
 class ShoppingTripControllerTest {
+    private static final String SHOPPING_TRIP_1_ADD_EXISTING_JSON = String.format("""
+        {
+          "%s": 1
+        }""", Testdata.PRODUCT_3_UUID
+    );
+    private static final String SHOPPING_TRIP_3_CREATE_JSON = String.format("""
+        {
+          "name": "Trip 3",
+          "store": "%s",
+          "time": "2024-01-25T08:00:00Z",
+          "products": {
+            "%s": 1
+          }
+        }""", Testdata.STORE_1_UUID, Testdata.PRODUCT_4_UUID
+    );
+    private static final UUID SHOPPING_TRIP_2_UUID = UUID.fromString("50000000-0000-0000-0000-000000000001");
+    private static final String SHOPPING_TRIP_1_UPDATE_JSON = String.format("""
+        {
+          "name": "Trip 1b",
+          "store": "%s",
+          "time": "2024-01-15T13:00:00Z",
+          "products": {
+            "%s": 1,
+            "%s": 3
+          }
+        }""", Testdata.STORE_2_UUID, Testdata.PRODUCT_3_UUID, Testdata.PRODUCT_4_UUID
+    );
+    private static final UUID SHOPPING_TRIP_1_UUID = UUID.fromString("50000000-0000-0000-0000-000000000000");
+    private static final String SHOPPING_TRIP_1_JSON = String.format("""
+            {
+              "uuid": "%s",
+              "store": "%s",
+              "time": "2024-01-15T09:00:00Z",
+              "products": {
+                "%s": 2
+              }
+            }""", SHOPPING_TRIP_1_UUID, Testdata.STORE_3_UUID, Testdata.PRODUCT_3_UUID
+    );
+    private static final String SHOPPING_TRIP_SEARCH_RESULT_JSON = String.format("""
+                {
+                  "page": {
+                    "number": 0,
+                    "size": 10,
+                    "totalElements": 1,
+                    "totalPages": 1
+                  },
+                  "content": [
+                    %s
+                  ]
+                }""", SHOPPING_TRIP_1_JSON);
     private MockMvc mockMvc;
     
     @Autowired
@@ -51,12 +103,12 @@ class ShoppingTripControllerTest {
         void shouldReturnShoppingTripWhenFoundAndOwned() throws Exception {
             mockMvc
                 .perform(
-                    get("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
+                    get("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_1_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.SHOPPING_TRIP_1_JSON));
+                .andExpect(content().json(SHOPPING_TRIP_1_JSON));
         }
 
         @Test
@@ -73,7 +125,7 @@ class ShoppingTripControllerTest {
         void shouldReturn404WhenAccessingOtherUsersShoppingTrip() throws Exception {
             mockMvc
                 .perform(
-                    get("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_2_UUID)
+                    get("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_2_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isNotFound());
@@ -83,7 +135,7 @@ class ShoppingTripControllerTest {
         void shouldReturn401WhenGettingShoppingTripWithoutAuthentication() throws Exception {
             mockMvc
                 .perform(
-                    get("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
+                    get("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_1_UUID)
                 )
                 .andExpect(status().isUnauthorized());
         }
@@ -97,18 +149,28 @@ class ShoppingTripControllerTest {
             
             mockMvc
                 .perform(
-                    put("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
-                        .content(Testdata.SHOPPING_TRIP_1_UPDATE_JSON)
+                    put("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_1_UUID)
+                        .content(SHOPPING_TRIP_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.SHOPPING_TRIP_1_JSON2));
+                .andExpect(content().json(String.format("""
+                    {
+                      "uuid": "%s",
+                      "store": "%s",
+                      "time": "2024-01-15T13:00:00Z",
+                      "products": {
+                        "%s": 1,
+                        "%s": 3
+                      }
+                    }""", SHOPPING_TRIP_1_UUID, Testdata.STORE_2_UUID, Testdata.PRODUCT_3_UUID, Testdata.PRODUCT_4_UUID
+                )));
             
             // Verify update was applied and other trip unaffected
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, shoppingTripRepository.count());
         }
 
@@ -119,15 +181,15 @@ class ShoppingTripControllerTest {
             mockMvc
                 .perform(
                     put("/api/shoppingTrips/{uuid}", Testdata.BAD_UUID)
-                        .content(Testdata.SHOPPING_TRIP_1_UPDATE_JSON)
+                        .content(SHOPPING_TRIP_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isNotFound());
             
             // Verify no changes to existing trips
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, shoppingTripRepository.count());
         }
 
@@ -137,16 +199,16 @@ class ShoppingTripControllerTest {
             
             mockMvc
                 .perform(
-                    put("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_2_UUID)
-                        .content(Testdata.SHOPPING_TRIP_1_UPDATE_JSON)
+                    put("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_2_UUID)
+                        .content(SHOPPING_TRIP_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isNotFound());
             
             // Verify no changes (user1 cannot update user2's trip)
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, shoppingTripRepository.count());
         }
 
@@ -156,15 +218,15 @@ class ShoppingTripControllerTest {
             
             mockMvc
                 .perform(
-                    put("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
-                        .content(Testdata.SHOPPING_TRIP_1_UPDATE_JSON)
+                    put("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_1_UUID)
+                        .content(SHOPPING_TRIP_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isUnauthorized());
             
             // Verify no changes when unauthorized
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, shoppingTripRepository.count());
         }
     }
@@ -178,20 +240,28 @@ class ShoppingTripControllerTest {
             mockMvc
                 .perform(
                     post("/api/shoppingTrips")
-                        .content(Testdata.SHOPPING_TRIP_3_CREATE_JSON)
+                        .content(SHOPPING_TRIP_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isCreated())
                 .andExpect(header().string("location", matchesRegex("http://localhost/api/shoppingLists/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.SHOPPING_TRIP_3_JSON));
+                .andExpect(content().json(String.format("""
+                    {
+                      "store": "%s",
+                      "time": "2024-01-25T08:00:00Z",
+                      "products": {
+                        "%s": 1
+                      }
+                    }""", Testdata.STORE_1_UUID, Testdata.PRODUCT_4_UUID
+                )));
             
             // Verify creation - count should increase by 1
             assertEquals(initialCount + 1, shoppingTripRepository.count());
             // Verify existing trips unaffected
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -201,15 +271,15 @@ class ShoppingTripControllerTest {
             mockMvc
                 .perform(
                     post("/api/shoppingTrips")
-                        .content(Testdata.SHOPPING_TRIP_3_CREATE_JSON)
+                        .content(SHOPPING_TRIP_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isUnauthorized());
             
             // Verify no changes when unauthorized
             assertEquals(initialCount, shoppingTripRepository.count());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
         }
     }
 
@@ -221,16 +291,16 @@ class ShoppingTripControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
+                    delete("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_1_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
             
             // Verify deletion
-            assertFalse(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertFalse(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
             assertEquals(initialCount - 1, shoppingTripRepository.count());
             // Verify other trip unaffected
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -246,8 +316,8 @@ class ShoppingTripControllerTest {
             
             // Verify no changes to existing trips
             assertEquals(initialCount, shoppingTripRepository.count());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -256,15 +326,15 @@ class ShoppingTripControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_2_UUID)
+                    delete("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_2_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
             
             // Verify no changes (user1 cannot delete user2's trip)
             assertEquals(initialCount, shoppingTripRepository.count());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -273,14 +343,14 @@ class ShoppingTripControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/api/shoppingTrips/{uuid}", Testdata.SHOPPING_TRIP_1_UUID)
+                    delete("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_1_UUID)
                 )
                 .andExpect(status().isUnauthorized());
             
             // Verify no changes when unauthorized
             assertEquals(initialCount, shoppingTripRepository.count());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(Testdata.SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
         }
     }
 
@@ -290,49 +360,58 @@ class ShoppingTripControllerTest {
         void shouldAddProductsToShoppingTripWhenAuthenticatedAndOwned() throws Exception {
             mockMvc
                 .perform(
-                    post("/api/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
-                        .content(Testdata.SHOPPING_TRIP_1_ADD_MULTIPLE_JSON)
+                    post("/api/shoppingTrips/{uuid}/add", SHOPPING_TRIP_1_UUID)
+                        .content(String.format("""
+                            {
+                              "%s": 3,
+                              "%s": 2
+                            }""", Testdata.PRODUCT_4_UUID, Testdata.PRODUCT_3_UUID
+                        ))
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").value(Testdata.SHOPPING_TRIP_1_UUID.toString()))
+                .andExpect(jsonPath("$.uuid").value(SHOPPING_TRIP_1_UUID.toString()))
                 .andExpect(jsonPath("$.store").value(Testdata.STORE_3_UUID.toString()))
                 .andExpect(jsonPath("$.products").isMap())
-                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_GROUP_TEST_1_UUID + "']").value(4)) // 2 (existing) + 2 (added)
-                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_GROUP_TEST_2_UUID + "']").value(3)); // 0 (existing) + 3 (added)
+                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_3_UUID + "']").value(4)) // 2 (existing) + 2 (added)
+                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_4_UUID + "']").value(3)); // 0 (existing) + 3 (added)
         }
 
         @Test
         void shouldAddSingleProductToShoppingTrip() throws Exception {
             mockMvc
                 .perform(
-                    post("/api/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
-                        .content(Testdata.SHOPPING_TRIP_1_ADD_SINGLE_JSON)
+                    post("/api/shoppingTrips/{uuid}/add", SHOPPING_TRIP_1_UUID)
+                        .content(String.format("""
+                            {
+                              "%s": 1.5
+                            }""", Testdata.PRODUCT_4_UUID
+                        ))
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").value(Testdata.SHOPPING_TRIP_1_UUID.toString()))
+                .andExpect(jsonPath("$.uuid").value(SHOPPING_TRIP_1_UUID.toString()))
                 .andExpect(jsonPath("$.products").isMap())
-                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_GROUP_TEST_1_UUID + "']").value(2)) // unchanged
-                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_GROUP_TEST_2_UUID + "']").value(1.5)); // newly added
+                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_3_UUID + "']").value(2)) // unchanged
+                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_4_UUID + "']").value(1.5)); // newly added
         }
 
         @Test
         void shouldAccumulateAmountsWhenAddingExistingProduct() throws Exception {
             mockMvc
                 .perform(
-                    post("/api/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
-                        .content(Testdata.SHOPPING_TRIP_1_ADD_EXISTING_JSON)
+                    post("/api/shoppingTrips/{uuid}/add", SHOPPING_TRIP_1_UUID)
+                        .content(SHOPPING_TRIP_1_ADD_EXISTING_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_GROUP_TEST_1_UUID + "']").value(3)); // 2 (existing) + 1 (added)
+                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_3_UUID + "']").value(3)); // 2 (existing) + 1 (added)
         }
 
         @Test
@@ -340,7 +419,7 @@ class ShoppingTripControllerTest {
             mockMvc
                 .perform(
                     post("/api/shoppingTrips/{uuid}/add", Testdata.BAD_UUID)
-                        .content(Testdata.SHOPPING_TRIP_1_ADD_EXISTING_JSON)
+                        .content(SHOPPING_TRIP_1_ADD_EXISTING_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
@@ -351,8 +430,8 @@ class ShoppingTripControllerTest {
         void shouldReturn404WhenAddingToOtherUsersShoppingTrip() throws Exception {
             mockMvc
                 .perform(
-                    post("/api/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_2_UUID)
-                        .content(Testdata.SHOPPING_TRIP_1_ADD_EXISTING_JSON)
+                    post("/api/shoppingTrips/{uuid}/add", SHOPPING_TRIP_2_UUID)
+                        .content(SHOPPING_TRIP_1_ADD_EXISTING_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
@@ -363,8 +442,8 @@ class ShoppingTripControllerTest {
         void shouldReturn401WhenAddingToShoppingTripWithoutAuthentication() throws Exception {
             mockMvc
                 .perform(
-                    post("/api/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
-                        .content(Testdata.SHOPPING_TRIP_1_ADD_EXISTING_JSON)
+                    post("/api/shoppingTrips/{uuid}/add", SHOPPING_TRIP_1_UUID)
+                        .content(SHOPPING_TRIP_1_ADD_EXISTING_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isUnauthorized());
@@ -374,45 +453,53 @@ class ShoppingTripControllerTest {
         void shouldHandleEmptyProductsMap() throws Exception {
             mockMvc
                 .perform(
-                    post("/api/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
-                        .content(Testdata.SHOPPING_TRIP_1_ADD_EMPTY_JSON)
+                    post("/api/shoppingTrips/{uuid}/add", SHOPPING_TRIP_1_UUID)
+                        .content("{}")
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.products").isMap())
-                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_GROUP_TEST_1_UUID + "']").value(2)); // unchanged
+                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_3_UUID + "']").value(2)); // unchanged
         }
 
         @Test
         void shouldHandleZeroAmount() throws Exception {
             mockMvc
                 .perform(
-                    post("/api/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
-                        .content(Testdata.SHOPPING_TRIP_1_ADD_ZERO_JSON)
+                    post("/api/shoppingTrips/{uuid}/add", SHOPPING_TRIP_1_UUID)
+                        .content(String.format("""
+                            {
+                              "%s": 0
+                            }""", Testdata.PRODUCT_4_UUID
+                        ))
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.products").isMap())
-                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_GROUP_TEST_1_UUID + "']").value(2)); // unchanged
+                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_3_UUID + "']").value(2)); // unchanged
         }
 
         @Test
         void shouldHandleNegativeAmount() throws Exception {
             mockMvc
                 .perform(
-                    post("/api/shoppingTrips/{uuid}/add", Testdata.SHOPPING_TRIP_1_UUID)
-                        .content(Testdata.SHOPPING_TRIP_1_ADD_NEGATIVE_JSON)
+                    post("/api/shoppingTrips/{uuid}/add", SHOPPING_TRIP_1_UUID)
+                        .content(String.format("""
+                            {
+                              "%s": -1
+                            }""", Testdata.PRODUCT_4_UUID
+                        ))
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.products").isMap())
-                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_GROUP_TEST_1_UUID + "']").value(2)); // unchanged
+                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_3_UUID + "']").value(2)); // unchanged
         }
     }
 
@@ -427,7 +514,7 @@ class ShoppingTripControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.SHOPPING_TRIP_SEARCH_RESULT_JSON));
+                .andExpect(content().json(SHOPPING_TRIP_SEARCH_RESULT_JSON));
         }
 
         @Test
@@ -439,7 +526,7 @@ class ShoppingTripControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.SHOPPING_TRIP_SEARCH_RESULT_JSON));
+                .andExpect(content().json(SHOPPING_TRIP_SEARCH_RESULT_JSON));
         }
 
         @Test
@@ -451,7 +538,7 @@ class ShoppingTripControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.SHOPPING_TRIP_SEARCH_RESULT_JSON));
+                .andExpect(content().json(SHOPPING_TRIP_SEARCH_RESULT_JSON));
         }
 
         @Test
@@ -463,7 +550,24 @@ class ShoppingTripControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.SHOPPING_TRIP_SEARCH_RESULT_USER2_JSON));
+                .andExpect(content().json(String.format("""
+                        {
+                          "page": {
+                            "number": 0,
+                            "size": 10,
+                            "totalElements": 1,
+                            "totalPages": 1
+                          },
+                          "content": [
+                            {
+                              "uuid": "%s",
+                              "store": "%s",
+                              "time": "2024-01-20T14:30:00Z",
+                              "products": {}
+                            }
+                          ]
+                        }""", SHOPPING_TRIP_2_UUID, Testdata.STORE_3_UUID
+                )));
         }
 
         @Test

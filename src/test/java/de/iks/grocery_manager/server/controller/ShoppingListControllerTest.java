@@ -15,6 +15,8 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.UUID;
+
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -26,6 +28,52 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureTestDatabase
 @Sql(Testdata.SCRIPT)
 class ShoppingListControllerTest {
+    private static final String SHOPPING_LIST_3_CREATE_JSON = String.format("""
+        {
+          "name": "List 3",
+          "repeating": false,
+          "products": {
+            "%s": 3
+          },
+          "productGroups": {}
+        }""", Testdata.PRODUCT_3_UUID
+    );
+    private static final UUID SHOPPING_LIST_2_UUID = UUID.fromString("30000000-0000-0000-0000-000000000001");
+    private static final String SHOPPING_LIST_1_UPDATE_JSON = String.format("""
+        {
+          "name": "List 1b",
+          "repeating": true,
+          "products": {
+            "%s": 2,
+            "%s": 1
+          },
+          "productGroups": {}
+        }""", Testdata.PRODUCT_3_UUID, Testdata.PRODUCT_4_UUID
+    );
+    private static final UUID SHOPPING_LIST_1_UUID = UUID.fromString("30000000-0000-0000-0000-000000000000");
+    private static final String SHOPPING_LIST_1_JSON = String.format("""
+            {
+              "uuid": "%s",
+              "name": "List 1",
+              "repeating": false,
+              "products": {
+                "%s": 2
+              },
+              "productGroups": {}
+            }""", SHOPPING_LIST_1_UUID, Testdata.PRODUCT_3_UUID
+    );
+    private static final String SHOPPING_LIST_SEARCH_RESULT_JSON = String.format("""
+                {
+                  "page": {
+                    "number": 0,
+                    "size": 10,
+                    "totalElements": 1,
+                    "totalPages": 1
+                  },
+                  "content": [
+                    %s
+                  ]
+                }""", SHOPPING_LIST_1_JSON);
     private MockMvc mockMvc;
     
     @Autowired
@@ -51,12 +99,12 @@ class ShoppingListControllerTest {
         void shouldReturnShoppingListWhenFoundAndOwned() throws Exception {
             mockMvc
                 .perform(
-                    get("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                    get("/api/shoppingLists/{uuid}", SHOPPING_LIST_1_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.SHOPPING_LIST_1_JSON));
+                .andExpect(content().json(SHOPPING_LIST_1_JSON));
         }
 
         @Test
@@ -73,7 +121,7 @@ class ShoppingListControllerTest {
         void shouldReturn404WhenAccessingOtherUsersShoppingList() throws Exception {
             mockMvc
                 .perform(
-                    get("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
+                    get("/api/shoppingLists/{uuid}", SHOPPING_LIST_2_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isNotFound());
@@ -83,7 +131,7 @@ class ShoppingListControllerTest {
         void shouldReturn401WhenGettingShoppingListWithoutAuthentication() throws Exception {
             mockMvc
                 .perform(
-                    get("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                    get("/api/shoppingLists/{uuid}", SHOPPING_LIST_1_UUID)
                 )
                 .andExpect(status().isUnauthorized());
         }
@@ -95,14 +143,25 @@ class ShoppingListControllerTest {
         void shouldUpdateShoppingListWhenAuthenticatedAndFound() throws Exception {
             mockMvc
                 .perform(
-                    put("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
-                        .content(Testdata.SHOPPING_LIST_1_UPDATE_JSON)
+                    put("/api/shoppingLists/{uuid}", SHOPPING_LIST_1_UUID)
+                        .content(SHOPPING_LIST_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.SHOPPING_LIST_1_JSON2));
+                .andExpect(content().json(String.format("""
+                    {
+                      "uuid": "%s",
+                      "name": "List 1b",
+                      "repeating": true,
+                      "products": {
+                        "%s": 2,
+                        "%s": 1
+                      },
+                      "productGroups": {}
+                    }""", SHOPPING_LIST_1_UUID, Testdata.PRODUCT_3_UUID, Testdata.PRODUCT_4_UUID
+                )));
         }
 
         @Test
@@ -110,7 +169,7 @@ class ShoppingListControllerTest {
             mockMvc
                 .perform(
                     put("/api/shoppingLists/{uuid}", Testdata.BAD_UUID)
-                        .content(Testdata.SHOPPING_LIST_1_UPDATE_JSON)
+                        .content(SHOPPING_LIST_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
@@ -121,8 +180,8 @@ class ShoppingListControllerTest {
         void shouldReturn404WhenUpdatingOtherUsersShoppingList() throws Exception {
             mockMvc
                 .perform(
-                    put("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
-                        .content(Testdata.SHOPPING_LIST_1_UPDATE_JSON)
+                    put("/api/shoppingLists/{uuid}", SHOPPING_LIST_2_UUID)
+                        .content(SHOPPING_LIST_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
@@ -133,8 +192,8 @@ class ShoppingListControllerTest {
         void shouldReturn401WhenUpdatingShoppingListWithoutAuthentication() throws Exception {
             mockMvc
                 .perform(
-                    put("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
-                        .content(Testdata.SHOPPING_LIST_1_UPDATE_JSON)
+                    put("/api/shoppingLists/{uuid}", SHOPPING_LIST_1_UUID)
+                        .content(SHOPPING_LIST_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isUnauthorized());
@@ -148,14 +207,23 @@ class ShoppingListControllerTest {
             mockMvc
                 .perform(
                     post("/api/shoppingLists")
-                        .content(Testdata.SHOPPING_LIST_3_CREATE_JSON)
+                        .content(SHOPPING_LIST_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isCreated())
                 .andExpect(header().string("location", matchesRegex("http://localhost/api/shoppingLists/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.SHOPPING_LIST_3_JSON));
+                .andExpect(content().json(String.format("""
+                    {
+                      "name": "List 3",
+                      "repeating": false,
+                      "products": {
+                        "%s": 3
+                      },
+                      "productGroups": {}
+                    }""", Testdata.PRODUCT_3_UUID
+                )));
         }
 
         @Test
@@ -163,7 +231,7 @@ class ShoppingListControllerTest {
             mockMvc
                 .perform(
                     post("/api/shoppingLists")
-                        .content(Testdata.SHOPPING_LIST_3_CREATE_JSON)
+                        .content(SHOPPING_LIST_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isUnauthorized());
@@ -178,16 +246,16 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                    delete("/api/shoppingLists/{uuid}", SHOPPING_LIST_1_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
             
             // Verify deletion
-            assertFalse(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
+            assertFalse(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
             assertEquals(initialCount - 1, shoppingListRepository.count());
             // Verify other list unaffected
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -196,17 +264,17 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                    delete("/api/shoppingLists/{uuid}", SHOPPING_LIST_1_UUID)
                         .param("ifNonRepeating", "true")
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
             
             // Verify deletion (non-repeating list should be deleted)
-            assertFalse(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
+            assertFalse(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
             assertEquals(initialCount - 1, shoppingListRepository.count());
             // Verify other list unaffected
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -215,17 +283,17 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
+                    delete("/api/shoppingLists/{uuid}", SHOPPING_LIST_2_UUID)
                         .param("ifNonRepeating", "true")
                         .with(user2_jwt)
                 )
                 .andExpect(status().isOk());
             
             // Verify list was NOT deleted (repeating list should not be deleted when ifNonRepeating=true)
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount, shoppingListRepository.count());
             // Verify other list unaffected
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
         }
 
         @Test
@@ -234,17 +302,17 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
+                    delete("/api/shoppingLists/{uuid}", SHOPPING_LIST_2_UUID)
                         .param("ifNonRepeating", "false")
                         .with(user2_jwt)
                 )
                 .andExpect(status().isOk());
             
             // Verify deletion (repeating list should be deleted when ifNonRepeating=false)
-            assertFalse(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
+            assertFalse(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
             assertEquals(initialCount - 1, shoppingListRepository.count());
             // Verify other list unaffected
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
         }
 
         @Test
@@ -260,8 +328,8 @@ class ShoppingListControllerTest {
             
             // Verify no changes to existing lists
             assertEquals(initialCount, shoppingListRepository.count());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -278,8 +346,8 @@ class ShoppingListControllerTest {
             
             // Verify no changes to existing lists
             assertEquals(initialCount, shoppingListRepository.count());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -288,15 +356,15 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
+                    delete("/api/shoppingLists/{uuid}", SHOPPING_LIST_2_UUID)
                         .with(user1_jwt)
                 )
                 .andExpect(status().isOk());
             
             // Verify no changes (user1 cannot delete user2's list)
             assertEquals(initialCount, shoppingListRepository.count());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -305,7 +373,7 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_2_UUID)
+                    delete("/api/shoppingLists/{uuid}", SHOPPING_LIST_2_UUID)
                         .param("ifNonRepeating", "true")
                         .with(user1_jwt)
                 )
@@ -313,8 +381,8 @@ class ShoppingListControllerTest {
             
             // Verify no changes (user1 cannot delete user2's list)
             assertEquals(initialCount, shoppingListRepository.count());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -323,14 +391,14 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                    delete("/api/shoppingLists/{uuid}", SHOPPING_LIST_1_UUID)
                 )
                 .andExpect(status().isUnauthorized());
             
             // Verify no changes when unauthorized
             assertEquals(initialCount, shoppingListRepository.count());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
         }
 
         @Test
@@ -339,15 +407,15 @@ class ShoppingListControllerTest {
             
             mockMvc
                 .perform(
-                    delete("/api/shoppingLists/{uuid}", Testdata.SHOPPING_LIST_1_UUID)
+                    delete("/api/shoppingLists/{uuid}", SHOPPING_LIST_1_UUID)
                         .param("ifNonRepeating", "true")
                 )
                 .andExpect(status().isUnauthorized());
 
             // Verify no changes when unauthorized
             assertEquals(initialCount, shoppingListRepository.count());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingListRepository.findByUuidAndOwner(Testdata.SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_1_UUID, "sub: user1").isPresent());
+            assertTrue(shoppingListRepository.findByUuidAndOwner(SHOPPING_LIST_2_UUID, "sub: user2").isPresent());
         }
     }
 
@@ -362,7 +430,7 @@ class ShoppingListControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.SHOPPING_LIST_SEARCH_RESULT_JSON));
+                .andExpect(content().json(SHOPPING_LIST_SEARCH_RESULT_JSON));
         }
 
         @Test
@@ -374,7 +442,7 @@ class ShoppingListControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.SHOPPING_LIST_SEARCH_RESULT_JSON));
+                .andExpect(content().json(SHOPPING_LIST_SEARCH_RESULT_JSON));
         }
 
         @Test
@@ -386,7 +454,25 @@ class ShoppingListControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.SHOPPING_LIST_SEARCH_RESULT_USER2_JSON));
+                .andExpect(content().json(String.format("""
+                        {
+                          "page": {
+                            "number": 0,
+                            "size": 10,
+                            "totalElements": 1,
+                            "totalPages": 1
+                          },
+                          "content": [
+                            {
+                              "uuid": "%s",
+                              "name": "List 2",
+                              "repeating": true,
+                              "products": {},
+                              "productGroups": {}
+                            }
+                          ]
+                        }""", SHOPPING_LIST_2_UUID
+                )));
         }
 
         @Test

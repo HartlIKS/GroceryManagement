@@ -28,6 +28,41 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureTestDatabase
 @Sql(Testdata.SCRIPT)
 class StoreControllerTest {
+    public static final String STORE_1_JSON = String.format("""
+        {
+          "uuid": "%s",
+          "name": "Store 1",
+          "address": {
+            "country": "DE",
+            "city": "Düsseldorf"
+          },
+          "currency": "EUR"
+        }""", Testdata.STORE_1_UUID);
+    public static final String STORE_1_UPDATE_JSON = """
+        {
+          "name": "Store 1b",
+          "address": {
+            "city": "Hilden"
+          }
+        }""";
+    public static final String STORE_3_CREATE_JSON = """
+        {
+          "name": "Store 3",
+          "address": {
+            "country": "DE",
+            "city": "Munich"
+          },
+          "currency": "EUR"
+        }""";
+    public static final String STORE_3_JSON = """
+        {
+          "name": "Store 3",
+          "address": {
+            "country": "DE",
+            "city": "Munich"
+          },
+          "currency": "EUR"
+        }""";
     private MockMvc mockMvc;
     
     @Autowired
@@ -60,7 +95,7 @@ class StoreControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.STORE_1_JSON));
+                .andExpect(content().json(STORE_1_JSON));
         }
 
         @Test
@@ -83,13 +118,22 @@ class StoreControllerTest {
             mockMvc
                 .perform(
                     put("/api/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
-                        .content(Testdata.STORE_1_UPDATE_JSON)
+                        .content(STORE_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.STORE_1_JSON2));
+                .andExpect(content().json(String.format("""
+                    {
+                      "uuid": "%s",
+                      "name": "Store 1b",
+                      "address": {
+                        "country": "DE",
+                        "city": "Hilden"
+                      },
+                      "currency": "EUR"
+                    }""", Testdata.STORE_1_UUID)));
             
             // Verify update was applied and other store unaffected
             assertTrue(storeRepository.findById(Testdata.STORE_1_UUID).isPresent());
@@ -104,7 +148,7 @@ class StoreControllerTest {
             mockMvc
                 .perform(
                     put("/api/masterdata/store/{uuid}", Testdata.BAD_UUID)
-                        .content(Testdata.STORE_1_UPDATE_JSON)
+                        .content(STORE_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
                 )
@@ -123,7 +167,7 @@ class StoreControllerTest {
             mockMvc
                 .perform(
                     put("/api/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
-                        .content(Testdata.STORE_1_UPDATE_JSON)
+                        .content(STORE_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user_jwt)
                 )
@@ -145,14 +189,14 @@ class StoreControllerTest {
             mockMvc
                 .perform(
                     post("/api/masterdata/store")
-                        .content(Testdata.STORE_3_CREATE_JSON)
+                        .content(STORE_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
                 )
                 .andExpect(status().isCreated())
                 .andExpect(header().string("location", matchesRegex("http://localhost/api/store/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.STORE_3_JSON));
+                .andExpect(content().json(STORE_3_JSON));
             
             // Verify creation - count should increase by 1
             assertEquals(initialCount + 1, storeRepository.count());
@@ -168,7 +212,7 @@ class StoreControllerTest {
             mockMvc
                 .perform(
                     post("/api/masterdata/store")
-                        .content(Testdata.STORE_3_CREATE_JSON)
+                        .content(STORE_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user_jwt)
                 )
@@ -231,7 +275,38 @@ class StoreControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.STORE_SEARCH_RESULT_JSON));
+                .andExpect(content().json(String.format("""
+                    {
+                      "page": {
+                        "number": 0,
+                        "size": 10,
+                        "totalElements": 4,
+                        "totalPages": 1
+                      },
+                      "content": [
+                        %s,
+                        {
+                          "uuid": "%s",
+                          "name": "Store 2",
+                          "address": {
+                            "country": "DE",
+                            "city": "Hilden"
+                          },
+                          "currency": "USD"
+                        },
+                        %s,
+                        {
+                          "uuid": "%s",
+                          "name": "Store 4",
+                          "address": {
+                            "country": "DE",
+                            "city": "Berlin"
+                          },
+                          "currency": "USD"
+                        }
+                      ]
+                    }""", STORE_1_JSON, Testdata.STORE_2_UUID, STORE_3_JSON, Testdata.STORE_4_UUID
+                )));
         }
     }
 }

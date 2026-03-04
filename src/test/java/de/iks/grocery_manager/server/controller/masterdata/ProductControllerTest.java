@@ -28,6 +28,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureTestDatabase
 @Sql(Testdata.SCRIPT)
 class ProductControllerTest {
+    private static final String PRODUCT_1_JSON = String.format("""
+        {
+          "uuid": "%s",
+          "name": "Product 1"
+        }""", Testdata.PRODUCT_1_UUID);
+    private static final String PRODUCT_1_UPDATE_JSON = """
+        {
+          "name": "Product 1b",
+          "EAN": "123456"
+        }""";
+    private static final String PRODUCT_3_JSON = """
+        {
+          "name": "Product 3",
+          "EAN": "654321"
+        }""";
+    private static final String PRODUCT_3_CREATE_JSON = PRODUCT_3_JSON;
+
     private MockMvc mockMvc;
     
     @Autowired
@@ -60,7 +77,7 @@ class ProductControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.PRODUCT_1_JSON));
+                .andExpect(content().json(PRODUCT_1_JSON));
         }
 
         @Test
@@ -83,13 +100,18 @@ class ProductControllerTest {
             mockMvc
                 .perform(
                     put("/api/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
-                        .content(Testdata.PRODUCT_1_UPDATE_JSON)
+                        .content(PRODUCT_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.PRODUCT_1_JSON2));
+                .andExpect(content().json(String.format("""
+                    {
+                      "uuid": "%s",
+                      "name": "Product 1b",
+                      "EAN": "123456"
+                    }""", Testdata.PRODUCT_1_UUID)));
             
             // Verify update was applied and other product unaffected
             assertTrue(productRepository.findById(Testdata.PRODUCT_1_UUID).isPresent());
@@ -104,7 +126,7 @@ class ProductControllerTest {
             mockMvc
                 .perform(
                     put("/api/masterdata/product/{uuid}", Testdata.BAD_UUID)
-                        .content(Testdata.PRODUCT_1_UPDATE_JSON)
+                        .content(PRODUCT_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
                 )
@@ -123,7 +145,7 @@ class ProductControllerTest {
             mockMvc
                 .perform(
                     put("/api/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
-                        .content(Testdata.PRODUCT_1_UPDATE_JSON)
+                        .content(PRODUCT_1_UPDATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user_jwt)
                 )
@@ -145,14 +167,14 @@ class ProductControllerTest {
             mockMvc
                 .perform(
                     post("/api/masterdata/product")
-                        .content(Testdata.PRODUCT_3_CREATE_JSON)
+                        .content(PRODUCT_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(admin_jwt)
                 )
                 .andExpect(status().isCreated())
                 .andExpect(header().string("location", matchesRegex("http://localhost/api/product/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.PRODUCT_3_JSON));
+                .andExpect(content().json(PRODUCT_3_JSON));
             
             // Verify creation - count should increase by 1
             assertEquals(initialCount + 1, productRepository.count());
@@ -168,7 +190,7 @@ class ProductControllerTest {
             mockMvc
                 .perform(
                     post("/api/masterdata/product")
-                        .content(Testdata.PRODUCT_3_CREATE_JSON)
+                        .content(PRODUCT_3_CREATE_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user_jwt)
                 )
@@ -230,7 +252,31 @@ class ProductControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(Testdata.PRODUCT_SEARCH_RESULT_JSON));
+                .andExpect(content().json(String.format("""
+                    {
+                      "page": {
+                        "number": 0,
+                        "size": 10,
+                        "totalElements": 4,
+                        "totalPages": 1
+                      },
+                      "content": [
+                        %s,
+                        {
+                          "uuid": "%s",
+                          "name": "Product 2"
+                        },
+                        {
+                          "uuid": "%s",
+                          "name": "Product Group Test 1"
+                        },
+                        {
+                          "uuid": "%s",
+                          "name": "Product Group Test 2"
+                        }
+                      ]
+                    }""", PRODUCT_1_JSON, Testdata.PRODUCT_2_UUID, Testdata.PRODUCT_3_UUID, Testdata.PRODUCT_4_UUID
+                )));
         }
     }
 }
