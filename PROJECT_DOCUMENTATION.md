@@ -251,8 +251,8 @@ Shopping trips record actual purchases made by users at specific stores, includi
 - `PUT /masterdata/price/{uuid}` - Update price listing
 - `POST /masterdata/price` - Create new price listing
 - `DELETE /masterdata/price/{uuid}` - Delete price listing
-- `GET /masterdata/price` - Get paginated price listings
-- `GET /masterdata/price?at={timestamp}&products={product_uuids}&stores={store_uuids}` - Get prices by products, stores, and timestamp (returns nested map structure)
+- `GET /masterdata/price` - Get paginated price listings (with optional store and product filters)
+- `GET /masterdata/price?at={timestamp}&products={product_uuids}&stores={store_uuids}` - Get prices by products, stores, and timestamp (returns nested map structure optimized for frontend price comparison)
 
 ### Product Groups (`/productGroups`)
 - `GET /productGroups/{uuid}` - Get product group by UUID
@@ -368,12 +368,21 @@ This will:
 - Migration files located in `src/main/resources/db/migration/`
 
 ## Testing
-- Backend: JUnit 5, Spring Boot Test, MockMvc for controller testing
-- Frontend: Vitest, Angular Testing Utilities
-- Comprehensive test coverage for all CRUD operations
-- Security testing with JWT authentication
-- Data integrity testing with foreign key constraints
-- ShoppingTripController tests with full CRUD coverage, ownership validation, and add-to-trip functionality
+- **Backend**: JUnit 5, Spring Boot Test, MockMvc for controller testing
+- **Frontend**: Vitest, Angular Testing Utilities
+- **Comprehensive test coverage** for all CRUD operations
+- **Security testing** with JWT authentication
+- **Data integrity testing** with foreign key constraints
+- **ShoppingTripController tests** with full CRUD coverage, ownership validation, and add-to-trip functionality
+- **ShoppingListController tests** with complete CRUD operations, user-scoped access control, and repeating list management
+- **ProductGroupController tests** with full CRUD coverage and user ownership validation
+- **PriceListController tests** with comprehensive price search functionality including:
+  - Basic price CRUD operations with authorization testing
+  - Advanced price search with date, store, and product parameters
+  - Boundary condition testing for validFrom/validTo dates
+  - Multiple store and product search capabilities
+  - Edge case handling for non-existent entities and out-of-range dates
+- **Enhanced test architecture** with canary pattern for data isolation and comprehensive validation
 
 ## API Documentation
 - Swagger UI available at: `http://localhost:8080/swagger-ui.html`
@@ -408,3 +417,5 @@ This will:
 - **Observable Chaining**: Proper async handling ensures operations complete before navigation
 - **Global CSS Optimization**: Table column styling and repeating indicators moved to global styles.scss
 - **Material Design Integration**: Leveraging Angular Material's built-in styling and CSS variables
+- **Test-Driven Bug Fixes**: Comprehensive testing identified and validated fixes for boundary condition issues in price search functionality
+- **Enhanced Price Search API**: Improved repository methods with inclusive boundary conditions for accurate date-based price queries
