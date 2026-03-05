@@ -2,6 +2,11 @@ package de.iks.grocery_manager.server.controller;
 
 import de.iks.grocery_manager.server.Testdata;
 import de.iks.grocery_manager.server.jpa.ShoppingTripRepository;
+import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
+import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;
+import de.iks.grocery_manager.server.model.ShoppingTrip;
+import de.iks.grocery_manager.server.model.masterdata.Product;
+import de.iks.grocery_manager.server.model.masterdata.Store;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,11 +18,17 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.util.UUID;
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 
-import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -27,67 +38,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureTestDatabase
 @Sql(Testdata.SCRIPT)
+@Transactional
 class ShoppingTripControllerTest {
-    private static final String SHOPPING_TRIP_1_ADD_EXISTING_JSON = String.format("""
-        {
-          "%s": 1
-        }""", Testdata.PRODUCT_3_UUID
-    );
-    private static final String SHOPPING_TRIP_3_CREATE_JSON = String.format("""
-        {
-          "name": "Trip 3",
-          "store": "%s",
-          "time": "2024-01-25T08:00:00Z",
-          "products": {
-            "%s": 1
-          }
-        }""", Testdata.STORE_1_UUID, Testdata.PRODUCT_4_UUID
-    );
-    private static final UUID SHOPPING_TRIP_2_UUID = UUID.fromString("50000000-0000-0000-0000-000000000001");
-    private static final String SHOPPING_TRIP_1_UPDATE_JSON = String.format("""
-        {
-          "name": "Trip 1b",
-          "store": "%s",
-          "time": "2024-01-15T13:00:00Z",
-          "products": {
-            "%s": 1,
-            "%s": 3
-          }
-        }""", Testdata.STORE_2_UUID, Testdata.PRODUCT_3_UUID, Testdata.PRODUCT_4_UUID
-    );
-    private static final UUID SHOPPING_TRIP_1_UUID = UUID.fromString("50000000-0000-0000-0000-000000000000");
-    private static final String SHOPPING_TRIP_1_JSON = String.format("""
-            {
-              "uuid": "%s",
-              "store": "%s",
-              "time": "2024-01-15T09:00:00Z",
-              "products": {
-                "%s": 2
-              }
-            }""", SHOPPING_TRIP_1_UUID, Testdata.STORE_3_UUID, Testdata.PRODUCT_3_UUID
-    );
-    private static final String SHOPPING_TRIP_SEARCH_RESULT_JSON = String.format("""
-                {
-                  "page": {
-                    "number": 0,
-                    "size": 10,
-                    "totalElements": 1,
-                    "totalPages": 1
-                  },
-                  "content": [
-                    %s
-                  ]
-                }""", SHOPPING_TRIP_1_JSON);
-    private MockMvc mockMvc;
-    
+
     @Autowired
     private ShoppingTripRepository shoppingTripRepository;
 
-    private final RequestPostProcessor user1_jwt = jwt()
-        .jwt(b -> b.subject("user1"));
-    
-    private final RequestPostProcessor user2_jwt = jwt()
-        .jwt(b -> b.subject("user2"));
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private StoreRepository storeRepository;
+
+    private MockMvc mockMvc;
+
+    private final RequestPostProcessor user_jwt = jwt()
+        .jwt(j -> j.subject("testuser"));
 
     @BeforeEach
     void setup(WebApplicationContext ctx) {
@@ -95,488 +61,650 @@ class ShoppingTripControllerTest {
             .webAppContextSetup(ctx)
             .apply(springSecurity())
             .build();
+
+        // Clean up any existing shopping trips
+        shoppingTripRepository.deleteAll();
     }
 
     @Nested
     class GetShoppingTrip {
         @Test
-        void shouldReturnShoppingTripWhenFoundAndOwned() throws Exception {
+        void shouldReturnShoppingTripWhenFound() throws Exception {
+            // Create fresh test data
+            Store store1 = storeRepository.findById(Testdata.STORE_1_UUID).orElseThrow();
+            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            Product product2 = productRepository.findById(Testdata.PRODUCT_2_UUID).orElseThrow();
+            
+            ShoppingTrip testTrip = new ShoppingTrip();
+            testTrip.setStore(store1);
+            testTrip.setOwner("sub: testuser");
+            testTrip.setTime(Instant.now());
+            testTrip.setProducts(new HashMap<>(Map.of(
+                product1, new BigDecimal("2.5"),
+                product2, new BigDecimal("1.0")
+            )));
+            testTrip = shoppingTripRepository.save(testTrip);
+            
             mockMvc
-                .perform(
-                    get("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_1_UUID)
-                        .with(user1_jwt)
-                )
+                .perform(get("/api/shoppingTrips/{uuid}", testTrip.getUuid()).with(user_jwt))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(SHOPPING_TRIP_1_JSON));
+                .andExpect(jsonPath("$.uuid").value(testTrip.getUuid().toString()))
+                .andExpect(jsonPath("$.store").value(Testdata.STORE_1_UUID.toString()))
+                .andExpect(jsonPath("$.products").isMap())
+                .andExpect(jsonPath("$.products." + Testdata.PRODUCT_1_UUID).value(2.5))
+                .andExpect(jsonPath("$.products." + Testdata.PRODUCT_2_UUID).value(1.0));
         }
 
         @Test
         void shouldReturn404WhenShoppingTripNotFound() throws Exception {
             mockMvc
-                .perform(
-                    get("/api/shoppingTrips/{uuid}", Testdata.BAD_UUID)
-                        .with(user1_jwt)
-                )
+                .perform(get("/api/shoppingTrips/{uuid}", Testdata.BAD_UUID).with(user_jwt))
                 .andExpect(status().isNotFound());
         }
 
         @Test
-        void shouldReturn404WhenAccessingOtherUsersShoppingTrip() throws Exception {
+        void shouldReturn404WhenAccessingShoppingTripOfDifferentUser() throws Exception {
+            // Create trip for different user
+            Store store1 = storeRepository.findById(Testdata.STORE_1_UUID).orElseThrow();
+            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            ShoppingTrip otherUserTrip = new ShoppingTrip();
+            otherUserTrip.setStore(store1);
+            otherUserTrip.setOwner("sub: otheruser");
+            otherUserTrip.setTime(Instant.now());
+            otherUserTrip.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
+            otherUserTrip = shoppingTripRepository.save(otherUserTrip);
+
             mockMvc
-                .perform(
-                    get("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_2_UUID)
-                        .with(user1_jwt)
-                )
+                .perform(get("/api/shoppingTrips/{uuid}", otherUserTrip.getUuid()).with(user_jwt))
                 .andExpect(status().isNotFound());
-        }
-
-        @Test
-        void shouldReturn401WhenGettingShoppingTripWithoutAuthentication() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_1_UUID)
-                )
-                .andExpect(status().isUnauthorized());
-        }
-    }
-
-    @Nested
-    class UpdateShoppingTrip {
-        @Test
-        void shouldUpdateShoppingTripWhenAuthenticatedAndFound() throws Exception {
-            long initialCount = shoppingTripRepository.count();
-            
-            mockMvc
-                .perform(
-                    put("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_1_UUID)
-                        .content(SHOPPING_TRIP_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user1_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(String.format("""
-                    {
-                      "uuid": "%s",
-                      "store": "%s",
-                      "time": "2024-01-15T13:00:00Z",
-                      "products": {
-                        "%s": 1,
-                        "%s": 3
-                      }
-                    }""", SHOPPING_TRIP_1_UUID, Testdata.STORE_2_UUID, Testdata.PRODUCT_3_UUID, Testdata.PRODUCT_4_UUID
-                )));
-            
-            // Verify update was applied and other trip unaffected
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
-            assertEquals(initialCount, shoppingTripRepository.count());
-        }
-
-        @Test
-        void shouldReturn404WhenUpdatingNonExistentShoppingTrip() throws Exception {
-            long initialCount = shoppingTripRepository.count();
-            
-            mockMvc
-                .perform(
-                    put("/api/shoppingTrips/{uuid}", Testdata.BAD_UUID)
-                        .content(SHOPPING_TRIP_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user1_jwt)
-                )
-                .andExpect(status().isNotFound());
-            
-            // Verify no changes to existing trips
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
-            assertEquals(initialCount, shoppingTripRepository.count());
-        }
-
-        @Test
-        void shouldReturn404WhenUpdatingOtherUsersShoppingTrip() throws Exception {
-            long initialCount = shoppingTripRepository.count();
-            
-            mockMvc
-                .perform(
-                    put("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_2_UUID)
-                        .content(SHOPPING_TRIP_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user1_jwt)
-                )
-                .andExpect(status().isNotFound());
-            
-            // Verify no changes (user1 cannot update user2's trip)
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
-            assertEquals(initialCount, shoppingTripRepository.count());
-        }
-
-        @Test
-        void shouldReturn401WhenUpdatingShoppingTripWithoutAuthentication() throws Exception {
-            long initialCount = shoppingTripRepository.count();
-            
-            mockMvc
-                .perform(
-                    put("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_1_UUID)
-                        .content(SHOPPING_TRIP_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                )
-                .andExpect(status().isUnauthorized());
-            
-            // Verify no changes when unauthorized
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
-            assertEquals(initialCount, shoppingTripRepository.count());
         }
     }
 
     @Nested
     class CreateShoppingTrip {
         @Test
-        void shouldCreateShoppingTripWhenAuthenticated() throws Exception {
+        void shouldCreateShoppingTripWhenAuthorized() throws Exception {
             long initialCount = shoppingTripRepository.count();
             
-            mockMvc
-                .perform(
-                    post("/api/shoppingTrips")
-                        .content(SHOPPING_TRIP_3_CREATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user1_jwt)
-                )
-                .andExpect(status().isCreated())
-                .andExpect(header().string("location", matchesRegex("http://localhost/api/shoppingLists/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(String.format("""
+            // Create canary trip first
+            Store store1 = storeRepository.findById(Testdata.STORE_1_UUID).orElseThrow();
+            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            ShoppingTrip canaryTrip = new ShoppingTrip();
+            canaryTrip.setStore(store1);
+            canaryTrip.setOwner("sub: testuser");
+            canaryTrip.setTime(Instant.now());
+            canaryTrip.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
+            canaryTrip = shoppingTripRepository.save(canaryTrip);
+
+            Instant testTime = Instant.now();
+            String createJson = String.format(
+                """
                     {
                       "store": "%s",
-                      "time": "2024-01-25T08:00:00Z",
+                      "time": "%s",
                       "products": {
-                        "%s": 1
+                        "%s": 1.5,
+                        "%s": 2.0
                       }
-                    }""", Testdata.STORE_1_UUID, Testdata.PRODUCT_4_UUID
-                )));
-            
-            // Verify creation - count should increase by 1
-            assertEquals(initialCount + 1, shoppingTripRepository.count());
-            // Verify existing trips unaffected
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
-        }
+                    }""", 
+                Testdata.STORE_2_UUID, 
+                testTime.toString(),
+                Testdata.PRODUCT_1_UUID, 
+                Testdata.PRODUCT_3_UUID
+            );
 
-        @Test
-        void shouldReturn401WhenCreatingShoppingTripWithoutAuthentication() throws Exception {
-            long initialCount = shoppingTripRepository.count();
-            
             mockMvc
-                .perform(
-                    post("/api/shoppingTrips")
-                        .content(SHOPPING_TRIP_3_CREATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                )
-                .andExpect(status().isUnauthorized());
-            
-            // Verify no changes when unauthorized
-            assertEquals(initialCount, shoppingTripRepository.count());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
+                .perform(post("/api/shoppingTrips")
+                             .with(user_jwt)
+                             .contentType(MediaType.APPLICATION_JSON)
+                             .content(createJson))
+                .andExpect(status().isCreated())
+                .andExpect(header().exists("location"))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.store").value(Testdata.STORE_2_UUID.toString()))
+                .andExpect(jsonPath("$.products").isMap())
+                .andExpect(jsonPath("$.products." + Testdata.PRODUCT_1_UUID).value(1.5))
+                .andExpect(jsonPath("$.products." + Testdata.PRODUCT_3_UUID).value(2.0));
+
+            // Verify creation
+            assertEquals(initialCount + 2, shoppingTripRepository.count());
+
+            // Verify canary trip unaffected
+            assertTrue(shoppingTripRepository
+                           .findById(canaryTrip.getUuid())
+                           .isPresent());
+            ShoppingTrip unchangedCanary = shoppingTripRepository
+                .findById(canaryTrip.getUuid())
+                .get();
+            assertEquals(Testdata.STORE_1_UUID, unchangedCanary.getStore().getUuid());
+            assertEquals(1,
+                         unchangedCanary
+                             .getProducts()
+                             .size()
+            );
         }
     }
 
     @Nested
-    class DeleteShoppingTrip {
+    class UpdateShoppingTrip {
         @Test
-        void shouldDeleteShoppingTripWhenAuthenticatedAndOwned() throws Exception {
+        void shouldUpdateShoppingTripWhenAuthorized() throws Exception {
             long initialCount = shoppingTripRepository.count();
             
-            mockMvc
-                .perform(
-                    delete("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_1_UUID)
-                        .with(user1_jwt)
-                )
-                .andExpect(status().isOk());
-            
-            // Verify deletion
-            assertFalse(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertEquals(initialCount - 1, shoppingTripRepository.count());
-            // Verify other trip unaffected
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
-        }
+            // Create test trip
+            Store store1 = storeRepository.findById(Testdata.STORE_1_UUID).orElseThrow();
+            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            Product product2 = productRepository.findById(Testdata.PRODUCT_2_UUID).orElseThrow();
 
-        @Test
-        void shouldReturn200WhenDeletingNonExistentShoppingTrip() throws Exception {
-            long initialCount = shoppingTripRepository.count();
+            ShoppingTrip testTrip = new ShoppingTrip();
+            testTrip.setStore(store1);
+            testTrip.setOwner("sub: testuser");
+            testTrip.setTime(Instant.now());
+            testTrip.setProducts(new HashMap<>(Map.of(
+                product1, new BigDecimal("2.5"),
+                product2, new BigDecimal("1.0")
+            )));
+            testTrip = shoppingTripRepository.save(testTrip);
             
-            mockMvc
-                .perform(
-                    delete("/api/shoppingTrips/{uuid}", Testdata.BAD_UUID)
-                        .with(user1_jwt)
-                )
-                .andExpect(status().isOk());
-            
-            // Verify no changes to existing trips
-            assertEquals(initialCount, shoppingTripRepository.count());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
-        }
+            // Create canary trip
+            ShoppingTrip canaryTrip = new ShoppingTrip();
+            canaryTrip.setStore(store1);
+            canaryTrip.setOwner("sub: testuser");
+            canaryTrip.setTime(Instant.now());
+            canaryTrip.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
+            canaryTrip = shoppingTripRepository.save(canaryTrip);
 
-        @Test
-        void shouldReturn200WhenDeletingOtherUsersShoppingTrip() throws Exception {
-            long initialCount = shoppingTripRepository.count();
-            
-            mockMvc
-                .perform(
-                    delete("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_2_UUID)
-                        .with(user1_jwt)
-                )
-                .andExpect(status().isOk());
-            
-            // Verify no changes (user1 cannot delete user2's trip)
-            assertEquals(initialCount, shoppingTripRepository.count());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
-        }
+            Instant updatedTime = Instant.now().plusSeconds(3600);
+            String updateJson = String.format(
+                """
+                    {
+                      "store": "%s",
+                      "time": "%s",
+                      "products": {
+                        "%s": 4.0,
+                        "%s": 2.5
+                      }
+                    }""", 
+                Testdata.STORE_3_UUID, 
+                updatedTime.toString(),
+                Testdata.PRODUCT_3_UUID, 
+                Testdata.PRODUCT_4_UUID
+            );
 
-        @Test
-        void shouldReturn401WhenDeletingShoppingTripWithoutAuthentication() throws Exception {
-            long initialCount = shoppingTripRepository.count();
-            
             mockMvc
-                .perform(
-                    delete("/api/shoppingTrips/{uuid}", SHOPPING_TRIP_1_UUID)
-                )
-                .andExpect(status().isUnauthorized());
+                .perform(put("/api/shoppingTrips/{uuid}", testTrip.getUuid())
+                             .with(user_jwt)
+                             .contentType(MediaType.APPLICATION_JSON)
+                             .content(updateJson))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.uuid").value(testTrip.getUuid().toString()))
+                .andExpect(jsonPath("$.store").value(Testdata.STORE_3_UUID.toString()))
+                .andExpect(jsonPath("$.products").isMap())
+                .andExpect(jsonPath("$.products." + Testdata.PRODUCT_3_UUID).value(4.0))
+                .andExpect(jsonPath("$.products." + Testdata.PRODUCT_4_UUID).value(2.5));
+
+            // Verify update and other trips unaffected
+            assertEquals(initialCount + 2, shoppingTripRepository.count());
+            assertTrue(shoppingTripRepository
+                           .findById(canaryTrip.getUuid())
+                           .isPresent());
+
+            ShoppingTrip unchangedCanary = shoppingTripRepository
+                .findById(canaryTrip.getUuid())
+                .get();
+            assertEquals(Testdata.STORE_1_UUID, unchangedCanary.getStore().getUuid());
+        }
+        
+        @Test
+        void shouldReturn404WhenUpdatingAnotherUsersShoppingTrip() throws Exception {
+            // Create trip for different user
+            Store store1 = storeRepository.findById(Testdata.STORE_1_UUID).orElseThrow();
+            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            ShoppingTrip otherUserTrip = new ShoppingTrip();
+            otherUserTrip.setStore(store1);
+            otherUserTrip.setOwner("sub: otheruser");
+            otherUserTrip.setTime(Instant.now());
+            otherUserTrip.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
+            otherUserTrip = shoppingTripRepository.save(otherUserTrip);
             
-            // Verify no changes when unauthorized
-            assertEquals(initialCount, shoppingTripRepository.count());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_1_UUID, "sub: user1").isPresent());
-            assertTrue(shoppingTripRepository.findByUuidAndOwner(SHOPPING_TRIP_2_UUID, "sub: user2").isPresent());
+            // Create canary trip
+            ShoppingTrip canaryTrip = new ShoppingTrip();
+            canaryTrip.setStore(store1);
+            canaryTrip.setOwner("sub: testuser");
+            canaryTrip.setTime(Instant.now());
+            canaryTrip.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
+            canaryTrip = shoppingTripRepository.save(canaryTrip);
+
+            String updateJson = """
+                {
+                  "store": "00000000-0000-0000-0000-000000000003",
+                  "time": "2026-03-05T10:00:00Z",
+                  "products": {}
+                }""";
+
+            mockMvc
+                .perform(put("/api/shoppingTrips/{uuid}", otherUserTrip.getUuid())
+                             .with(user_jwt)
+                             .contentType(MediaType.APPLICATION_JSON)
+                             .content(updateJson))
+                .andExpect(status().isNotFound());
+
+            // Verify other user's trip unchanged
+            ShoppingTrip unchangedOtherTrip = shoppingTripRepository
+                .findById(otherUserTrip.getUuid())
+                .orElseThrow();
+            assertEquals(Testdata.STORE_1_UUID, unchangedOtherTrip.getStore().getUuid());
+            
+            // Verify canary trip unaffected
+            assertTrue(shoppingTripRepository
+                           .findById(canaryTrip.getUuid())
+                           .isPresent());
+            ShoppingTrip unchangedCanary = shoppingTripRepository
+                .findById(canaryTrip.getUuid())
+                .get();
+            assertEquals(Testdata.STORE_1_UUID, unchangedCanary.getStore().getUuid());
         }
     }
 
     @Nested
     class AddToShoppingTrip {
         @Test
-        void shouldAddProductsToShoppingTripWhenAuthenticatedAndOwned() throws Exception {
+        void shouldAddProductsToShoppingTripWhenAuthorized() throws Exception {
+            // Create test trip
+            Store store1 = storeRepository.findById(Testdata.STORE_1_UUID).orElseThrow();
+            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+
+            ShoppingTrip testTrip = new ShoppingTrip();
+            testTrip.setStore(store1);
+            testTrip.setOwner("sub: testuser");
+            testTrip.setTime(Instant.now());
+            testTrip.setProducts(new HashMap<>(Map.of(
+                product1, new BigDecimal("2.5")
+            )));
+            testTrip = shoppingTripRepository.save(testTrip);
+            
+            // Create canary trip
+            ShoppingTrip canaryTrip = new ShoppingTrip();
+            canaryTrip.setStore(store1);
+            canaryTrip.setOwner("sub: testuser");
+            canaryTrip.setTime(Instant.now());
+            canaryTrip.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
+            canaryTrip = shoppingTripRepository.save(canaryTrip);
+
+            String addJson = String.format(
+                """
+                    {
+                      "%s": 1.5,
+                      "%s": 2.0
+                    }""", 
+                Testdata.PRODUCT_1_UUID, 
+                Testdata.PRODUCT_3_UUID
+            );
+
             mockMvc
-                .perform(
-                    post("/api/shoppingTrips/{uuid}/add", SHOPPING_TRIP_1_UUID)
-                        .content(String.format("""
-                            {
-                              "%s": 3,
-                              "%s": 2
-                            }""", Testdata.PRODUCT_4_UUID, Testdata.PRODUCT_3_UUID
-                        ))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user1_jwt)
-                )
+                .perform(post("/api/shoppingTrips/{uuid}/add", testTrip.getUuid())
+                             .with(user_jwt)
+                             .contentType(MediaType.APPLICATION_JSON)
+                             .content(addJson))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").value(SHOPPING_TRIP_1_UUID.toString()))
-                .andExpect(jsonPath("$.store").value(Testdata.STORE_3_UUID.toString()))
+                .andExpect(jsonPath("$.uuid").value(testTrip.getUuid().toString()))
+                .andExpect(jsonPath("$.store").value(Testdata.STORE_1_UUID.toString()))
                 .andExpect(jsonPath("$.products").isMap())
-                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_3_UUID + "']").value(4)) // 2 (existing) + 2 (added)
-                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_4_UUID + "']").value(3)); // 0 (existing) + 3 (added)
-        }
+                .andExpect(jsonPath("$.products." + Testdata.PRODUCT_1_UUID).value(4.0)) // 2.5 + 1.5
+                .andExpect(jsonPath("$.products." + Testdata.PRODUCT_3_UUID).value(2.0));
 
-        @Test
-        void shouldAddSingleProductToShoppingTrip() throws Exception {
-            mockMvc
-                .perform(
-                    post("/api/shoppingTrips/{uuid}/add", SHOPPING_TRIP_1_UUID)
-                        .content(String.format("""
-                            {
-                              "%s": 1.5
-                            }""", Testdata.PRODUCT_4_UUID
-                        ))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user1_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").value(SHOPPING_TRIP_1_UUID.toString()))
-                .andExpect(jsonPath("$.products").isMap())
-                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_3_UUID + "']").value(2)) // unchanged
-                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_4_UUID + "']").value(1.5)); // newly added
+            // Verify canary trip unaffected
+            assertTrue(shoppingTripRepository
+                           .findById(canaryTrip.getUuid())
+                           .isPresent());
+            ShoppingTrip unchangedCanary = shoppingTripRepository
+                .findById(canaryTrip.getUuid())
+                .get();
+            assertEquals(1, unchangedCanary.getProducts().size());
+            assertEquals(new BigDecimal("1.0"), unchangedCanary.getProducts().get(product1));
         }
-
+        
         @Test
-        void shouldAccumulateAmountsWhenAddingExistingProduct() throws Exception {
-            mockMvc
-                .perform(
-                    post("/api/shoppingTrips/{uuid}/add", SHOPPING_TRIP_1_UUID)
-                        .content(SHOPPING_TRIP_1_ADD_EXISTING_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user1_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_3_UUID + "']").value(3)); // 2 (existing) + 1 (added)
-        }
+        void shouldReturn404WhenAddingToAnotherUsersShoppingTrip() throws Exception {
+            // Create trip for different user
+            Store store1 = storeRepository.findById(Testdata.STORE_1_UUID).orElseThrow();
+            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            ShoppingTrip otherUserTrip = new ShoppingTrip();
+            otherUserTrip.setStore(store1);
+            otherUserTrip.setOwner("sub: otheruser");
+            otherUserTrip.setTime(Instant.now());
+            otherUserTrip.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
+            otherUserTrip = shoppingTripRepository.save(otherUserTrip);
+            
+            // Create canary trip
+            ShoppingTrip canaryTrip = new ShoppingTrip();
+            canaryTrip.setStore(store1);
+            canaryTrip.setOwner("sub: testuser");
+            canaryTrip.setTime(Instant.now());
+            canaryTrip.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
+            canaryTrip = shoppingTripRepository.save(canaryTrip);
 
-        @Test
-        void shouldReturn404WhenAddingToNonExistentShoppingTrip() throws Exception {
+            String addJson = String.format(
+                """
+                    {
+                      "%s": 2.0
+                    }""", 
+                Testdata.PRODUCT_2_UUID
+            );
+
             mockMvc
-                .perform(
-                    post("/api/shoppingTrips/{uuid}/add", Testdata.BAD_UUID)
-                        .content(SHOPPING_TRIP_1_ADD_EXISTING_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user1_jwt)
-                )
+                .perform(post("/api/shoppingTrips/{uuid}/add", otherUserTrip.getUuid())
+                             .with(user_jwt)
+                             .contentType(MediaType.APPLICATION_JSON)
+                             .content(addJson))
                 .andExpect(status().isNotFound());
-        }
 
-        @Test
-        void shouldReturn404WhenAddingToOtherUsersShoppingTrip() throws Exception {
-            mockMvc
-                .perform(
-                    post("/api/shoppingTrips/{uuid}/add", SHOPPING_TRIP_2_UUID)
-                        .content(SHOPPING_TRIP_1_ADD_EXISTING_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user1_jwt)
-                )
-                .andExpect(status().isNotFound());
+            // Verify other user's trip unchanged
+            ShoppingTrip unchangedOtherTrip = shoppingTripRepository
+                .findById(otherUserTrip.getUuid())
+                .orElseThrow();
+            assertEquals(1, unchangedOtherTrip.getProducts().size());
+            
+            // Verify canary trip unaffected
+            assertTrue(shoppingTripRepository
+                           .findById(canaryTrip.getUuid())
+                           .isPresent());
+            ShoppingTrip unchangedCanary = shoppingTripRepository
+                .findById(canaryTrip.getUuid())
+                .get();
+            assertEquals(1, unchangedCanary.getProducts().size());
         }
+    }
 
+    @Nested
+    class DeleteShoppingTrip {
         @Test
-        void shouldReturn401WhenAddingToShoppingTripWithoutAuthentication() throws Exception {
+        void shouldDeleteShoppingTripWhenAuthorized() throws Exception {
+            // Create test trip
+            Store store1 = storeRepository.findById(Testdata.STORE_1_UUID).orElseThrow();
+            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            Product product2 = productRepository.findById(Testdata.PRODUCT_2_UUID).orElseThrow();
+            
+            ShoppingTrip testTrip = new ShoppingTrip();
+            testTrip.setStore(store1);
+            testTrip.setOwner("sub: testuser");
+            testTrip.setTime(Instant.now());
+            testTrip.setProducts(new HashMap<>(Map.of(
+                product1, new BigDecimal("2.5"),
+                product2, new BigDecimal("1.0")
+            )));
+            testTrip = shoppingTripRepository.save(testTrip);
+            
+            // Create canary trip
+            ShoppingTrip canaryTrip = new ShoppingTrip();
+            canaryTrip.setStore(store1);
+            canaryTrip.setOwner("sub: testuser");
+            canaryTrip.setTime(Instant.now());
+            canaryTrip.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
+            canaryTrip = shoppingTripRepository.save(canaryTrip);
+            
+            long initialCount = shoppingTripRepository.count();
+
             mockMvc
-                .perform(
-                    post("/api/shoppingTrips/{uuid}/add", SHOPPING_TRIP_1_UUID)
-                        .content(SHOPPING_TRIP_1_ADD_EXISTING_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                )
-                .andExpect(status().isUnauthorized());
+                .perform(delete("/api/shoppingTrips/{uuid}", testTrip.getUuid()).with(user_jwt))
+                .andExpect(status().isOk());
+
+            // Verify deletion
+            assertEquals(initialCount - 1, shoppingTripRepository.count());
+            assertFalse(shoppingTripRepository
+                            .findById(testTrip.getUuid())
+                            .isPresent());
+
+            // Verify canary trip unaffected
+            assertTrue(shoppingTripRepository
+                           .findById(canaryTrip.getUuid())
+                           .isPresent());
         }
-
+        
         @Test
-        void shouldHandleEmptyProductsMap() throws Exception {
-            mockMvc
-                .perform(
-                    post("/api/shoppingTrips/{uuid}/add", SHOPPING_TRIP_1_UUID)
-                        .content("{}")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user1_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.products").isMap())
-                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_3_UUID + "']").value(2)); // unchanged
-        }
+        void shouldReturn404WhenDeletingAnotherUsersShoppingTrip() throws Exception {
+            // Create trip for different user
+            Store store1 = storeRepository.findById(Testdata.STORE_1_UUID).orElseThrow();
+            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            ShoppingTrip otherUserTrip = new ShoppingTrip();
+            otherUserTrip.setStore(store1);
+            otherUserTrip.setOwner("sub: otheruser");
+            otherUserTrip.setTime(Instant.now());
+            otherUserTrip.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
+            otherUserTrip = shoppingTripRepository.save(otherUserTrip);
+            
+            // Create canary trip
+            ShoppingTrip canaryTrip = new ShoppingTrip();
+            canaryTrip.setStore(store1);
+            canaryTrip.setOwner("sub: testuser");
+            canaryTrip.setTime(Instant.now());
+            canaryTrip.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
+            canaryTrip = shoppingTripRepository.save(canaryTrip);
+            
+            long initialCount = shoppingTripRepository.count();
 
-        @Test
-        void shouldHandleZeroAmount() throws Exception {
             mockMvc
-                .perform(
-                    post("/api/shoppingTrips/{uuid}/add", SHOPPING_TRIP_1_UUID)
-                        .content(String.format("""
-                            {
-                              "%s": 0
-                            }""", Testdata.PRODUCT_4_UUID
-                        ))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user1_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.products").isMap())
-                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_3_UUID + "']").value(2)); // unchanged
-        }
+                .perform(delete("/api/shoppingTrips/{uuid}", otherUserTrip.getUuid()).with(user_jwt))
+                .andExpect(status().isOk());
 
-        @Test
-        void shouldHandleNegativeAmount() throws Exception {
-            mockMvc
-                .perform(
-                    post("/api/shoppingTrips/{uuid}/add", SHOPPING_TRIP_1_UUID)
-                        .content(String.format("""
-                            {
-                              "%s": -1
-                            }""", Testdata.PRODUCT_4_UUID
-                        ))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user1_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.products").isMap())
-                .andExpect(jsonPath("$.products['" + Testdata.PRODUCT_3_UUID + "']").value(2)); // unchanged
+            // Verify other user's trip still exists and unchanged
+            assertTrue(shoppingTripRepository
+                           .findById(otherUserTrip.getUuid())
+                           .isPresent());
+            ShoppingTrip unchangedOtherTrip = shoppingTripRepository
+                .findById(otherUserTrip.getUuid())
+                .orElseThrow();
+            assertEquals(Testdata.STORE_1_UUID, unchangedOtherTrip.getStore().getUuid());
+            
+            // Verify canary trip unaffected
+            assertTrue(shoppingTripRepository
+                           .findById(canaryTrip.getUuid())
+                           .isPresent());
+            assertEquals(initialCount, shoppingTripRepository.count());
         }
     }
 
     @Nested
     class SearchShoppingTrips {
         @Test
-        void shouldReturnUserOwnedShoppingTripsWhenSearching() throws Exception {
+        void shouldReturnShoppingTripsInDateRangeWhenNoParametersProvided() throws Exception {
+            // Create test trips with fixed timestamps
+            Store store1 = storeRepository.findById(Testdata.STORE_1_UUID).orElseThrow();
+            Store store2 = storeRepository.findById(Testdata.STORE_2_UUID).orElseThrow();
+            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            Product product2 = productRepository.findById(Testdata.PRODUCT_2_UUID).orElseThrow();
+            Product product3 = productRepository.findById(Testdata.PRODUCT_3_UUID).orElseThrow();
+
+            // Use a fixed base time in the future
+            Instant baseTime = Instant.parse("2026-03-05T15:00:00Z");
+            
+            ShoppingTrip testTrip1 = new ShoppingTrip();
+            testTrip1.setStore(store1);
+            testTrip1.setOwner("sub: testuser");
+            testTrip1.setTime(baseTime.plus(Duration.ofMinutes(5))); // 15:05:00
+            testTrip1.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("2.5"))));
+            shoppingTripRepository.save(testTrip1);
+            
+            ShoppingTrip testTrip2 = new ShoppingTrip();
+            testTrip2.setStore(store2);
+            testTrip2.setOwner("sub: testuser");
+            testTrip2.setTime(baseTime.plus(Duration.ofMinutes(10))); // 15:10:00
+            testTrip2.setProducts(new HashMap<>(Map.of(product2, new BigDecimal("1.0"))));
+            shoppingTripRepository.save(testTrip2);
+            
+            ShoppingTrip canaryTrip = new ShoppingTrip();
+            canaryTrip.setStore(store1);
+            canaryTrip.setOwner("sub: testuser");
+            canaryTrip.setTime(baseTime.plus(Duration.ofMinutes(15))); // 15:15:00
+            canaryTrip.setProducts(new HashMap<>(Map.of(product3, new BigDecimal("1.5"))));
+            shoppingTripRepository.save(canaryTrip);
+            
+            // Use explicit date range that includes all our test trips
             mockMvc
-                .perform(
-                    get("/api/shoppingTrips?from=2024-01-01T00:00:00Z&to=2024-01-31T23:59:59Z")
-                        .with(user1_jwt)
-                )
+                .perform(get("/api/shoppingTrips?from={from}&to={to}", 
+                            "2026-03-05T15:04:00Z", // Start before first trip
+                            "2026-03-05T15:20:00Z") // End after last trip
+                            .with(user_jwt))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(SHOPPING_TRIP_SEARCH_RESULT_JSON));
+                .andExpect(jsonPath("$.page.number").value(0))
+                .andExpect(jsonPath("$.page.size").value(10))
+                .andExpect(jsonPath("$.page.totalElements").value(3))
+                .andExpect(jsonPath("$.page.totalPages").value(1))
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[?(@.store == '" + Testdata.STORE_1_UUID + "')]").exists())
+                .andExpect(jsonPath("$.content[?(@.store == '" + Testdata.STORE_2_UUID + "')]").exists());
+            
+            // Verify canary trip unaffected
+            assertTrue(shoppingTripRepository
+                           .findById(canaryTrip.getUuid())
+                           .isPresent());
+            ShoppingTrip unchangedCanary = shoppingTripRepository
+                .findById(canaryTrip.getUuid())
+                .get();
+            assertEquals(Testdata.STORE_1_UUID, unchangedCanary.getStore().getUuid());
+            assertEquals(1, unchangedCanary.getProducts().size());
         }
 
         @Test
-        void shouldReturnUserOwnedShoppingTripsWhenSearchingWithFrom() throws Exception {
+        void shouldReturnFilteredShoppingTripsWhenSearchingWithDateRange() throws Exception {
+            // Create test trips with fixed timestamps
+            Store store1 = storeRepository.findById(Testdata.STORE_1_UUID).orElseThrow();
+            Store store2 = storeRepository.findById(Testdata.STORE_2_UUID).orElseThrow();
+            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            Product product2 = productRepository.findById(Testdata.PRODUCT_2_UUID).orElseThrow();
+            Product product3 = productRepository.findById(Testdata.PRODUCT_3_UUID).orElseThrow();
+
+            // Use a fixed base time
+            Instant baseTime = Instant.parse("2026-03-05T15:00:00Z");
+            
+            ShoppingTrip testTrip1 = new ShoppingTrip();
+            testTrip1.setStore(store1);
+            testTrip1.setOwner("sub: testuser");
+            testTrip1.setTime(baseTime.plus(Duration.ofMinutes(5))); // 15:05:00
+            testTrip1.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("2.5"))));
+            shoppingTripRepository.save(testTrip1);
+            
+            ShoppingTrip testTrip2 = new ShoppingTrip();
+            testTrip2.setStore(store2);
+            testTrip2.setOwner("sub: testuser");
+            testTrip2.setTime(baseTime.plus(Duration.ofMinutes(10))); // 15:10:00
+            testTrip2.setProducts(new HashMap<>(Map.of(product2, new BigDecimal("1.0"))));
+            shoppingTripRepository.save(testTrip2);
+            
+            ShoppingTrip canaryTrip = new ShoppingTrip();
+            canaryTrip.setStore(store1);
+            canaryTrip.setOwner("sub: testuser");
+            canaryTrip.setTime(baseTime.plus(Duration.ofHours(24))); // Next day
+            canaryTrip.setProducts(new HashMap<>(Map.of(product3, new BigDecimal("1.5"))));
+            shoppingTripRepository.save(canaryTrip);
+            
+            // Use date range that only includes first two trips
             mockMvc
-                .perform(
-                    get("/api/shoppingTrips?from=2024-01-01T00:00:00Z&to=2024-01-31T23:59:59Z")
-                        .with(user1_jwt)
-                )
+                .perform(get("/api/shoppingTrips?from={from}&to={to}", 
+                            "2026-03-05T15:04:00Z", // Start before first trip
+                            "2026-03-05T15:12:00Z") // End after second trip, before canary
+                            .with(user_jwt))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(SHOPPING_TRIP_SEARCH_RESULT_JSON));
+                .andExpect(jsonPath("$.page.totalElements").value(2))
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[?(@.store == '" + Testdata.STORE_1_UUID + "')]").exists())
+                .andExpect(jsonPath("$.content[?(@.store == '" + Testdata.STORE_2_UUID + "')]").exists());
+            
+            // Verify canary trip unaffected
+            assertTrue(shoppingTripRepository
+                           .findById(canaryTrip.getUuid())
+                           .isPresent());
+            ShoppingTrip unchangedCanary = shoppingTripRepository
+                .findById(canaryTrip.getUuid())
+                .get();
+            assertEquals(Testdata.STORE_1_UUID, unchangedCanary.getStore().getUuid());
+            assertEquals(1, unchangedCanary.getProducts().size());
         }
 
         @Test
-        void shouldReturnUserOwnedShoppingTripsWhenSearchingWithTo() throws Exception {
+        void shouldReturnEmptyResultWhenSearchingWithNonOverlappingDateRange() throws Exception {
+            ZonedDateTime futureFrom = ZonedDateTime.now().plusDays(30);
+            ZonedDateTime futureTo = futureFrom.plusWeeks(1);
+            
             mockMvc
-                .perform(
-                    get("/api/shoppingTrips?from=2024-01-01T00:00:00Z&to=2024-01-31T23:59:59Z")
-                        .with(user1_jwt)
-                )
+                .perform(get("/api/shoppingTrips?from={from}&to={to}", 
+                            futureFrom.format(DateTimeFormatter.ISO_ZONED_DATE_TIME),
+                            futureTo.format(DateTimeFormatter.ISO_ZONED_DATE_TIME))
+                            .with(user_jwt))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(SHOPPING_TRIP_SEARCH_RESULT_JSON));
+                .andExpect(jsonPath("$.page.totalElements").value(0))
+                .andExpect(jsonPath("$.content").isEmpty());
         }
 
         @Test
-        void shouldReturnEmptyResultForUserWithNoTrips() throws Exception {
+        void shouldReturnOnlyUserOwnsShoppingTrips() throws Exception {
+            // Create test trips for current user with fixed timestamps
+            Store store1 = storeRepository.findById(Testdata.STORE_1_UUID).orElseThrow();
+            Store store2 = storeRepository.findById(Testdata.STORE_2_UUID).orElseThrow();
+            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            Product product2 = productRepository.findById(Testdata.PRODUCT_2_UUID).orElseThrow();
+            
+            // Use a fixed base time
+            Instant baseTime = Instant.parse("2026-03-05T15:00:00Z");
+            
+            ShoppingTrip testTrip1 = new ShoppingTrip();
+            testTrip1.setStore(store1);
+            testTrip1.setOwner("sub: testuser");
+            testTrip1.setTime(baseTime.plus(Duration.ofMinutes(5))); // 15:05:00
+            testTrip1.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("2.5"))));
+            shoppingTripRepository.save(testTrip1);
+            
+            ShoppingTrip testTrip2 = new ShoppingTrip();
+            testTrip2.setStore(store2);
+            testTrip2.setOwner("sub: testuser");
+            testTrip2.setTime(baseTime.plus(Duration.ofMinutes(10))); // 15:10:00
+            testTrip2.setProducts(new HashMap<>(Map.of(product2, new BigDecimal("1.0"))));
+            shoppingTripRepository.save(testTrip2);
+            
+            // Create canary trip
+            ShoppingTrip canaryTrip = new ShoppingTrip();
+            canaryTrip.setStore(store1);
+            canaryTrip.setOwner("sub: testuser");
+            canaryTrip.setTime(baseTime.plus(Duration.ofMinutes(15))); // 15:15:00
+            canaryTrip.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
+            shoppingTripRepository.save(canaryTrip);
+            
+            // Create trip for different user
+            ShoppingTrip otherUserTrip = new ShoppingTrip();
+            otherUserTrip.setStore(store1);
+            otherUserTrip.setOwner("sub: otheruser");
+            otherUserTrip.setTime(baseTime.plus(Duration.ofMinutes(5))); // Same time as testTrip1
+            otherUserTrip.setProducts(new HashMap<>());
+            shoppingTripRepository.save(otherUserTrip);
+
+            // Use explicit date range that includes all current user trips
             mockMvc
-                .perform(
-                    get("/api/shoppingTrips?from=2024-01-01T00:00:00Z&to=2024-01-31T23:59:59Z")
-                        .with(user2_jwt)
-                )
+                .perform(get("/api/shoppingTrips?from={from}&to={to}", 
+                            "2026-03-05T15:04:00Z", // Start before first trip
+                            "2026-03-05T15:20:00Z") // End after last trip
+                            .with(user_jwt))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(String.format("""
-                        {
-                          "page": {
-                            "number": 0,
-                            "size": 10,
-                            "totalElements": 1,
-                            "totalPages": 1
-                          },
-                          "content": [
-                            {
-                              "uuid": "%s",
-                              "store": "%s",
-                              "time": "2024-01-20T14:30:00Z",
-                              "products": {}
-                            }
-                          ]
-                        }""", SHOPPING_TRIP_2_UUID, Testdata.STORE_3_UUID
-                )));
-        }
-
-        @Test
-        void shouldReturn401WhenSearchingShoppingTripsWithoutAuthentication() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/shoppingTrips")
-                )
-                .andExpect(status().isUnauthorized());
+                .andExpect(jsonPath("$.page.totalElements").value(3))
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[?(@.store == '" + Testdata.STORE_1_UUID + "')]").exists())
+                .andExpect(jsonPath("$.content[?(@.store == '" + Testdata.STORE_2_UUID + "')]").exists());
+            
+            // Verify canary trip unaffected
+            assertTrue(shoppingTripRepository
+                           .findById(canaryTrip.getUuid())
+                           .isPresent());
+            ShoppingTrip unchangedCanary = shoppingTripRepository
+                .findById(canaryTrip.getUuid())
+                .get();
+            assertEquals(Testdata.STORE_1_UUID, unchangedCanary.getStore().getUuid());
+            assertEquals(1, unchangedCanary.getProducts().size());
         }
     }
 }

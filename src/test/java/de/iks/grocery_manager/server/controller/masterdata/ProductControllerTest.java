@@ -268,11 +268,11 @@ class ProductControllerTest {
                         },
                         {
                           "uuid": "%s",
-                          "name": "Product Group Test 1"
+                          "name": "Product 3"
                         },
                         {
                           "uuid": "%s",
-                          "name": "Product Group Test 2"
+                          "name": "Product 4"
                         }
                       ]
                     }""", PRODUCT_1_JSON, Testdata.PRODUCT_2_UUID, Testdata.PRODUCT_3_UUID, Testdata.PRODUCT_4_UUID
