@@ -138,7 +138,7 @@ public interface DTOMapper {
     ShareDTO map(Share share, @Context String user);
 
     @Mapping(target = "uuid", ignore = true)
-    @Mapping(target = "links", ignore = true)
+    @Mapping(target = "links", expression = "java(new java.util.ArrayList<>())")
     Share create(CreateShareDTO shareDTO);
 
     @Mapping(target = "uuid", ignore = true)

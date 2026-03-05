@@ -39,12 +39,14 @@ public class ShareController {
         UriComponentsBuilder uriBuilder
     ) {
         final String user = getUser(principal);
-        Share ret = shares.save(dtoMapper.create(createShareDTO));
+        Share ret = dtoMapper.create(createShareDTO);
         JoinLink ownerLink = new JoinLink();
         ownerLink.setShare(ret);
+        ownerLink.setName("Owner");
         ownerLink.setUsers(Set.of(user));
         ownerLink.setPermissions(Permissions.ADMIN);
-        links.saveAndFlush(ownerLink);
+        ret.getLinks().add(ownerLink);
+        ret = shares.save(ret);
         return ResponseEntity
             .created(
                 uriBuilder

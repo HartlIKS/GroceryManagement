@@ -19,7 +19,11 @@ public class Share implements HasUUID {
     @Column(nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "share")
+    @OneToMany(
+        mappedBy = "share",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
     private List<JoinLink> links;
 
     public Permissions getPermissionsFor(String user) {
