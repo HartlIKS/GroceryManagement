@@ -58,7 +58,8 @@ export class ProductGroupListComponent {
       this.productGroupService.delete(uuid).subscribe({
         error: (error) => {
           console.error('Error deleting product group:', error);
-        }
+        },
+        complete: () => this.productGroupsResource.reload(),
       });
     }
   }

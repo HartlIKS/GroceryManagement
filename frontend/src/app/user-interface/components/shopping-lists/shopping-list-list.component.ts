@@ -57,7 +57,8 @@ export class ShoppingListListComponent {
       this.shoppingListService.delete(uuid).subscribe({
         error: (error) => {
           console.error('Error deleting shopping list:', error);
-        }
+        },
+        complete: () => this.shoppingListsResource.reload(),
       });
     }
   }
