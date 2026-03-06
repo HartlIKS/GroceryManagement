@@ -1,12 +1,11 @@
 package de.iks.grocery_manager.server.jpa.share;
 
 import de.iks.grocery_manager.server.model.share.Share;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public interface ShareRepository extends JpaRepository<Share, UUID> {
     @Query("""
@@ -19,5 +18,5 @@ where exists(
     where l.permissions > 0
 )
 """)
-    Page<? extends Share> findByUser(String user, Pageable pageable);
+    Stream<? extends Share> findByUser(String user);
 }

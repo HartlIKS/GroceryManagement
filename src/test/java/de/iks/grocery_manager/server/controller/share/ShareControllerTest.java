@@ -1,4 +1,4 @@
-package de.iks.grocery_manager.server.controller;
+package de.iks.grocery_manager.server.controller.share;
 
 import de.iks.grocery_manager.server.Testdata;
 import de.iks.grocery_manager.server.jpa.share.JoinLinkRepository;
@@ -307,15 +307,12 @@ class ShareControllerTest {
                 .perform(get("/api/share").with(user_jwt))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.page.number").value(0))
-                .andExpect(jsonPath("$.page.size").value(10))
-                .andExpect(jsonPath("$.page.totalElements").value(2))
-                .andExpect(jsonPath("$.page.totalPages").value(1))
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[?(@.name == 'User Share 1' && @.uuid == '" + userShare1.getUuid().toString() + "')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'User Share 2' && @.uuid == '" + userShare2.getUuid().toString() + "')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'Other Share 1')]").doesNotExist())
-                .andExpect(jsonPath("$.content[?(@.name == 'Other Share 2')]").doesNotExist());
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[?(@.name == 'User Share 1' && @.uuid == '" + userShare1.getUuid().toString() + "')]").exists())
+                .andExpect(jsonPath("$[?(@.name == 'User Share 2' && @.uuid == '" + userShare2.getUuid().toString() + "')]").exists())
+                .andExpect(jsonPath("$[?(@.name == 'Other Share 1')]").doesNotExist())
+                .andExpect(jsonPath("$[?(@.name == 'Other Share 2')]").doesNotExist());
         }
 
         @Test
@@ -327,8 +324,7 @@ class ShareControllerTest {
             mockMvc
                 .perform(get("/api/share").with(user_jwt))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.page.totalElements").value(0))
-                .andExpect(jsonPath("$.content").isEmpty());
+                .andExpect(jsonPath("$").isEmpty());
         }
 
         @Test
@@ -341,34 +337,10 @@ class ShareControllerTest {
             mockMvc
                 .perform(get("/api/share").with(user_jwt))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[?(@.name == 'Admin Share' && @.permissions == 'ADMIN' && @.uuid == '" + adminShare.getUuid().toString() + "')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'Write Share' && @.permissions == 'WRITE' && @.uuid == '" + writeShare.getUuid().toString() + "')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'Read Share' && @.permissions == 'READ' && @.uuid == '" + readShare.getUuid().toString() + "')]").exists());
-        }
-
-        @Test
-        void shouldReturnPaginatedResults() throws Exception {
-            // Create multiple shares for current user
-            for (int i = 1; i <= 15; i++) {
-                createShareWithOwner("Share " + i, "sub: testuser", Permissions.READ);
-            }
-
-            mockMvc
-                .perform(get("/api/share?page=0&size=5").with(user_jwt))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.page.number").value(0))
-                .andExpect(jsonPath("$.page.size").value(5))
-                .andExpect(jsonPath("$.page.totalElements").value(15))
-                .andExpect(jsonPath("$.page.totalPages").value(3))
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content.length()").value(5));
-
-            mockMvc
-                .perform(get("/api/share?page=1&size=5").with(user_jwt))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.page.number").value(1))
-                .andExpect(jsonPath("$.page.size").value(5))
-                .andExpect(jsonPath("$.content.length()").value(5));
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[?(@.name == 'Admin Share' && @.permissions == 'ADMIN' && @.uuid == '" + adminShare.getUuid().toString() + "')]").exists())
+                .andExpect(jsonPath("$[?(@.name == 'Write Share' && @.permissions == 'WRITE' && @.uuid == '" + writeShare.getUuid().toString() + "')]").exists())
+                .andExpect(jsonPath("$[?(@.name == 'Read Share' && @.permissions == 'READ' && @.uuid == '" + readShare.getUuid().toString() + "')]").exists());
         }
 
         @Test
@@ -384,10 +356,8 @@ class ShareControllerTest {
             mockMvc
                 .perform(get("/api/share").with(other_user_jwt))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.page.totalElements").value(1))
-                .andExpect(jsonPath("$.content[?(@.name == 'Other Share 1' && @.uuid == '" + otherShare1.getUuid().toString() + "')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'User Share 1')]").doesNotExist())
-                .andExpect(jsonPath("$.content[?(@.name == 'User Share 2')]").doesNotExist());
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[?(@.name == 'Other Share 1' && @.uuid == '" + otherShare1.getUuid().toString() + "')]").exists());
         }
     }
 

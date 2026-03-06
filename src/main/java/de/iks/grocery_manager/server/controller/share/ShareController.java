@@ -9,15 +9,13 @@ import de.iks.grocery_manager.server.model.share.JoinLink;
 import de.iks.grocery_manager.server.model.share.Permissions;
 import de.iks.grocery_manager.server.model.share.Share;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -76,13 +74,13 @@ public class ShareController {
 
     @GetMapping
     @Transactional(readOnly = true)
-    public Page<ShareDTO> getAll(
-        @PageableDefault Pageable pageable,
+    public List<ShareDTO> getAll(
         @AuthenticationPrincipal Object principal
     ) {
         final String user = getUser(principal);
         return shares
-            .findByUser(user, pageable)
-            .map(s -> dtoMapper.map(s, user));
+            .findByUser(user)
+            .map(s -> dtoMapper.map(s, user))
+            .toList();
     }
 }
