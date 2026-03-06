@@ -34,6 +34,10 @@ export const routes: Routes = [
       {
         path: 'planboard',
         loadChildren: () => import('./user-interface/planboard.routes').then(m => m.planboardRoutes),
+      },
+      {
+        path: 'share-admin',
+        loadChildren: () => import('./share-admin.routes').then(m => m.shareAdminRoutes)
       }
     ],
   },

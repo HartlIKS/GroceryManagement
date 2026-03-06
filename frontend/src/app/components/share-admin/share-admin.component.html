@@ -1,0 +1,64 @@
+<div class="share-admin-container">
+  <mat-card class="admin-card">
+    <mat-card-header>
+      <mat-card-title>{{ isEditMode() ? 'Edit Share' : 'Create Share' }}</mat-card-title>
+      <mat-card-subtitle>{{ isEditMode() ? 'Manage your share properties' : 'Create a new share' }}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (loading()) {
+        <div class="loading-container">
+          <mat-spinner></mat-spinner>
+          <p>Loading share information...</p>
+        </div>
+      } @else if (error()) {
+        <div class="error-container">
+          <mat-icon class="error-icon">error</mat-icon>
+          <p>Failed to load share data</p>
+        </div>
+      } @else {
+        <form [formGroup]="shareForm" (ngSubmit)="onSubmit()">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Share Name</mat-label>
+            <input matInput formControlName="name" placeholder="Enter share name">
+          </mat-form-field>
+
+          @if (isEditMode()) {
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Share ID</mat-label>
+              <input matInput [value]="currentShare()?.uuid" readonly>
+              <mat-hint>This ID cannot be changed</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Your Permissions</mat-label>
+              <input matInput [value]="currentShare()?.permissions" readonly>
+              <mat-hint>Your current permission level in this share</mat-hint>
+            </mat-form-field>
+          }
+
+          <div class="action-buttons">
+            <button mat-raised-button color="primary" type="submit"
+                    [disabled]="shareForm.invalid || isSubmitting()">
+              <mat-icon>{{ isEditMode() ? 'save' : 'add' }}</mat-icon>
+              {{ isEditMode() ? 'Save Changes' : 'Create Share' }}
+            </button>
+
+            @if (isEditMode()) {
+              <button mat-raised-button color="warn"
+                      (click)="onDeleteShare()"
+                      [disabled]="isSubmitting()">
+                <mat-icon>delete</mat-icon>
+                Delete Share
+              </button>
+            } @else {
+              <a routerLink="/" mat-stroked-button>
+                <mat-icon>cancel</mat-icon>
+                Cancel
+              </a>
+            }
+          </div>
+        </form>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

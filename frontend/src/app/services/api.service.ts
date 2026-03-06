@@ -42,6 +42,7 @@ export class ApiService {
         if(key === 'share') {
           const shareId = this.share();
           if(shareId !== undefined) httpParams = httpParams.set('share', shareId);
+          continue;
         }
         let value = valueSignal();
         if (value !== null && value !== undefined) {
@@ -64,6 +65,21 @@ export class ApiService {
     const httpParams = this.toParamSignal(params);
 
     return httpResource<T>(() => ({
+      url: `${this.baseUrl}${endpoint}`,
+      params: httpParams(),
+      headers: this.headers(),
+      credentials: 'include',
+    }), {
+      injector: this.injector,
+    });
+  }
+  getShareOnly<T>(endpoint: string, params?: Record<string, Signal<ApiParam> | ApiParam>) {
+    const httpParams = this.toParamSignal({
+      ...params,
+      share: '',
+    });
+
+    return httpResource<T>(() => (this.share() === undefined ? undefined : {
       url: `${this.baseUrl}${endpoint}`,
       params: httpParams(),
       headers: this.headers(),

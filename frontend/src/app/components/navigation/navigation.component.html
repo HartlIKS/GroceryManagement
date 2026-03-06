@@ -42,6 +42,15 @@
 
         <mat-menu #share>
           @let currentShare = apiService.share();
+          <a mat-menu-item routerLink="/share-admin">
+            @if (currentShare) {
+              <mat-icon>edit</mat-icon>
+            } @else {
+              <mat-icon>share</mat-icon>
+            }
+            <span>{{ currentShare ? 'Edit' : 'Create' }}</span>
+          </a>
+          <hr>
           <button mat-menu-item (click)="apiService.share.set(undefined)">
             @if(undefined === currentShare) {
               <mat-icon>check_box</mat-icon>
