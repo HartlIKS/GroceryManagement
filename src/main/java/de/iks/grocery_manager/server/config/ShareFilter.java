@@ -8,6 +8,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.NotImplementedException;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
@@ -19,7 +22,9 @@ import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.GenericFilterBean;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.UUID;
 
 import static de.iks.grocery_manager.server.util.OwnerUtils.getUser;
@@ -28,6 +33,57 @@ import static de.iks.grocery_manager.server.util.OwnerUtils.getUser;
 @RequiredArgsConstructor
 public class ShareFilter extends GenericFilterBean {
     public record SharePrincipal(Share share, Object principal) {
+    }
+    public record ShareAuthenticationToken(SharePrincipal share, Authentication original) implements Authentication {
+        ShareAuthenticationToken(Share share, Authentication original) {
+            this(new SharePrincipal(share, original.getPrincipal()), original);
+        }
+        @Override
+        @NullMarked
+        public Collection<? extends GrantedAuthority> getAuthorities() {
+            return original.getAuthorities();
+        }
+
+        @Override
+        public @Nullable Object getCredentials() {
+            return original.getCredentials();
+        }
+
+        @Override
+        public @Nullable Object getPrincipal() {
+            return share;
+        }
+
+        @Override
+        public @Nullable Object getDetails() {
+            return original.getDetails();
+        }
+
+        @Override
+        public boolean isAuthenticated() {
+            return original.isAuthenticated();
+        }
+
+        @Override
+        public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
+            original.setAuthenticated(isAuthenticated);
+        }
+
+        @Override
+        public String getName() {
+            return original.getName();
+        }
+
+        @Override
+        public boolean implies(Subject subject) {
+            return original.implies(subject);
+        }
+
+        @Override
+        @NullMarked
+        public Builder<?> toBuilder() {
+            throw new NotImplementedException();
+        }
     }
 
     private final SecurityContextHolderStrategy contextHolder = SecurityContextHolder.getContextHolderStrategy();
@@ -40,7 +96,11 @@ public class ShareFilter extends GenericFilterBean {
         final SecurityContext securityContext = contextHolder.getContext();
         final Authentication authentication = securityContext.getAuthentication();
         if(shareUuid != null) {
-            if(authentication == null) throw new AuthenticationCredentialsNotFoundException("Authentication required");
+            if(authentication == null || !authentication.isAuthenticated() || authentication
+                .getAuthorities()
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_ANONYMOUS"::equals)) throw new AuthenticationCredentialsNotFoundException("Authentication required");
 
             Share share = shares
                 .findById(UUID.fromString(shareUuid))
@@ -53,9 +113,10 @@ public class ShareFilter extends GenericFilterBean {
             final SecurityContext newSecurityContext = contextHolder.createEmptyContext();
 
             newSecurityContext.setAuthentication(
-                authentication
+                new ShareAuthenticationToken(
+                    share,
+                    authentication
                     .toBuilder()
-                    .principal(new SharePrincipal(share, authentication.getPrincipal()))
                     .authorities(c -> {
                         switch(permissions) {
                         case ADMIN:
@@ -70,6 +131,7 @@ public class ShareFilter extends GenericFilterBean {
                         }
                     })
                     .build()
+                )
             );
 
             contextHolder.setContext(newSecurityContext);
