@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, Injector, isSignal, Signal } from '@angular/core';
+import { computed, inject, Injectable, Injector, isSignal, signal, Signal } from '@angular/core';
 import { HttpClient, HttpParams, httpResource, HttpResourceRef } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -24,6 +24,12 @@ export class ApiService {
     if(token !== undefined) return {Authorization: `Bearer ${token}`};
     return {};
   });
+  public readonly share = signal<string | undefined>(undefined);
+  private readonly shareParams = computed(() => {
+    const s = this.share();
+    if(s === undefined) return undefined;
+    return {share: s};
+  })
 
   private toParamSignal(params: Record<string, Signal<ApiParam> | ApiParam> = {}): Signal<HttpParams> {
     const resolvedParams: Record<string, Signal<ApiParam>> = Object.fromEntries(
@@ -33,6 +39,10 @@ export class ApiService {
     return computed(() => {
       let httpParams = new HttpParams();
       for (const [key, valueSignal] of Object.entries(resolvedParams)) {
+        if(key === 'share') {
+          const shareId = this.share();
+          if(shareId !== undefined) httpParams = httpParams.set('share', shareId);
+        }
         let value = valueSignal();
         if (value !== null && value !== undefined) {
           if (Array.isArray(value)) {
@@ -72,6 +82,7 @@ export class ApiService {
       return {
         url: `${this.baseUrl}${endpoint}/${uuid}`,
         headers: this.headers(),
+        params: this.shareParams(),
         credentials: 'include',
       };
     }, {
@@ -81,6 +92,7 @@ export class ApiService {
       asResource: (): HttpResourceRef<T | undefined> => this.getById<T>(endpoint, computed(() => id)),
       asObservable: (): Observable<T> => this.http.get<T>(`${this.baseUrl}${endpoint}/${id}`, {
         headers: this.headers(),
+        params: this.shareParams(),
         withCredentials: true,
       }),
     };
@@ -89,6 +101,7 @@ export class ApiService {
   post<T>(endpoint: string, data: any): Observable<T> {
     return this.http.post<T>(`${this.baseUrl}${endpoint}`, data, {
       headers: this.headers(),
+      params: this.shareParams(),
       withCredentials: true,
     });
   }
@@ -96,6 +109,7 @@ export class ApiService {
   put<T>(endpoint: string, id: string, data: any): Observable<T> {
     return this.http.put<T>(`${this.baseUrl}${endpoint}/${id}`, data, {
       headers: this.headers(),
+      params: this.shareParams(),
       withCredentials: true,
     });
   }
