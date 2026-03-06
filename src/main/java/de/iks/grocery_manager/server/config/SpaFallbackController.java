@@ -3,13 +3,13 @@ package de.iks.grocery_manager.server.config;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.WebRequest;
 
-import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -20,7 +20,6 @@ public class SpaFallbackController {
     private final FrontendConfig frontendConfig;
     private final AuthorityConfiguration authorityConfiguration;
     private final IssuerConfig issuerConfig;
-    private final Instant modifiedSince = Instant.now();
 
     @PostConstruct
     protected void init() {
@@ -38,12 +37,16 @@ public class SpaFallbackController {
     @GetMapping("/auth.json")
     @ResponseBody
     public ResponseEntity<Map<String, String>> getAuthConfig(WebRequest request) {
-        if(request.checkNotModified(frontendConfig.getAuthEtag(), modifiedSince.toEpochMilli())) return null;
+        if(request.checkNotModified(frontendConfig.getAuthEtag())) return ResponseEntity
+            .status(HttpStatus.NOT_MODIFIED)
+            .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic())
+            .header("Access-Control-Allow-Origin", "*")
+            .build();
         return ResponseEntity
             .ok()
             .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic())
             .eTag(frontendConfig.getAuthEtag())
-            .lastModified(modifiedSince.toEpochMilli())
+            .header("Access-Control-Allow-Origin", "*")
             .body(this.frontendConfig.getAuth());
     }
 }
