@@ -2,7 +2,9 @@ import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { MatIcon } from '@angular/material/icon';
 import { AuthService } from '../../services/auth.service';
+import { ShareService } from '../../services/share.service';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
+import { ApiService } from '../../services';
 
 @Component({
   selector: 'app-navigation',
@@ -13,6 +15,8 @@ import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 })
 export class NavigationComponent {
   readonly authService = inject(AuthService);
+  readonly apiService = inject(ApiService);
+  readonly shareService = inject(ShareService);
   private readonly isMasterDataRoute_ = signal(false);
   readonly isMasterDataRoute = this.isMasterDataRoute_.asReadonly();
 

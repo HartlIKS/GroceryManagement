@@ -7,13 +7,13 @@
     <div class="nav-menu">
       <router-outlet name="navbar"/>
     </div>
+
     <div class="nav-menu">
       @defer {
         <a class="nav-item" [matMenuTriggerFor]="profile">
           <mat-icon>account_circle</mat-icon>
           {{ authService.username() }}
         </a>
-
         <mat-menu #profile>
           @if (authService.hasMasterData()) {
             @if (isMasterDataRoute()) {
@@ -28,10 +28,41 @@
               </a>
             }
           }
+          @if(!isMasterDataRoute()) {
+            <button mat-menu-item [matMenuTriggerFor]="share">
+              <mat-icon>share</mat-icon>
+              <span>Share</span>
+            </button>
+          }
           <button mat-menu-item (click)="authService.logout()">
             <mat-icon>logout</mat-icon>
             Logout
           </button>
+        </mat-menu>
+
+        <mat-menu #share>
+          @let currentShare = apiService.share();
+          <button mat-menu-item (click)="apiService.share.set(undefined)">
+            @if(undefined === currentShare) {
+              <mat-icon>check_box</mat-icon>
+            } @else {
+              <mat-icon>check_box_outline_blank</mat-icon>
+            }
+            <span>None</span>
+          </button>
+          @for (share of shareService.shareList(); track share.uuid) {
+            @if(share.uuid === currentShare) {
+              <button mat-menu-item (click)="apiService.share.set(undefined)">
+                <mat-icon>check_box</mat-icon>
+                <span>{{share.name}}</span><span>({{share.permissions}})</span>
+              </button>
+            } @else {
+              <button mat-menu-item (click)="apiService.share.set(share.uuid)">
+                <mat-icon>check_box_outline_blank</mat-icon>
+                <span>{{share.name}}</span><span>({{share.permissions}})</span>
+              </button>
+            }
+          }
         </mat-menu>
       }
     </div>
