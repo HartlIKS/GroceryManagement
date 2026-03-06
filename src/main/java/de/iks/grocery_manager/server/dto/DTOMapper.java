@@ -156,7 +156,7 @@ public interface DTOMapper {
     JoinLinkDTO map(JoinLink link);
 
     @Mapping(target = "uuid", ignore = true)
-    @Mapping(target = "users", ignore = true)
+    @Mapping(target = "users", expression = "java(new java.util.HashSet<>())")
     @Mapping(target = "name", source = "linkDTO.name")
     @Mapping(target = "use", ignore = true)
     JoinLink create(CreateJoinLinkDTO linkDTO, Share share);

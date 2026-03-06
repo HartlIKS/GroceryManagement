@@ -93,10 +93,10 @@ public class JoinLinkController {
         List<JoinLink> links = principal
             .share()
             .getLinks();
-        if(!links.removeIf(l -> l.getUuid().equals(uuid))) return ResponseEntity.notFound().build();
-        if(links.stream().map(JoinLink::getPermissions).noneMatch(Permissions.ADMIN::equals)) {
-            throw new IllegalArgumentException("Cannot delete last admin link of a share");
+        if(links.stream().filter(j -> !j.getUuid().equals(uuid)).map(JoinLink::getPermissions).noneMatch(Permissions.ADMIN::equals)) {
+            return ResponseEntity.badRequest().build();
         }
+        if(!links.removeIf(l -> l.getUuid().equals(uuid))) return ResponseEntity.notFound().build();
         return ResponseEntity.ok().build();
     }
 }
