@@ -6,11 +6,11 @@ This is a full-stack grocery management system consisting of a Spring Boot REST 
 
 ## Architecture
 
-### Backend (Spring Boot 4.0.1)
-- **Language**: Java 21
+### Backend (Spring Boot 4.0.3)
+- **Language**: Java 17
 - **Framework**: Spring Boot with WebMVC
 - **Database**: PostgreSQL with JPA/Hibernate
-- **Security**: Spring Security with OAuth2 Resource Server and WebAuthn
+- **Security**: Spring Security with OAuth2 Resource Server and ShareFilter
 - **Documentation**: OpenAPI 3.0 (SpringDoc)
 - **Build Tool**: Maven
 - **Migration**: Liquibase
@@ -36,18 +36,25 @@ GroceryManagement/
 │   │   │   ├── GroceryManagementApplication.java  # Main application class
 │   │   │   ├── config/              # Security and configuration
 │   │   │   ├── controller/          # REST controllers
-│   │   │   │   └── masterdata/      # Master data controllers
+│   │   │   │   ├── masterdata/      # Master data controllers
+│   │   │   │   └── share/           # Share functionality controllers
 │   │   │   ├── dto/                 # Data Transfer Objects
-│   │   │   │   └── masterdata/      # Master data DTOs
+│   │   │   │   ├── masterdata/      # Master data DTOs
+│   │   │   │   └── share/           # Share DTOs
 │   │   │   ├── jpa/                 # JPA repositories
-│   │   │   │   └── masterdata/      # Master data repositories
-│   │   │   └── model/               # JPA entities
-│   │   │       └── masterdata/      # Master data entities
+│   │   │   │   ├── masterdata/      # Master data repositories
+│   │   │   │   └── share/           # Share repositories
+│   │   │   ├── model/               # JPA entities
+│   │   │   │   ├── masterdata/      # Master data entities
+│   │   │   │   └── share/           # Share entities
+│   │   │   └── util/                # Utility classes
 │   │   └── resources/               # Application resources
 │   └── test/                        # Backend tests
 │       └── java/de/iks/grocery_manager/server/
 │           ├── Testdata.java                          # Test data constants
 │           └── controller/          # Controller tests
+│               ├── masterdata/      # Master data controller tests
+│               └── share/           # Share controller tests
 └── frontend/                        # Angular frontend
     ├── package.json                 # Node.js dependencies
     ├── angular.json                 # Angular configuration
@@ -143,6 +150,28 @@ Shopping lists allow users to create personalized grocery lists with specific qu
 - **owner**: User who owns the trip (required, String)
 
 Shopping trips record actual purchases made by users at specific stores, including quantities and prices paid. Users can only access their own shopping trips.
+
+### Share
+- **uuid**: Primary identifier (UUID)
+- **name**: Share name (required, String)
+- **links**: List of join links for the share (List<JoinLink>)
+
+Shares allow users to collaborate on grocery management with different permission levels. Each share can have multiple join links with different access permissions.
+
+### JoinLink
+- **uuid**: Primary identifier (UUID)
+- **share**: Reference to Share (Share, required)
+- **name**: Link name (required, String)
+- **permissions**: Permission level for users joining through this link (Permissions, required)
+- **active**: Whether the link is currently active (required, boolean)
+- **singleUse**: Whether the link becomes inactive after first use (required, boolean)
+- **validTo**: Optional expiration time for the link (Instant)
+- **users**: Set of users who have joined through this link (Set<String>)
+
+Join links provide a mechanism for users to gain access to shares with specific permission levels. Links can be configured as single-use or time-limited for security.
+
+### Permissions
+Enum defining access levels: **NONE**, **READ**, **WRITE**, **ADMIN**
 
 ## User Interface Features
 
@@ -278,6 +307,22 @@ Shopping trips record actual purchases made by users at specific stores, includi
 - `GET /shoppingTrips` - Search shopping trips (with optional from/to date parameters, paginated, user-owned only)
 - `POST /shoppingTrips/{uuid}/add` - Add products to existing shopping trip (user-owned only)
 
+### Shares (`/share`)
+- `POST /share` - Create new share (authenticated users only)
+- `GET /share` - Get paginated list of user's shares (authenticated users only)
+- `POST /share/join/{uuid}` - Join a share using a join link UUID (authenticated users only)
+
+### Current Share (`/share/current`)
+- `GET /share/current?share={uuid}` - Get current share information (requires share parameter and authentication)
+- `PUT /share/current?share={uuid}` - Update current share name (requires ADMIN permission on share)
+- `DELETE /share/current?share={uuid}` - Delete current share and cleanup all associated data (requires ADMIN permission on share)
+
+### Join Links (`/share/joinLinks`)
+- `POST /share/joinLinks` - Create new join link for a share (requires ADMIN permission on share)
+- `GET /share/joinLinks/{shareUuid}` - Get all join links for a share (requires READ permission on share)
+- `PUT /share/joinLinks/{uuid}` - Update join link properties (requires ADMIN permission on share)
+- `DELETE /share/joinLinks/{uuid}` - Delete join link (requires ADMIN permission on share)
+
 ### Planboard (Frontend Feature)
 - **Route**: `/planboard` - Interactive shopping planning interface
 - **Features**: Shopping list integration, price comparison, store assignment, planned trip generation
@@ -285,7 +330,7 @@ Shopping trips record actual purchases made by users at specific stores, includi
 ## Development Setup
 
 ### Prerequisites
-- Java 21
+- Java 17
 - Node.js 24.13.0
 - Maven 3.x
 - PostgreSQL (or Docker)
@@ -359,9 +404,41 @@ This will:
 - On-demand component loading for performance optimization
 
 ## Security Configuration
-- OAuth2 Resource Server configuration
-- WebAuthn support for passwordless authentication
-- CORS configuration for frontend integration
+- **OAuth2 Resource Server configuration** for JWT token validation
+- **ShareFilter** for share-based authentication and authorization (placed before AuthorizationFilter)
+- **Authority-based access control** with mixed JWT scopes and ShareFilter-granted authorities:
+  - **JWT**
+    - `SCOPE_{masterdata}` - required for master data operations
+  - **ShareFilter**
+    - `USER_SCOPED`
+    - `SHARE_SCOPED`
+    - `READ_SCOPED`
+    - `WRITE_SCOPED`
+    - `ADMIN_SCOPED`
+    - **ShareFilter authority granting**:
+      - When share parameter present:
+        - ADMIN permission: grants ADMIN_SCOPED + WRITE_SCOPED + READ_SCOPED + SHARE_SCOPED
+        - WRITE permission: grants WRITE_SCOPED + READ_SCOPED + SHARE_SCOPED
+        - READ permission: grants READ_SCOPED + SHARE_SCOPED
+        - NONE permission: grants no authorities (AccessDenied)
+      - When no share parameter (regular user context): grants ADMIN_SCOPED + WRITE_SCOPED + READ_SCOPED + USER_SCOPED
+- **Permission-based access control** with four levels: NONE, READ, WRITE, ADMIN
+- **OwnerUtils** for consistent owner identification across user and share contexts
+- **CORS configuration** for frontend integration
+- **Share-based security model**:
+  - Users authenticate with JWT tokens
+  - Share parameter in requests switches context to share-based authentication
+  - ShareFilter wraps authentication with ShareAuthenticationToken containing SharePrincipal
+  - Permission levels are determined by user's highest permission across all join links
+  - Owner format for share-scoped data: `"share: {uuid}"`
+  - Owner format for user-scoped data: `"sub: {subject}"`
+- **Endpoint security rules**:
+  - Master data GET endpoints: authenticated users only
+  - Master data write endpoints: require masterdata scope authority
+  - Share endpoints: require USER_SCOPED authority
+  - Current share endpoints: require SHARE_SCOPED (read) or ADMIN_SCOPED + SHARE_SCOPED (write/admin)
+  - Join link management: require ADMIN_SCOPED + SHARE_SCOPED
+  - Default fallback: require WRITE_SCOPED authority
 
 ## Database Migration
 - Liquibase for database schema management
@@ -382,6 +459,18 @@ This will:
   - Boundary condition testing for validFrom/validTo dates
   - Multiple store and product search capabilities
   - Edge case handling for non-existent entities and out-of-range dates
+- **ShareController tests** with complete share and join link management:
+  - Share creation with automatic owner link generation
+  - Join link functionality with single-use and expiration handling
+  - User-scoped share listing with proper permission levels
+  - Comprehensive pagination and filtering support
+- **CurrentShareController tests** with ShareFilter integration:
+  - Current share retrieval with different permission levels (ADMIN, WRITE, READ)
+  - Permission-based update operations (ADMIN only)
+  - Share deletion with automatic cleanup of associated data
+  - ShareFilter authentication and authorization testing
+  - Owner-based data cleanup verification
+  - Comprehensive error handling for unauthorized access
 - **Enhanced test architecture** with canary pattern for data isolation and comprehensive validation
 
 ## API Documentation
@@ -401,6 +490,12 @@ This will:
 - Modern control flow (`@if`, `@for`) replaces deprecated structural directives
 - Global design system with CSS custom properties for consistent styling
 - Separated architecture: `master-data` for admin functions, `user-interface` for user-facing features
+- **Share Functionality**: Comprehensive sharing system with permission-based access control
+  - ShareFilter provides seamless switching between user and share contexts
+  - Join links support single-use and time-limited access for security
+  - CleanupService ensures proper data cleanup when shares are deleted
+  - Share-scoped data uses `"share: {uuid}"` owner format for isolation
+  - Permission levels (NONE, READ, WRITE, ADMIN) provide granular access control
 - **Lazy Loading Implementation**: Feature-based route modules optimize initial bundle size
 - **Performance Optimization**: UserDashboard eagerly loaded for fast landing page experience
 - Shopping Lists feature implements unified table for mixed item types with visual distinction
@@ -419,3 +514,5 @@ This will:
 - **Material Design Integration**: Leveraging Angular Material's built-in styling and CSS variables
 - **Test-Driven Bug Fixes**: Comprehensive testing identified and validated fixes for boundary condition issues in price search functionality
 - **Enhanced Price Search API**: Improved repository methods with inclusive boundary conditions for accurate date-based price queries
+- **Share-First Testing**: CurrentShareController tests verify ShareFilter integration and permission-based access control
+- **Data Cleanup Verification**: Tests ensure proper cleanup of share-associated data when shares are deleted
