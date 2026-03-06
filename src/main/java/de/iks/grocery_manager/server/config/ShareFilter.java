@@ -8,7 +8,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.NotImplementedException;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.access.AccessDeniedException;
@@ -20,6 +19,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.filter.GenericFilterBean;
 
 import javax.security.auth.Subject;
@@ -82,12 +82,13 @@ public class ShareFilter extends GenericFilterBean {
         @Override
         @NullMarked
         public Builder<?> toBuilder() {
-            throw new NotImplementedException();
+            return original.toBuilder();
         }
     }
 
     private final SecurityContextHolderStrategy contextHolder = SecurityContextHolder.getContextHolderStrategy();
     private final ShareRepository shares;
+    private final TransactionTemplate transactionTemplate;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -101,40 +102,41 @@ public class ShareFilter extends GenericFilterBean {
                 .stream()
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch("ROLE_ANONYMOUS"::equals)) throw new AuthenticationCredentialsNotFoundException("Authentication required");
+            transactionTemplate.executeWithoutResult(ignored -> {
+                Share share = shares
+                    .findById(UUID.fromString(shareUuid))
+                    .orElseThrow(() -> new AccessDeniedException("No share with id " + shareUuid));
 
-            Share share = shares
-                .findById(UUID.fromString(shareUuid))
-                .orElseThrow(() -> new AccessDeniedException("No share with id " + shareUuid));
+                Permissions permissions = share.getPermissionsFor(
+                    getUser(authentication.getPrincipal())
+                );
 
-            Permissions permissions = share.getPermissionsFor(
-                getUser(authentication.getPrincipal())
-            );
+                final SecurityContext newSecurityContext = contextHolder.createEmptyContext();
 
-            final SecurityContext newSecurityContext = contextHolder.createEmptyContext();
+                newSecurityContext.setAuthentication(
+                    new ShareAuthenticationToken(
+                        share,
+                        authentication
+                            .toBuilder()
+                            .authorities(c -> {
+                                switch(permissions) {
+                                case ADMIN:
+                                    c.add(new SimpleGrantedAuthority(SecurityConfiguration.AUTHORITY_ADMIN));
+                                case WRITE:
+                                    c.add(new SimpleGrantedAuthority(SecurityConfiguration.AUTHORITY_WRITE));
+                                case READ:
+                                    c.add(new SimpleGrantedAuthority(SecurityConfiguration.AUTHORITY_READ));
+                                    c.add(new SimpleGrantedAuthority(SecurityConfiguration.AUTHORITY_SHARE));
+                                case NONE:
+                                    break;
+                                }
+                            })
+                            .build()
+                    )
+                );
 
-            newSecurityContext.setAuthentication(
-                new ShareAuthenticationToken(
-                    share,
-                    authentication
-                    .toBuilder()
-                    .authorities(c -> {
-                        switch(permissions) {
-                        case ADMIN:
-                            c.add(new SimpleGrantedAuthority(SecurityConfiguration.AUTHORITY_ADMIN));
-                        case WRITE:
-                            c.add(new SimpleGrantedAuthority(SecurityConfiguration.AUTHORITY_WRITE));
-                        case READ:
-                            c.add(new SimpleGrantedAuthority(SecurityConfiguration.AUTHORITY_READ));
-                            c.add(new SimpleGrantedAuthority(SecurityConfiguration.AUTHORITY_SHARE));
-                        case NONE:
-                            break;
-                        }
-                    })
-                    .build()
-                )
-            );
-
-            contextHolder.setContext(newSecurityContext);
+                contextHolder.setContext(newSecurityContext);
+            });
         } else if(authentication != null &&
             authentication.isAuthenticated() &&
             authentication
