@@ -45,8 +45,9 @@ services:
       - keycloak
     environment:
       SPRING_CONFIG_IMPORT: optional:configtree:/run/secrets/
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/GroceryManager
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres
       SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER: "http://localhost:8081/realms/GroceryManager"
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI: "http://keycloak:8081/realms/GroceryManager/protocol/openid-connect/certs"
     secrets:
       - source: postgres_pw

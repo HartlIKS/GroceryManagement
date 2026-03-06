@@ -7,12 +7,5 @@ spring:
   security:
     oauth2:
       resourceserver:
-        jwt:
-          issuer-uri: "http://localhost:8081/realms/GroceryManager"
-          jwk-set-uri: "${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs"
         scope:
           masterdata: "MASTERDATA"
-frontend:
-  auth:
-    issuer: "${spring.security.oauth2.resourceserver.jwt.issuer-uri}"
-    scope: "openid profile offline_access ${spring.security.oauth2.resourceserver.scope.masterdata}"
