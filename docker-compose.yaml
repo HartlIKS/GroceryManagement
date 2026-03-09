@@ -14,27 +14,17 @@ services:
       - type: volume
         source: pg-data
         target: /var/lib/postgresql
-  keycloak:
-    image: quay.io/keycloak/keycloak:26.5
-    depends_on:
-      - postgres
+  rauthy:
+    image: ghcr.io/sebadob/rauthy
     environment:
-      KC_DB: postgres
-      KC_DB_URL: "jdbc:postgresql://postgres/keycloak"
-      KC_DB_USERNAME: keycloak
-      KC_DB_PASSWORD: keycloak
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-      KC_HTTP_PORT: 8081
-      KC_HEALTH_ENABLED: true
-    command:
-      - "start-dev"
-      - "--import-realm"
+      LOCAL_TEST: true
+      TLS_GENERATE_SELF_SIGNED: false
+      LISTEN_SCHEME: http
+      LISTEN_PORT_HTTP: 8081
+      PUB_URL: localhost:8081
+      RP_ORIGIN: http://localhost:8081
     ports:
       - "8081:8081"
-    configs:
-      - target: /opt/keycloak/data/import
-        source: realms
   grocery-manager:
     image: ghcr.io/hartliks/grocerymanagement:master
     build:
@@ -42,13 +32,13 @@ services:
       target: run
     depends_on:
       - postgres
-      - keycloak
+      - rauthy
     environment:
       SPRING_CONFIG_IMPORT: optional:configtree:/run/secrets/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER: "http://localhost:8081/realms/GroceryManager"
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI: "http://keycloak:8081/realms/GroceryManager/protocol/openid-connect/certs"
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER: "http://localhost:8081/auth/v1"
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "http://rauthy:8081/auth/v1/oidc/certs"
     secrets:
       - source: postgres_pw
         target: spring.datasource.password
@@ -59,10 +49,6 @@ services:
 volumes:
   pg-data:
     driver: "local"
-
-configs:
-  realms:
-    file: realms
 
 secrets:
   postgres_pw:
