@@ -1,1 +1,24 @@
 /* Navigation-specific styles - no additional styles needed */
+
+mat-sidenav-container {
+  height: 100vh;
+}
+
+a.active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+a:hover:not(.active) {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.collapsable {
+  display: flex;
+  flex: 1 1 auto;
+}
+
+@media (width <= 1080px) {
+  .collapsable>* {
+    display: none;
+  }
+}

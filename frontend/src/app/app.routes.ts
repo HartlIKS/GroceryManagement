@@ -1,20 +1,67 @@
 import { Routes } from '@angular/router';
 import { authGuard, masterDataGuard } from './guards/auth.guard';
-import { NavigationComponent } from './components/navigation';
-import { MainNavItemsComponent } from './components/navigation/main-nav-items';
-import { MasterDataNavItemsComponent } from './components/navigation/master-data-nav-items';
+import { NavigationComponent, NavItem } from './components/navigation';
+
+const normalNavItems: NavItem[] = [
+  {
+    path: '/',
+    icon: 'home',
+    title: 'Home',
+  },
+  {
+    path: '/product-groups',
+    icon: 'category',
+    title: 'Product Groups',
+  },
+  {
+    path: '/shopping-lists',
+    icon: 'shopping_cart',
+    title: 'Shopping Lists',
+  },
+  {
+    path: '/shopping-trips',
+    icon: 'receipt_long',
+    title: 'Shopping Trips',
+  },
+  {
+    path: '/planboard',
+    icon: 'dashboard',
+    title: 'Plan Board',
+  },
+];
+const masterDataNavItems: NavItem[] = [
+  {
+    path: '/master-data/dashboard',
+    icon: 'dashboard',
+    title: 'Dashboard',
+  },
+  {
+    path: '/master-data/products',
+    icon: 'inventory_2',
+    title: 'Products',
+  },
+  {
+    path: '/master-data/stores',
+    icon: 'store',
+    title: 'Stores',
+  },
+  {
+    path: '/master-data/prices',
+    icon: 'price_check',
+    title: 'Prices',
+  },
+];
 
 export const routes: Routes = [
   {
     path: '',
     component: NavigationComponent,
+    data: {
+      navItems: normalNavItems,
+      isMasterData: false,
+    },
     canActivateChild: [authGuard],
     children: [
-      {
-        path: '',
-        outlet: 'navbar',
-        component: MainNavItemsComponent,
-      },
       {
         path: '',
         loadComponent: () => import('./user-interface/components/user-dashboard.component').then(m => m.UserDashboardComponent),
@@ -44,13 +91,12 @@ export const routes: Routes = [
   {
     path: 'master-data',
     component: NavigationComponent,
+    data: {
+      navItems: masterDataNavItems,
+      isMasterData: true,
+    },
     canActivate: [masterDataGuard],
     children: [
-      {
-        path: '',
-        outlet: 'navbar',
-        component: MasterDataNavItemsComponent
-      },
       {
         path: '',
         redirectTo: '/master-data/dashboard',

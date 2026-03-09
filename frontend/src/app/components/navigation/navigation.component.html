@@ -1,20 +1,48 @@
-<nav class="navbar">
-  <div class="nav-container">
-    <div class="nav-brand">
-      <span class="brand-text">Grocery Manager</span>
-    </div>
+<mat-sidenav-container>
+  <mat-sidenav mode="over" #sidenav>
+    @defer {
+      <mat-nav-list>
+        @for (item of navItems(); track item.path) {
+          <a mat-list-item [routerLink]="item.path" routerLinkActive="active">
+            @if (item.icon) {
+              <mat-icon [textContent]="item.icon"/>
+            }
+            @if (item.title) {
+              {{ item.title }}
+            }
+          </a>
+        }
+      </mat-nav-list>
+    }
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <mat-toolbar color="primary">
+      <button mat-icon-button (click)="sidenav.open()">
+        <mat-icon>menu</mat-icon>
+      </button>
 
-    <div class="nav-menu">
-      <router-outlet name="navbar"/>
-    </div>
+      <strong>Grocery Manager</strong>
 
-    <div class="nav-menu">
-      @defer {
-        <a class="nav-item" [matMenuTriggerFor]="profile">
-          <mat-icon>account_circle</mat-icon>
-          {{ authService.username() }}
-        </a>
-        <mat-menu #profile>
+      <div class="collapsable">
+        <span style="flex: 1 1 auto"></span>
+        @for (item of navItems(); track item.path) {
+          <a mat-button [routerLink]="item.path" routerLinkActive="active">
+            @if (item.icon) {
+              <mat-icon [textContent]="item.icon"/>
+            }
+            @if (item.title) {
+              {{ item.title }}
+            }
+          </a>
+        }
+      </div>
+
+      <button style="flex: 0 0 auto" mat-raised-button [matMenuTriggerFor]="profile">
+        <mat-icon>account_circle</mat-icon>
+        {{ authService.username() }}
+      </button>
+      <mat-menu #profile>
+        <ng-template matMenuContent>
           @if (authService.hasMasterData()) {
             @if (isMasterDataRoute()) {
               <a mat-menu-item routerLink="/">
@@ -28,7 +56,7 @@
               </a>
             }
           }
-          @if(!isMasterDataRoute()) {
+          @if (!isMasterDataRoute()) {
             <button mat-menu-item [matMenuTriggerFor]="share">
               <mat-icon>share</mat-icon>
               <span>Share</span>
@@ -38,9 +66,11 @@
             <mat-icon>logout</mat-icon>
             Logout
           </button>
-        </mat-menu>
+        </ng-template>
+      </mat-menu>
 
-        <mat-menu #share>
+      <mat-menu #share>
+        <ng-template matMenuContent>
           @let currentShare = apiService.share();
           <a mat-menu-item routerLink="/share-admin">
             @if (currentShare) {
@@ -52,7 +82,7 @@
           </a>
           <hr>
           <button mat-menu-item (click)="apiService.share.set(undefined)">
-            @if(undefined === currentShare) {
+            @if (undefined === currentShare) {
               <mat-icon>check_box</mat-icon>
             } @else {
               <mat-icon>check_box_outline_blank</mat-icon>
@@ -60,24 +90,22 @@
             <span>None</span>
           </button>
           @for (share of shareService.shareList(); track share.uuid) {
-            @if(share.uuid === currentShare) {
+            @if (share.uuid === currentShare) {
               <button mat-menu-item (click)="apiService.share.set(undefined)">
                 <mat-icon>check_box</mat-icon>
-                <span>{{share.name}}</span><span>({{share.permissions}})</span>
+                <span>{{ share.name }}</span><span>({{ share.permissions }})</span>
               </button>
             } @else {
               <button mat-menu-item (click)="apiService.share.set(share.uuid)">
                 <mat-icon>check_box_outline_blank</mat-icon>
-                <span>{{share.name}}</span><span>({{share.permissions}})</span>
+                <span>{{ share.name }}</span><span>({{ share.permissions }})</span>
               </button>
             }
           }
-        </mat-menu>
-      }
-    </div>
-  </div>
-</nav>
+        </ng-template>
+      </mat-menu>
+    </mat-toolbar>
 
-<div class="main-content">
-  <router-outlet/>
-</div>
+    <router-outlet class="main-content"/>
+  </mat-sidenav-content>
+</mat-sidenav-container>
