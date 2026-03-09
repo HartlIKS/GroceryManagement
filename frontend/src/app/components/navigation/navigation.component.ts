@@ -24,7 +24,24 @@ export type NavItem = {
 @Component({
   selector: 'app-navigation',
   standalone: true,
-  imports: [MatIcon, RouterOutlet, RouterLink, MatMenuTrigger, MatMenu, MatMenuItem, MatSidenavContainer, MatSidenavContent, MatSidenav, RouterLinkActive, MatToolbar, MatButton, MatMenuContent, MatIconButton, MatNavList, MatListItem],
+  imports: [
+    MatIcon,
+    RouterOutlet,
+    RouterLink,
+    MatMenuTrigger,
+    MatMenu,
+    MatMenuItem,
+    MatSidenavContainer,
+    MatSidenavContent,
+    MatSidenav,
+    RouterLinkActive,
+    MatToolbar,
+    MatButton,
+    MatMenuContent,
+    MatIconButton,
+    MatNavList,
+    MatListItem
+  ],
   templateUrl: './navigation.component.html',
   styleUrls: ['./navigation.component.css']
 })

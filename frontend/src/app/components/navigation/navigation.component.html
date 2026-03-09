@@ -1,19 +1,17 @@
 <mat-sidenav-container>
   <mat-sidenav mode="over" #sidenav>
-    @defer {
-      <mat-nav-list>
-        @for (item of navItems(); track item.path) {
-          <a mat-list-item [routerLink]="item.path" routerLinkActive="active">
-            @if (item.icon) {
-              <mat-icon [textContent]="item.icon"/>
-            }
-            @if (item.title) {
-              {{ item.title }}
-            }
-          </a>
-        }
-      </mat-nav-list>
-    }
+    <mat-nav-list>
+      @for (item of navItems(); track item.path) {
+        <a mat-list-item [routerLink]="item.path" routerLinkActive="active">
+          @if (item.icon) {
+            <mat-icon [textContent]="item.icon"/>
+          }
+          @if (item.title) {
+            {{ item.title }}
+          }
+        </a>
+      }
+    </mat-nav-list>
   </mat-sidenav>
   <mat-sidenav-content>
     <mat-toolbar color="primary">
