@@ -60,6 +60,13 @@ export class AuthService {
     await this.oauthService.loadDiscoveryDocumentAndTryLogin();
   }
 
+  async ensureLoggedIn() {
+    await this.settle;
+    if(this.oauthService.hasValidAccessToken()) return true;
+    this.oauthService.initLoginFlow();
+    return false;
+  }
+
   logout(): void {
     this.oauthService.logOut();
   }
