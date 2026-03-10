@@ -23,6 +23,6 @@ export class CurrentShareService {
 
   deleteCurrentShare(): Observable<void> {
     return this.apiService.delete('/share', 'current')
-      .pipe(tap(() => this.apiService.share.set(undefined)));
+      .pipe(tap(() => this.apiService.setShare(undefined)));
   }
 }

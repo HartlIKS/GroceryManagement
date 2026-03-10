@@ -79,7 +79,7 @@
             <span>{{ currentShare ? 'Edit' : 'Create' }}</span>
           </a>
           <hr>
-          <button mat-menu-item (click)="apiService.share.set(undefined)">
+          <button mat-menu-item (click)="apiService.setShare(undefined)">
             @if (undefined === currentShare) {
               <mat-icon>check_box</mat-icon>
             } @else {
@@ -89,12 +89,12 @@
           </button>
           @for (share of shareService.shareList(); track share.uuid) {
             @if (share.uuid === currentShare) {
-              <button mat-menu-item (click)="apiService.share.set(undefined)">
+              <button mat-menu-item (click)="apiService.setShare(undefined)">
                 <mat-icon>check_box</mat-icon>
                 <span>{{ share.name }}</span><span>({{ share.permissions }})</span>
               </button>
             } @else {
-              <button mat-menu-item (click)="apiService.share.set(share.uuid)">
+              <button mat-menu-item (click)="apiService.setShare(share.uuid)">
                 <mat-icon>check_box_outline_blank</mat-icon>
                 <span>{{ share.name }}</span><span>({{ share.permissions }})</span>
               </button>
