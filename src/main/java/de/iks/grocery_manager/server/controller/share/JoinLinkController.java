@@ -97,6 +97,7 @@ public class JoinLinkController {
             return ResponseEntity.badRequest().build();
         }
         if(!links.removeIf(l -> l.getUuid().equals(uuid))) return ResponseEntity.notFound().build();
+        this.links.deleteById(uuid);
         return ResponseEntity.ok().build();
     }
 }
