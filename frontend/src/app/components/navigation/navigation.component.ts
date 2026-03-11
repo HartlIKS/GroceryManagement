@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { ActivatedRoute, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, IsActiveMatchOptions, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatIcon } from '@angular/material/icon';
 import { AuthService } from '../../services/auth.service';
 import { ShareService } from '../../services/share.service';
@@ -13,6 +13,7 @@ import { MatListItem, MatNavList } from '@angular/material/list';
 
 export type NavItem = {
   path: string | string[],
+  linkOptions?: {exact: boolean} | IsActiveMatchOptions,
 } & ({
   title: string,
   icon?: string,

@@ -5,6 +5,9 @@ import { NavItem } from './components/navigation';
 const normalNavItems: NavItem[] = [
   {
     path: '/',
+    linkOptions: {
+      exact: true,
+    },
     icon: 'home',
     title: 'Home',
   },

@@ -2,7 +2,7 @@
   <mat-sidenav mode="over" #sidenav>
     <mat-nav-list>
       @for (item of navItems(); track item.path) {
-        <a mat-list-item [routerLink]="item.path" routerLinkActive="active">
+        <a mat-list-item [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="item.linkOptions ?? {exact: false}">
           @if (item.icon) {
             <mat-icon [textContent]="item.icon"/>
           }
@@ -24,7 +24,7 @@
       <div class="collapsable">
         <span style="flex: 1 1 auto"></span>
         @for (item of navItems(); track item.path) {
-          <a mat-button [routerLink]="item.path" routerLinkActive="active">
+          <a mat-button [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="item.linkOptions ?? {exact: false}">
             @if (item.icon) {
               <mat-icon [textContent]="item.icon"/>
             }
