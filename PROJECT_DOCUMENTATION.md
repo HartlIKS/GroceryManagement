@@ -82,12 +82,17 @@ GroceryManagement/
     │   │   │   │   ├── shopping-trips/  # Shopping trip management
     │   │   │   │   ├── planboard/       # Shopping planning interface
     │   │   │   │   ├── product-listing/ # Product price listing component
+    │   │   │   │   ├── share-admin/     # Share administration interface
+    │   │   │   │   ├── join-link-form/  # Join link creation/editing form
+    │   │   │   │   ├── join-share/      # Join link usage interface
     │   │   │   │   └── user-dashboard.component.*  # User dashboard (eagerly loaded)
     │   │   │   ├── models/          # User interface models
     │   │   │   ├── services/        # User interface services
     │   │   │   ├── product-groups.routes.ts   # Lazy-loaded product group routes
     │   │   │   ├── shopping-lists.routes.ts   # Lazy-loaded shopping list routes
-    │   │   │   └── shopping-trips.routes.ts  # Lazy-loaded shopping trip routes
+    │   │   │   ├── shopping-trips.routes.ts  # Lazy-loaded shopping trip routes
+    │   │   │   ├── share-admin.routes.ts    # Share administration routes
+    │   │   │   └── join-link.routes.ts      # Join link form routes
     │   │   ├── models/              # Global models
     │   │   └── services/            # Global services
     │   ├── environments/            # Environment configurations
@@ -220,6 +225,26 @@ Enum defining access levels: **NONE**, **READ**, **WRITE**, **ADMIN**
 - **Real-time price fetching** - Integrated with backend price search API
 - **Currency formatting** - Proper display of prices with store currency
 
+### Share Administration
+- **Share management interface** for creating and editing shares (`/share-admin`)
+- **Join link management** with complete CRUD operations for join links
+- **Material table interface** for displaying join links with actions
+- **Permission-based access control** with ADMIN, WRITE, READ, and NONE levels
+- **Copy join link functionality** - One-click copying of full join URLs to clipboard
+- **Join link creation form** - Dedicated form for creating new join links with configurable properties
+- **Join link editing** - Update existing join link properties and permissions
+- **Real-time status indicators** - Visual indicators for active/inactive links and user counts
+- **Color-coded permission chips** - Visual distinction between permission levels
+- **Global styling integration** - Uses global design system for consistent appearance
+
+### Join Link Usage Interface
+- **Join link processing** - Automatic join processing when navigating to `/join/{uuid}`
+- **Real-time feedback** - Loading states, success messages, and error handling
+- **Automatic share switching** - Sets the joined share as the current share
+- **Seamless navigation** - Auto-redirect to home page after successful joining
+- **Error handling** - Specific error messages for invalid/expired links
+- **Modern clipboard integration** - Uses Angular CDK Clipboard service for reliable copying
+
 ### Product Groups Management
 - **Complete CRUD operations** for product groups
 - **Product assignment** - Add/remove products from groups
@@ -317,11 +342,12 @@ Enum defining access levels: **NONE**, **READ**, **WRITE**, **ADMIN**
 - `PUT /share/current?share={uuid}` - Update current share name (requires ADMIN permission on share)
 - `DELETE /share/current?share={uuid}` - Delete current share and cleanup all associated data (requires ADMIN permission on share)
 
-### Join Links (`/share/joinLinks`)
-- `POST /share/joinLinks` - Create new join link for a share (requires ADMIN permission on share)
-- `GET /share/joinLinks/{shareUuid}` - Get all join links for a share (requires READ permission on share)
-- `PUT /share/joinLinks/{uuid}` - Update join link properties (requires ADMIN permission on share)
-- `DELETE /share/joinLinks/{uuid}` - Delete join link (requires ADMIN permission on share)
+### Join Links (`/share/current/links`)
+- `POST /share/current/links` - Create new join link for current share (requires ADMIN permission on share)
+- `GET /share/current/links` - Get all join links for current share (requires READ permission on share)
+- `GET /share/current/links/{uuid}` - Get specific join link for current share (requires READ permission on share)
+- `PUT /share/current/links/{uuid}` - Update join link properties (requires ADMIN permission on share)
+- `DELETE /share/current/links/{uuid}` - Delete join link (requires ADMIN permission on share)
 
 ### Planboard (Frontend Feature)
 - **Route**: `/planboard` - Interactive shopping planning interface
