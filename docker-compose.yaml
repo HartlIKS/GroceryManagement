@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD_FILE: /run/secrets/pg_pass
-      POSTGRES_DB: GroceryManager
+      POSTGRES_DB: postgres
     secrets:
       - source: postgres_pw
         target: pg_pass
@@ -23,6 +23,10 @@ services:
       LISTEN_PORT_HTTP: 8081
       PUB_URL: localhost:8081
       RP_ORIGIN: http://localhost:8081
+    volumes:
+      - type: volume
+        source: rauthy-data
+        target: /app/data
     ports:
       - "8081:8081"
   grocery-manager:
@@ -48,6 +52,8 @@ services:
 
 volumes:
   pg-data:
+    driver: "local"
+  rauthy-data:
     driver: "local"
 
 secrets:
