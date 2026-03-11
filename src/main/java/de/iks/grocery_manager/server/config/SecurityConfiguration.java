@@ -60,7 +60,7 @@ public class SecurityConfiguration {
                 .requestMatchers("/api/share/current", "/api/share/current/**")
                 .hasAllAuthorities(AUTHORITY_ADMIN, AUTHORITY_SHARE)
                 .requestMatchers("/api/share", "/api/share/**")
-                .hasAuthority(AUTHORITY_USER)
+                .authenticated()
                 .requestMatchers(HttpMethod.GET)
                 .hasAuthority(AUTHORITY_READ)
                 .anyRequest()
