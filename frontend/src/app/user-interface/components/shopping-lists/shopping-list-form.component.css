@@ -25,5 +25,5 @@
 
 .sample-images .image-small,
 .sample-images-dropdown .image-small {
-  border: 1px solid var(--color-shadow);
+  border: 1px solid var(--mat-sys-outline);
 }

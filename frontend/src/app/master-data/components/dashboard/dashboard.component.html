@@ -7,50 +7,44 @@
   @if (!loading()) {
     <div class="dashboard-content">
       <div class="dashboard-grid">
-        <a class="dashboard-card-link" routerLink="/master-data/products">
-          <mat-card class="dashboard-card">
-            <mat-card-header>
-              <mat-card-title>Products</mat-card-title>
-              <mat-card-subtitle>Total products in system</mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-              <div class="stat-number">{{ totalProducts() }}</div>
-            </mat-card-content>
-            <mat-card-actions>
-              <button mat-button color="primary">Manage Products</button>
-            </mat-card-actions>
-          </mat-card>
-        </a>
+        <mat-card class="dashboard-card">
+          <mat-card-header>
+            <mat-card-title>Products</mat-card-title>
+            <mat-card-subtitle>Total products in system</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="stat-number">{{ totalProducts() }}</div>
+          </mat-card-content>
+          <mat-card-actions>
+            <a mat-button color="primary" routerLink="/master-data/products">Manage Products</a>
+          </mat-card-actions>
+        </mat-card>
 
-        <a class="dashboard-card-link" routerLink="/master-data/stores">
-          <mat-card class="dashboard-card">
-            <mat-card-header>
-              <mat-card-title>Stores</mat-card-title>
-              <mat-card-subtitle>Total stores in system</mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-              <div class="stat-number">{{ totalStores() }}</div>
-            </mat-card-content>
-            <mat-card-actions>
-              <button mat-button color="primary">Manage Stores</button>
-            </mat-card-actions>
-          </mat-card>
-        </a>
+        <mat-card class="dashboard-card">
+          <mat-card-header>
+            <mat-card-title>Stores</mat-card-title>
+            <mat-card-subtitle>Total stores in system</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="stat-number">{{ totalStores() }}</div>
+          </mat-card-content>
+          <mat-card-actions>
+            <a mat-button color="primary" routerLink="/master-data/stores">Manage Stores</a>
+          </mat-card-actions>
+        </mat-card>
 
-        <a class="dashboard-card-link" routerLink="/master-data/prices">
-          <mat-card class="dashboard-card">
-            <mat-card-header>
-              <mat-card-title>Price Lists</mat-card-title>
-              <mat-card-subtitle>Total price entries</mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-              <div class="stat-number">{{ totalPrices() }}</div>
-            </mat-card-content>
-            <mat-card-actions>
-              <button mat-button color="primary">Manage Prices</button>
-            </mat-card-actions>
-          </mat-card>
-        </a>
+        <mat-card class="dashboard-card">
+          <mat-card-header>
+            <mat-card-title>Price Lists</mat-card-title>
+            <mat-card-subtitle>Total price entries</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="stat-number">{{ totalPrices() }}</div>
+          </mat-card-content>
+          <mat-card-actions>
+            <a mat-button color="primary" routerLink="/master-data/prices">Manage Prices</a>
+          </mat-card-actions>
+        </mat-card>
       </div>
 
       <div class="quick-actions">
