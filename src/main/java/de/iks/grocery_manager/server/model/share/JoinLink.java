@@ -20,7 +20,6 @@ public class JoinLink implements HasUUID {
         CascadeType.DETACH,
         CascadeType.MERGE,
         CascadeType.REFRESH,
-        CascadeType.PERSIST,
     })
     @JoinColumn(nullable = false)
     private Share share;
