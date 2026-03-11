@@ -8,9 +8,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
-import { CurrentShareService } from '../../services/current-share.service';
-import { CreateShareDTO } from '../../models';
-import { ShareService } from '../../services/share.service';
+import { CurrentShareService } from '../../../services/current-share.service';
+import { CreateShareDTO } from '../../../models';
+import { ShareService } from '../../../services/share.service';
 
 @Component({
   selector: 'app-share-admin',
