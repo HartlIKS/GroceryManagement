@@ -1,16 +1,20 @@
 import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
+import { MatFormField, MatInput, MatLabel } from '@angular/material/input';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { CurrentShareService } from '../../../services/current-share.service';
 import { CreateShareDTO } from '../../../models';
 import { ShareService } from '../../../services/share.service';
+import { JoinLinkService } from '../../../services/join-link.service';
+import { MatChipListbox, MatChipOption } from '@angular/material/chips';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { Clipboard } from '@angular/cdk/clipboard';
 
 @Component({
   selector: 'app-share-admin',
@@ -20,23 +24,35 @@ import { ShareService } from '../../../services/share.service';
     FormsModule,
     ReactiveFormsModule,
     MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
+    MatFormField,
+    MatInput,
     MatIcon,
     MatProgressSpinner,
-    RouterLink
+    MatTableModule,
+    RouterLink,
+    MatChipListbox,
+    MatChipOption,
+    MatTooltip,
+    MatButton,
+    MatIconButton,
+    MatLabel
   ],
+  providers: [DatePipe],
   templateUrl: './share-admin.component.html',
   styleUrls: ['./share-admin.component.css']
 })
 export class ShareAdminComponent implements OnInit {
   private readonly currentShareService = inject(CurrentShareService);
   private readonly shareService = inject(ShareService);
+  private readonly joinLinkService = inject(JoinLinkService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly clipboard = inject(Clipboard);
 
   public readonly currentShare = this.currentShareService.currentShareResource.value.asReadonly();
+  public readonly joinLinks = computed(() => this.joinLinkService.joinLinksResource.value() ?? []);
+  public readonly joinLinksDataSource = computed(() => new MatTableDataSource(this.joinLinks()));
+  public readonly displayedJoinLinkColumns = ['name', 'permissions', 'status', 'users', 'expiry', 'actions'];
   public readonly loading = computed(() => this.currentShareService.currentShareResource.status() === 'loading');
   public readonly isEditMode = computed(() => this.currentShare() !== undefined);
   public readonly error = computed(() => {
@@ -64,8 +80,9 @@ export class ShareAdminComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Load current share data when component initializes
+    // Load current share data and join links when component initializes
     this.currentShareService.currentShareResource.reload();
+    this.joinLinkService.joinLinksResource.reload();
   }
 
   onSubmit(): void {
@@ -110,5 +127,35 @@ export class ShareAdminComponent implements OnInit {
         next: () => this.router.navigate(['/']),
         complete: () => this.isSubmitting.set(false),
       });
+  }
+
+  deleteJoinLink(linkUuid: string): void {
+    if (this.isSubmitting()) {
+      return;
+    }
+
+    const confirmDelete = confirm('Are you sure you want to delete this join link? This action cannot be undone.');
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    this.isSubmitting.set(true);
+
+    this.joinLinkService.deleteJoinLink(linkUuid)
+      .subscribe({
+        next: () => {
+          // Join links will be automatically reloaded via the service
+        },
+        error: (err) => {
+          console.error('Failed to delete join link:', err);
+        },
+        complete: () => this.isSubmitting.set(false),
+      });
+  }
+
+  copyJoinLink(linkUuid: string): void {
+    const joinUrl = `${window.location.origin}/join/${linkUuid}`;
+    this.clipboard.copy(joinUrl);
   }
 }

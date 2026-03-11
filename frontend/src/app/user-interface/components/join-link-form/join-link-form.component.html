@@ -1,0 +1,91 @@
+<div class="container">
+  <mat-card class="form-container">
+    <mat-card-header>
+      <mat-card-title>{{ isEditMode() ? 'Edit Join Link' : 'Create New Join Link' }}</mat-card-title>
+      <mat-card-subtitle>
+        {{ isEditMode() ? 'Modify join link properties' : 'Create a new join link for sharing' }}
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (isSubmitting()) {
+        <div class="loading">
+          <mat-spinner></mat-spinner>
+          <p>{{ isEditMode() ? 'Updating join link...' : 'Creating join link...' }}</p>
+        </div>
+      } @else {
+        <form [formGroup]="joinLinkForm" (ngSubmit)="onSubmit()">
+          <!-- Name Field -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Join Link Name</mat-label>
+            <input matInput formControlName="name" placeholder="Enter a descriptive name">
+            <mat-hint>A name to help you identify this join link</mat-hint>
+            @if (joinLinkForm.get('name')?.invalid && joinLinkForm.get('name')?.touched) {
+              <mat-error>Join link name is required (minimum 3 characters)</mat-error>
+            }
+          </mat-form-field>
+
+          <!-- Permissions Field -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Permissions</mat-label>
+            <mat-select formControlName="permissions">
+              @for (permission of permissions; track permission.value) {
+                <mat-option [value]="permission.value">
+                  {{ permission.label }}
+                </mat-option>
+              }
+            </mat-select>
+            <mat-hint>Access level granted to users who join with this link</mat-hint>
+          </mat-form-field>
+
+          <!-- Active Status -->
+          <div class="checkbox-group">
+            <mat-checkbox formControlName="active">
+              Active
+            </mat-checkbox>
+            <mat-hint class="checkbox-hint">Inactive links cannot be used to join the share</mat-hint>
+          </div>
+
+          <!-- Single Use -->
+          <div class="checkbox-group">
+            <mat-checkbox formControlName="singleUse">
+              Single Use
+            </mat-checkbox>
+            <mat-hint class="checkbox-hint">Link can only be used once by one user</mat-hint>
+          </div>
+
+          <!-- Expiry Date -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Expiry Date (Optional)</mat-label>
+            <input matInput 
+                   [matDatepicker]="expiryPicker" 
+                   formControlName="validTo"
+                   placeholder="Leave empty for no expiry">
+            <mat-datepicker-toggle matSuffix [for]="expiryPicker"></mat-datepicker-toggle>
+            <mat-datepicker #expiryPicker></mat-datepicker>
+            <mat-hint>Link will expire on this date (leave empty for permanent link)</mat-hint>
+          </mat-form-field>
+
+          <!-- Form Actions -->
+          <div class="form-actions">
+            <button mat-stroked-button 
+                    type="button"
+                    (click)="onCancel()"
+                    [disabled]="isSubmitting()">
+              <mat-icon>cancel</mat-icon>
+              Cancel
+            </button>
+            
+            <button mat-raised-button 
+                    color="primary"
+                    type="submit"
+                    [disabled]="joinLinkForm.invalid || isSubmitting()">
+              <mat-icon>{{ isEditMode() ? 'save' : 'add' }}</mat-icon>
+              {{ isEditMode() ? 'Update Join Link' : 'Create Join Link' }}
+            </button>
+          </div>
+        </form>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

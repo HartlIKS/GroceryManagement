@@ -49,20 +49,18 @@ export class ApiService {
     this.share_.set(share);
   }
 
-  private toParamSignal(params: Record<string, Signal<ApiParam> | ApiParam> = {}): Signal<HttpParams | undefined> {
+  private toParamSignal(params: Record<string, Signal<ApiParam> | ApiParam> = {}, share: boolean = true): Signal<HttpParams | undefined> {
     const resolvedParams: Record<string, Signal<ApiParam>> = Object.fromEntries(
       Object.entries(params ?? {})
         .map(([k, v]) => [k, resolve(v)])
     );
     return computed(() => {
       let httpParams = new HttpParams();
+      if(share) {
+        const shareId = this.share();
+        if(shareId !== undefined) httpParams = httpParams.set('share', shareId);
+      }
       for (const [key, valueSignal] of Object.entries(resolvedParams)) {
-        if (key === 'share') {
-          const shareId = this.share();
-          if (shareId !== undefined) httpParams = httpParams.set('share', shareId);
-          else return undefined;
-          continue;
-        }
         let value = valueSignal();
         if (value !== null && value !== undefined) {
           if (Array.isArray(value)) {
@@ -79,8 +77,8 @@ export class ApiService {
   }
 
   // Generic CRUD operations
-  get<T>(endpoint: string, params?: Record<string, Signal<ApiParam> | ApiParam>) {
-    const httpParams = this.toParamSignal(params);
+  get<T>(endpoint: string, params?: Record<string, Signal<ApiParam> | ApiParam>, share?: boolean) {
+    const httpParams = this.toParamSignal(params, share);
     return httpResource<T>(() => {
       const headers = this.headers();
       if(headers === undefined) return undefined;
@@ -96,31 +94,35 @@ export class ApiService {
   }
 
   getShareOnly<T>(endpoint: string, params?: Record<string, Signal<ApiParam> | ApiParam>) {
-    const httpParams = this.toParamSignal({
-      ...params,
-      share: '',
-    });
+    const httpParams = this.toParamSignal(params, true);
 
-    return httpResource<T>(() => (this.share() === undefined ? undefined : {
-      url: `${this.baseUrl}${endpoint}`,
-      params: httpParams(),
-      headers: this.headers(),
-      credentials: 'include',
-    }), {
+    return httpResource<T>(() => {
+      const params = httpParams();
+      if((params?.get('share') ?? undefined) === undefined) return undefined;
+      const headers = this.headers();
+      if(headers === undefined) return undefined;
+      return {
+        url: `${this.baseUrl}${endpoint}`,
+        params,
+        headers,
+        credentials: 'include',
+      };
+    }, {
       injector: this.injector,
     });
   }
 
-  getById<T>(endpoint: string, id: Signal<string | undefined>): HttpResourceRef<T | undefined>;
-  getById<T>(endpoint: string, id: string): GetApiEndpoint<T>;
-  getById<T>(endpoint: string, id: Signal<string | undefined> | string): HttpResourceRef<T | undefined> | GetApiEndpoint<T> {
+  getById<T>(endpoint: string, id: Signal<string | undefined>, share?: boolean): HttpResourceRef<T | undefined>;
+  getById<T>(endpoint: string, id: string, share?: boolean): GetApiEndpoint<T>;
+  getById<T>(endpoint: string, id: Signal<string | undefined> | string, share: boolean = true): HttpResourceRef<T | undefined> | GetApiEndpoint<T> {
     if (isSignal(id)) return httpResource<T>(() => {
       const uuid = id();
       if (uuid === undefined) return undefined;
+      const params = share ? this.shareParams() : undefined;
       return {
         url: `${this.baseUrl}${endpoint}/${uuid}`,
         headers: this.headers(),
-        params: this.shareParams(),
+        params,
         credentials: 'include',
       };
     }, {

@@ -15,7 +15,7 @@ export class StoreService extends CacheService<ListStoreDTO, CreateStoreDTO> {
   }
 
   protected override rawGet(uuid: string): GetApiEndpoint<ListStoreDTO> {
-    return this.apiService.getById<ListStoreDTO>(this.endpoint, uuid);
+    return this.apiService.getById<ListStoreDTO>(this.endpoint, uuid, false);
   }
 
   protected override rawUpdate(uuid: string, store: CreateStoreDTO): Observable<ListStoreDTO> {
@@ -36,12 +36,12 @@ export class StoreService extends CacheService<ListStoreDTO, CreateStoreDTO> {
         name,
         page,
         size,
-    });
+    }, false);
   }
 
   // Get single store by UUID
   getStore(uuid: Signal<string | undefined> | string) {
-    if(isSignal(uuid)) return this.apiService.getById<ListStoreDTO>(this.endpoint, uuid);
+    if(isSignal(uuid)) return this.apiService.getById<ListStoreDTO>(this.endpoint, uuid, false);
     return this.get(uuid);
   }
 

@@ -1,0 +1,35 @@
+<div class="container">
+  <mat-card class="form-container">
+    <mat-card-header>
+      <mat-card-title>Join Share</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (loading) {
+        <div class="loading">
+          <mat-spinner></mat-spinner>
+          <p>Joining share...</p>
+          <p class="loading-hint">Please wait while we connect you to the shared list.</p>
+        </div>
+      } @else if (error) {
+        <div class="error">
+          <mat-icon class="error-icon">error</mat-icon>
+          <h3>Failed to Join Share</h3>
+          <p>{{ error }}</p>
+          <div class="action-buttons">
+            <button mat-stroked-button routerLink="/">
+              <mat-icon>home</mat-icon>
+              Go to Home
+            </button>
+          </div>
+        </div>
+      } @else if (success) {
+      } @else {
+        <div class="no-data">
+          <mat-icon class="join-icon">link</mat-icon>
+          <p>Preparing to join share...</p>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

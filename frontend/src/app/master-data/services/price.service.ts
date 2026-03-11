@@ -26,11 +26,11 @@ export class PriceService extends CacheService<ListPriceDTO, UpdatePriceDTO> {
         size,
         store,
         product,
-    });
+    }, false);
   }
 
   protected override rawGet(uuid: string): GetApiEndpoint<ListPriceDTO> {
-    return this.apiService.getById<ListPriceDTO>(this.endpoint, uuid);
+    return this.apiService.getById<ListPriceDTO>(this.endpoint, uuid, false);
   }
 
   protected override rawUpdate(uuid: string, price: UpdatePriceDTO): Observable<ListPriceDTO> {
@@ -43,7 +43,7 @@ export class PriceService extends CacheService<ListPriceDTO, UpdatePriceDTO> {
 
 // Get single price by UUID
   getPrice(uuid: Signal<string | undefined> | string) {
-    if(isSignal(uuid)) return this.apiService.getById<ListPriceDTO>(this.endpoint, uuid);
+    if(isSignal(uuid)) return this.apiService.getById<ListPriceDTO>(this.endpoint, uuid, false);
     return this.get(uuid);
   }
 
@@ -62,6 +62,6 @@ export class PriceService extends CacheService<ListPriceDTO, UpdatePriceDTO> {
       products,
       stores,
       at
-    });
+    }, false);
   }
 }

@@ -1,17 +1,17 @@
-<div class="share-admin-container">
-  <mat-card class="admin-card">
+<div class="container">
+  <mat-card class="form-container">
     <mat-card-header>
       <mat-card-title>{{ isEditMode() ? 'Edit Share' : 'Create Share' }}</mat-card-title>
       <mat-card-subtitle>{{ isEditMode() ? 'Manage your share properties' : 'Create a new share' }}</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
       @if (loading()) {
-        <div class="loading-container">
+        <div class="loading">
           <mat-spinner></mat-spinner>
           <p>Loading share information...</p>
         </div>
       } @else if (error()) {
-        <div class="error-container">
+        <div class="error">
           <mat-icon class="error-icon">error</mat-icon>
           <p>Failed to load share data</p>
         </div>
@@ -23,17 +23,103 @@
           </mat-form-field>
 
           @if (isEditMode()) {
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Share ID</mat-label>
-              <input matInput [value]="currentShare()?.uuid" readonly>
-              <mat-hint>This ID cannot be changed</mat-hint>
-            </mat-form-field>
+            <div>
+              <h3>Join Links</h3>
+              <a mat-raised-button
+                 color="primary"
+                 routerLink="/share-admin/join-links/create"
+                 [disabled]="isSubmitting()">
+                <mat-icon>add</mat-icon>
+                Create New Join Link
+              </a>
+              @if (joinLinks().length === 0) {
+                <p>No join links have been created yet.</p>
+              } @else {
+                <mat-table [dataSource]="joinLinksDataSource()">
+                  <!-- Name Column -->
+                  <ng-container matColumnDef="name">
+                    <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
+                    <mat-cell *matCellDef="let link">
+                      {{ link.name }}
+                    </mat-cell>
+                  </ng-container>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Your Permissions</mat-label>
-              <input matInput [value]="currentShare()?.permissions" readonly>
-              <mat-hint>Your current permission level in this share</mat-hint>
-            </mat-form-field>
+                  <!-- Permissions Column -->
+                  <ng-container matColumnDef="permissions">
+                    <mat-header-cell *matHeaderCellDef>Permissions</mat-header-cell>
+                    <mat-cell *matCellDef="let link">
+                      <mat-chip-listbox>
+                        <mat-chip-option
+                          [class.admin-permission]="link.permissions === 'ADMIN'"
+                          [class.write-permission]="link.permissions === 'WRITE'"
+                          [class.read-permission]="link.permissions === 'READ'"
+                          [class.none-permission]="link.permissions === 'NONE'">
+                          {{ link.permissions }}
+                        </mat-chip-option>
+                      </mat-chip-listbox>
+                    </mat-cell>
+                  </ng-container>
+
+                  <!-- Status Column -->
+                  <ng-container matColumnDef="status">
+                    <mat-header-cell *matHeaderCellDef>Status</mat-header-cell>
+                    <mat-cell *matCellDef="let link">
+                      {{ link.active ? 'Active' : 'Inactive' }}
+                    </mat-cell>
+                  </ng-container>
+
+                  <!-- Users Column -->
+                  <ng-container matColumnDef="users">
+                    <mat-header-cell *matHeaderCellDef>Users</mat-header-cell>
+                    <mat-cell *matCellDef="let link">
+                      {{ link.numUsers }} joined
+                    </mat-cell>
+                  </ng-container>
+
+                  <!-- Expiry Column -->
+                  <ng-container matColumnDef="expiry">
+                    <mat-header-cell *matHeaderCellDef>Expires</mat-header-cell>
+                    <mat-cell *matCellDef="let link">
+                      @if (link.validTo) {
+                        {{ link.validTo | date:'short' }}
+                      } @else {
+                        Never
+                      }
+                    </mat-cell>
+                  </ng-container>
+
+                  <!-- Actions Column -->
+                  <ng-container matColumnDef="actions">
+                    <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+                    <mat-cell *matCellDef="let link">
+                      <a mat-icon-button
+                         color="primary"
+                         [routerLink]="['/share-admin', 'join-links', link.uuid, 'edit']"
+                         matTooltip="Edit join link">
+                        <mat-icon>edit</mat-icon>
+                      </a>
+                      <button mat-icon-button
+                              type="button"
+                              color="accent"
+                              (click)="copyJoinLink(link.uuid)"
+                              matTooltip="Copy join link">
+                        <mat-icon>content_copy</mat-icon>
+                      </button>
+                      <button mat-icon-button
+                              type="button"
+                              color="warn"
+                              (click)="deleteJoinLink(link.uuid)"
+                              matTooltip="Delete join link">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </mat-cell>
+                  </ng-container>
+
+                  <mat-header-row *matHeaderRowDef="displayedJoinLinkColumns"></mat-header-row>
+                  <mat-row *matRowDef="let _; columns: displayedJoinLinkColumns;"></mat-row>
+                </mat-table>
+              }
+            </div>
           }
 
           <div class="action-buttons">

@@ -1,58 +1,10 @@
-.share-admin-container {
-  padding: 20px;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.admin-card {
-  margin-bottom: 20px;
-}
-
-.full-width {
-  width: 100%;
-  margin-bottom: 16px;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 12px;
-  margin-top: 24px;
-}
-
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  gap: 16px;
-}
-
-.error-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  text-align: center;
-  gap: 16px;
-}
+/* Component-specific styles - general layout and forms use global styles */
 
 .error-icon {
   font-size: 48px;
   width: 48px;
   height: 48px;
   color: #f44336;
-}
-
-.no-share-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  text-align: center;
-  gap: 16px;
 }
 
 .no-share-icon {

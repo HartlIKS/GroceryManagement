@@ -15,7 +15,7 @@ export class ProductService extends CacheService<ListProductDTO, CreateProductDT
   }
 
   protected override rawGet(uuid: string): GetApiEndpoint<ListProductDTO> {
-    return this.apiService.getById<ListProductDTO>(this.endpoint, uuid);
+    return this.apiService.getById<ListProductDTO>(this.endpoint, uuid, false);
   }
 
   protected override rawUpdate(uuid: string, product: CreateProductDTO): Observable<ListProductDTO> {
@@ -36,12 +36,12 @@ export class ProductService extends CacheService<ListProductDTO, CreateProductDT
         name,
         page,
         size,
-    });
+    }, false);
   }
 
   // Get single product by UUID
   getProduct(uuid: Signal<string | undefined> | string) {
-    if(isSignal(uuid)) return this.apiService.getById<ListProductDTO>(this.endpoint, uuid);
+    if(isSignal(uuid)) return this.apiService.getById<ListProductDTO>(this.endpoint, uuid, false);
     return this.get(uuid);
   }
 

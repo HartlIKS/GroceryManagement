@@ -88,6 +88,10 @@ export const routes: Routes = [
       {
         path: 'share-admin',
         loadChildren: () => import('./share-admin.routes').then(m => m.shareAdminRoutes)
+      },
+      {
+        path: 'join/:uuid',
+        loadComponent: () => import('./user-interface/components/join-share/join-share.component').then(m => m.JoinShareComponent)
       }
     ],
   },

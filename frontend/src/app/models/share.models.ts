@@ -15,5 +15,17 @@ export type ListShareDTO = Share;
 export type JoinLink = {
   uuid: string,
   name: string,
-  share: string,
+  permissions: Permissions,
+  active: boolean,
+  singleUse: boolean,
+  validTo: string,
+  numUsers: number,
+}
+
+export type CreateJoinLinkDTO = {
+  name?: string,
+  permissions?: Permissions,
+  active?: boolean,
+  singleUse?: boolean,
+  validTo?: string,
 }

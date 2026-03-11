@@ -5,8 +5,9 @@ export const shareAdminRoutes: Routes = [
   {
     path: '',
     component: ShareAdminComponent,
-  }, {
-    path: '**',
-    redirectTo: '',
+  },
+  {
+    path: 'join-links',
+    loadChildren: () => import('./join-link.routes').then(m => m.joinLinkRoutes)
   }
 ];
