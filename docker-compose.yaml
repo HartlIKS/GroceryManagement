@@ -18,6 +18,7 @@ services:
     image: ghcr.io/sebadob/rauthy
     environment:
       LOCAL_TEST: true
+      DISABLE_REFRESH_TOKEN_NBF: true
       TLS_GENERATE_SELF_SIGNED: false
       LISTEN_SCHEME: http
       LISTEN_PORT_HTTP: 8081
