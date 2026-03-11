@@ -1,17 +1,20 @@
 <mat-sidenav-container>
   <mat-sidenav mode="over" #sidenav>
-    <mat-nav-list>
-      @for (item of navItems(); track item.path) {
-        <a mat-list-item [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="item.linkOptions ?? {exact: false}">
-          @if (item.icon) {
-            <mat-icon [textContent]="item.icon"/>
-          }
-          @if (item.title) {
-            {{ item.title }}
-          }
-        </a>
-      }
-    </mat-nav-list>
+    @defer {
+      <mat-nav-list>
+        @for (item of navItems(); track item.path) {
+          <a mat-list-item [routerLink]="item.path" routerLinkActive="active"
+             [routerLinkActiveOptions]="item.linkOptions ?? {exact: false}">
+            @if (item.icon) {
+              <mat-icon [textContent]="item.icon"/>
+            }
+            @if (item.title) {
+              {{ item.title }}
+            }
+          </a>
+        }
+      </mat-nav-list>
+    }
   </mat-sidenav>
   <mat-sidenav-content>
     <mat-toolbar color="primary">
@@ -24,7 +27,8 @@
       <div class="collapsable">
         <span style="flex: 1 1 auto"></span>
         @for (item of navItems(); track item.path) {
-          <a mat-button [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="item.linkOptions ?? {exact: false}">
+          <a mat-button [routerLink]="item.path" routerLinkActive="active"
+             [routerLinkActiveOptions]="item.linkOptions ?? {exact: false}">
             @if (item.icon) {
               <mat-icon [textContent]="item.icon"/>
             }
@@ -35,7 +39,7 @@
         }
       </div>
 
-      <button style="flex: 0 0 auto" mat-raised-button [matMenuTriggerFor]="profile">
+      <button mat-raised-button [matMenuTriggerFor]="profile">
         <mat-icon>account_circle</mat-icon>
         {{ authService.username() }}
       </button>
@@ -71,11 +75,7 @@
         <ng-template matMenuContent>
           @let currentShare = apiService.share();
           <a mat-menu-item routerLink="/share-admin">
-            @if (currentShare) {
-              <mat-icon>edit</mat-icon>
-            } @else {
-              <mat-icon>share</mat-icon>
-            }
+            <mat-icon [fontIcon]="currentShare ? 'edit' : 'share'">edit</mat-icon>
             <span>{{ currentShare ? 'Edit' : 'Create' }}</span>
           </a>
           <hr>
