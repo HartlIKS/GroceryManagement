@@ -1,21 +1,17 @@
 package de.iks.grocery_manager.server.controller.share;
 
-import de.iks.grocery_manager.server.jpa.ProductGroupRepository;
-import de.iks.grocery_manager.server.jpa.ShoppingListRepository;
-import de.iks.grocery_manager.server.jpa.ShoppingTripRepository;
+import de.iks.grocery_manager.server.jpa.OwnerTrackingJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service
 public class CleanupService {
-    private final ProductGroupRepository groups;
-    private final ShoppingListRepository lists;
-    private final ShoppingTripRepository trips;
+    private final List<OwnerTrackingJpaRepository<?>> repositories;
 
     public void deleteOwner(String owner) {
-        trips.deleteAllByOwner(owner);
-        lists.deleteAllByOwner(owner);
-        groups.deleteAllByOwner(owner);
+        repositories.forEach(r -> r.deleteAllByOwner(owner));
     }
 }

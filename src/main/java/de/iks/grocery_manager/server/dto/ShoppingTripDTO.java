@@ -10,5 +10,5 @@ public record ShoppingTripDTO(
     UUID store,
     Instant time,
     Map<UUID, BigDecimal> products
-) {
+) implements HasUUID_DTO {
 }

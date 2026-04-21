@@ -1,5 +1,6 @@
 package de.iks.grocery_manager.server.dto.share;
 
+import de.iks.grocery_manager.server.dto.HasUUID_DTO;
 import de.iks.grocery_manager.server.model.share.Permissions;
 
 import java.time.Instant;
@@ -13,5 +14,5 @@ public record JoinLinkDTO(
     boolean singleUse,
     Instant validTo,
     int numUsers
-) {
+) implements HasUUID_DTO {
 }

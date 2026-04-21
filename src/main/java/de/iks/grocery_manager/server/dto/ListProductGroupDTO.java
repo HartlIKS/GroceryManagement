@@ -8,5 +8,5 @@ public record ListProductGroupDTO(
     UUID uuid,
     String name,
     Map<UUID, BigDecimal> products
-) {
+) implements HasUUID_DTO {
 }

@@ -1,23 +1,24 @@
 package de.iks.grocery_manager.server.controller.masterdata;
 
+import de.iks.grocery_manager.server.controller.CRUDController;
 import de.iks.grocery_manager.server.dto.DTOMapper;
+import de.iks.grocery_manager.server.dto.EntityMapper;
 import de.iks.grocery_manager.server.dto.masterdata.CreatePriceListingDTO;
 import de.iks.grocery_manager.server.dto.masterdata.ListPriceDTO;
 import de.iks.grocery_manager.server.dto.masterdata.PriceListingDTO;
 import de.iks.grocery_manager.server.dto.masterdata.UpdatePriceDTO;
 import de.iks.grocery_manager.server.jpa.masterdata.PriceRepository;
-import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
-import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;
-import lombok.RequiredArgsConstructor;
+import de.iks.grocery_manager.server.model.masterdata.PriceListing;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
 import java.util.List;
@@ -26,80 +27,20 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
 @RestController
 @RequestMapping(
     path = "/api/masterdata/price",
     produces = MediaType.APPLICATION_JSON_VALUE
 )
 @Transactional
-public class PriceListController {
-    private final ProductRepository products;
-    private final StoreRepository stores;
-    private final PriceRepository priceList;
+public class PriceListController extends CRUDController<PriceListing, ListPriceDTO, CreatePriceListingDTO, UpdatePriceDTO, PriceRepository> {
     private final DTOMapper dtoMapper;
-
-    @GetMapping("/{uuid}")
-    @Transactional(readOnly = true)
-    public ResponseEntity<ListPriceDTO> getPrice(@PathVariable UUID uuid) {
-        return ResponseEntity.of(
-            priceList
-                .findById(uuid)
-                .map(dtoMapper::map)
-        );
-    }
-
-    @PutMapping("/{uuid}")
-    public ResponseEntity<ListPriceDTO> updatePrice(
-        @PathVariable UUID uuid,
-        @RequestBody UpdatePriceDTO updatePriceDTO
+    public PriceListController(
+        PriceRepository repository,
+        DTOMapper dtoMapper
     ) {
-        return ResponseEntity.of(
-            priceList
-                .findById(uuid)
-                .map(p -> {
-                    dtoMapper.update(p, updatePriceDTO);
-                    return priceList.saveAndFlush(p);
-                })
-                .map(dtoMapper::map)
-        );
-    }
-
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<ListPriceDTO> postPrice(
-        @RequestBody CreatePriceListingDTO createPriceListingDTO,
-        UriComponentsBuilder uriBuilder
-    ) {
-        return products
-            .findById(createPriceListingDTO.product())
-            .flatMap(product -> stores
-                .findById(createPriceListingDTO.store())
-                .map(store -> dtoMapper
-                    .map(priceList.saveAndFlush(dtoMapper.create(
-                        createPriceListingDTO,
-                        store,
-                        product
-                    )))
-                )
-            )
-            .map(ret -> ResponseEntity
-                .created(
-                    uriBuilder
-                        .pathSegment("api", "price", "{uuid}")
-                        .build(ret.uuid())
-                )
-                .body(ret)
-            )
-            .orElseGet(ResponseEntity.notFound()::build);
-    }
-
-    @DeleteMapping("/{uuid}")
-    public ResponseEntity<?> deletePrice(@PathVariable UUID uuid) {
-        priceList.deleteById(uuid);
-        return ResponseEntity
-            .ok()
-            .build();
+        super(repository, new EntityMapper<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), new String[] {"api", "masterdata", "price", "{uuid}"});
+        this.dtoMapper = dtoMapper;
     }
 
     @GetMapping
@@ -110,19 +51,19 @@ public class PriceListController {
         @PageableDefault Pageable page
     ) {
         if(store == null && product == null) {
-            return priceList
+            return repository
                 .findAll(page)
                 .map(dtoMapper::map);
         } else if(store == null) {
-            return priceList
+            return repository
                 .findByProduct_Uuid(product, page)
                 .map(dtoMapper::map);
         } else if(product == null) {
-            return priceList
+            return repository
                 .findByStore_Uuid(store, page)
                 .map(dtoMapper::map);
         } else {
-            return priceList
+            return repository
                 .findByProduct_UuidAndStore_Uuid(product, store, page)
                 .map(dtoMapper::map);
         }
@@ -138,8 +79,13 @@ public class PriceListController {
         UUID[] stores
     ) {
         return ResponseEntity.ok(
-            priceList
-                .findAllByValidFromLessThanEqualAndValidToGreaterThanEqualAndStore_UuidInAndProduct_UuidIn(at, at, Set.of(stores), Set.of(products))
+            repository
+                .findAllByValidFromLessThanEqualAndValidToGreaterThanEqualAndStore_UuidInAndProduct_UuidIn(
+                    at,
+                    at,
+                    Set.of(stores),
+                    Set.of(products)
+                )
                 .collect(Collectors.groupingBy(
                     p -> p
                         .getProduct()

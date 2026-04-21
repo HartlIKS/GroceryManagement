@@ -13,7 +13,7 @@ import java.util.UUID;
 @Data
 @Entity
 @Table
-public class ShoppingTrip implements HasUUID {
+public class ShoppingTrip implements HasUUID, HasOwner {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;

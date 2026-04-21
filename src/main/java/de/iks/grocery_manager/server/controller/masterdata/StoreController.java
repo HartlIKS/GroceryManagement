@@ -1,74 +1,33 @@
 package de.iks.grocery_manager.server.controller.masterdata;
 
+import de.iks.grocery_manager.server.controller.CRUDController;
 import de.iks.grocery_manager.server.dto.DTOMapper;
+import de.iks.grocery_manager.server.dto.EntityMapper;
 import de.iks.grocery_manager.server.dto.masterdata.CreateStoreDTO;
 import de.iks.grocery_manager.server.dto.masterdata.ListStoreDTO;
 import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;
-import lombok.RequiredArgsConstructor;
+import de.iks.grocery_manager.server.model.masterdata.Store;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.UUID;
-
-@RequiredArgsConstructor
 @RestController
 @RequestMapping(
     path = "/api/masterdata/store", produces = MediaType.APPLICATION_JSON_VALUE
 )
 @Transactional
-public class StoreController {
-    private final StoreRepository stores;
+public class StoreController extends CRUDController.Standard<Store, ListStoreDTO, CreateStoreDTO, StoreRepository> {
     private final DTOMapper dtoMapper;
-
-    @GetMapping("/{uuid}")
-    @Transactional(readOnly = true)
-    public ResponseEntity<ListStoreDTO> getStore(@PathVariable UUID uuid) {
-        return ResponseEntity.of(
-            stores
-                .findById(uuid)
-                .map(dtoMapper::map)
-        );
-    }
-
-    @PutMapping("/{uuid}")
-    public ResponseEntity<ListStoreDTO> putStore(@PathVariable UUID uuid, @RequestBody CreateStoreDTO store) {
-        return ResponseEntity.of(
-            stores
-                .findById(uuid)
-                .map(s -> {
-                    dtoMapper.update(s, store);
-                    return stores.saveAndFlush(s);
-                })
-                .map(dtoMapper::map)
-        );
-    }
-
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<ListStoreDTO> createStore(@RequestBody CreateStoreDTO createStoreDTO, UriComponentsBuilder uriBuilder) {
-        ListStoreDTO ret = dtoMapper.map(stores.saveAndFlush(dtoMapper.create(createStoreDTO)));
-        return ResponseEntity
-            .created(
-                uriBuilder
-                    .pathSegment("api", "store", "{uuid}")
-                    .build(ret.uuid())
-            )
-            .body(ret);
-    }
-
-    @DeleteMapping("/{uuid}")
-    public ResponseEntity<?> deleteStore(@PathVariable UUID uuid) {
-        stores.deleteById(uuid);
-        return ResponseEntity
-            .ok()
-            .build();
+    public StoreController(StoreRepository repository, DTOMapper dtoMapper) {
+        super(repository, new EntityMapper<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), new String[] {"api", "masterdata", "store", "{uuid}"});
+        this.dtoMapper = dtoMapper;
     }
 
     @GetMapping
@@ -78,7 +37,7 @@ public class StoreController {
         @PageableDefault Pageable pageable
     ) {
         return ResponseEntity.ok(
-            stores
+            repository
                 .findAllByNameContainingIgnoreCase(name, pageable)
                 .map(dtoMapper::map)
         );

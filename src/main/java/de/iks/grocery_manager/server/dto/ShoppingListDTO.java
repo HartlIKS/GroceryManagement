@@ -10,5 +10,5 @@ public record ShoppingListDTO(
     boolean repeating,
     Map<UUID, BigDecimal> products,
     Map<UUID, BigDecimal> productGroups
-) {
+) implements HasUUID_DTO {
 }

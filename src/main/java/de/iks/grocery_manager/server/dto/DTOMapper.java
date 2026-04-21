@@ -16,11 +16,7 @@ import de.iks.grocery_manager.server.model.masterdata.Product;
 import de.iks.grocery_manager.server.model.masterdata.Store;
 import de.iks.grocery_manager.server.model.share.JoinLink;
 import de.iks.grocery_manager.server.model.share.Share;
-import org.mapstruct.Context;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants.ComponentModel;
-import org.mapstruct.MappingTarget;
+import org.mapstruct.*;
 
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -28,10 +24,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
 @Mapper(
-    componentModel = ComponentModel.SPRING,
+    componentModel = SPRING,
     nullValuePropertyMappingStrategy = IGNORE,
     uses = {
         CrudRepositoryMapper.Prices.class,
@@ -44,11 +41,11 @@ import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
     }
 )
 public interface DTOMapper {
-    ListStoreDTO map(Store store);
-
     default UUID toUUID(HasUUID entity) {
         return entity.getUuid();
     }
+
+    ListStoreDTO map(Store store);
 
     @Mapping(target = "uuid", ignore = true)
     Store create(CreateStoreDTO store);
@@ -70,9 +67,8 @@ public interface DTOMapper {
 
     ListPriceDTO map(PriceListing price);
 
-    @Mapping(target = ".", source = "priceListingDTO")
     @Mapping(target = "uuid", ignore = true)
-    PriceListing create(CreatePriceListingDTO priceListingDTO, Store store, Product product);
+    PriceListing create(CreatePriceListingDTO priceListingDTO);
 
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "store", ignore = true)

@@ -2,20 +2,19 @@ package de.iks.grocery_manager.server.controller;
 
 import de.iks.grocery_manager.server.dto.CreateShoppingTripDTO;
 import de.iks.grocery_manager.server.dto.DTOMapper;
+import de.iks.grocery_manager.server.dto.EntityMapper.Owned;
 import de.iks.grocery_manager.server.dto.ShoppingTripDTO;
 import de.iks.grocery_manager.server.jpa.ShoppingTripRepository;
+import de.iks.grocery_manager.server.model.ShoppingTrip;
 import de.iks.grocery_manager.server.model.masterdata.Product;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -24,49 +23,20 @@ import java.util.UUID;
 
 import static de.iks.grocery_manager.server.util.OwnerUtils.getOwner;
 
-@RequiredArgsConstructor
 @RestController
 @RequestMapping(
     path = "/api/shoppingTrips",
     produces = MediaType.APPLICATION_JSON_VALUE
 )
 @Transactional
-public class ShoppingTripController {
-    private final ShoppingTripRepository trips;
+public class ShoppingTripController extends OwnerTrackingCRUDController.Standard<ShoppingTrip, ShoppingTripDTO, CreateShoppingTripDTO, ShoppingTripRepository> {
     private final DTOMapper dtoMapper;
-
-    @GetMapping("/{uuid}")
-    @Transactional(readOnly = true)
-    public ResponseEntity<ShoppingTripDTO> getShoppingTrip(
-        @PathVariable UUID uuid,
-        @AuthenticationPrincipal Object principal
+    public ShoppingTripController(
+        ShoppingTripRepository repository,
+        DTOMapper dtoMapper
     ) {
-        return ResponseEntity.of(
-            trips
-                .findByUuidAndOwner(uuid, getOwner(principal))
-                .map(dtoMapper::map)
-        );
-    }
-
-    @PutMapping("/{uuid}")
-    public ResponseEntity<ShoppingTripDTO> updateShoppingTrip(
-        @PathVariable UUID uuid,
-        @RequestBody CreateShoppingTripDTO createShoppingTripDTO,
-        @AuthenticationPrincipal Object principal
-    ) {
-        return ResponseEntity.of(
-            trips
-                .findByUuidAndOwner(uuid, getOwner(principal))
-                .map(p -> {
-                    dtoMapper.update(
-                        p,
-                        createShoppingTripDTO
-                    );
-                    return p;
-                })
-                .map(trips::saveAndFlush)
-                .map(dtoMapper::map)
-        );
+        super(repository, new Owned<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), new String[] {"api", "shoppingTrips", "{uuid}"});
+        this.dtoMapper = dtoMapper;
     }
 
     @PostMapping("/{uuid}/add")
@@ -76,7 +46,7 @@ public class ShoppingTripController {
         @AuthenticationPrincipal Object principal
     ) {
         return ResponseEntity.of(
-            trips
+            repository
                 .findByUuidAndOwner(uuid, getOwner(principal))
                 .map(p -> {
                     Map<Product, BigDecimal> prods = p.getProducts();
@@ -88,34 +58,9 @@ public class ShoppingTripController {
                     ));
                     return p;
                 })
-                .map(trips::saveAndFlush)
+                .map(repository::saveAndFlush)
                 .map(dtoMapper::map)
         );
-    }
-
-    @DeleteMapping("/{uuid}")
-    public void deleteShoppingTrip(@PathVariable UUID uuid, @AuthenticationPrincipal Object principal) {
-        trips.deleteByUuidAndOwner(uuid, getOwner(principal));
-    }
-
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<ShoppingTripDTO> createShoppingTrip(
-        @RequestBody CreateShoppingTripDTO CreateShoppingTripDTO,
-        @AuthenticationPrincipal Object principal,
-        UriComponentsBuilder uriBuilder
-    ) {
-        ShoppingTripDTO ret = dtoMapper.map(trips.saveAndFlush(dtoMapper.create(
-            CreateShoppingTripDTO,
-            getOwner(principal)
-        )));
-        return ResponseEntity
-            .created(
-                uriBuilder
-                    .pathSegment("api", "shoppingLists", "{uuid}")
-                    .build(ret.uuid())
-            )
-            .body(ret);
     }
 
     @GetMapping
@@ -129,7 +74,7 @@ public class ShoppingTripController {
         if(from == null) from = ZonedDateTime.now();
         if(to == null) to = from.plusWeeks(1);
         return ResponseEntity.ok(
-            trips
+            repository
                 .findByOwnerAndTimeBetween(getOwner(principal), from.toInstant(), to.toInstant(), pageable)
                 .map(dtoMapper::map)
         );

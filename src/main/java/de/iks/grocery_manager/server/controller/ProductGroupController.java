@@ -2,92 +2,38 @@ package de.iks.grocery_manager.server.controller;
 
 import de.iks.grocery_manager.server.dto.CreateProductGroupDTO;
 import de.iks.grocery_manager.server.dto.DTOMapper;
+import de.iks.grocery_manager.server.dto.EntityMapper.Owned;
 import de.iks.grocery_manager.server.dto.ListProductGroupDTO;
 import de.iks.grocery_manager.server.jpa.ProductGroupRepository;
-import lombok.RequiredArgsConstructor;
+import de.iks.grocery_manager.server.model.ProductGroup;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriComponentsBuilder;
-
-import java.util.UUID;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import static de.iks.grocery_manager.server.util.OwnerUtils.getOwner;
 
-@RequiredArgsConstructor
 @RestController
 @RequestMapping(
     path = "/api/productGroups",
     produces = MediaType.APPLICATION_JSON_VALUE
 )
 @Transactional
-public class ProductGroupController {
-    private final ProductGroupRepository groups;
+public class ProductGroupController extends OwnerTrackingCRUDController.Standard<ProductGroup, ListProductGroupDTO, CreateProductGroupDTO, ProductGroupRepository> {
     private final DTOMapper dtoMapper;
-
-    @GetMapping("/{uuid}")
-    @Transactional(readOnly = true)
-    public ResponseEntity<ListProductGroupDTO> getProductGroup(
-        @PathVariable UUID uuid,
-        @AuthenticationPrincipal Object principal
+    public ProductGroupController(
+        ProductGroupRepository repository,
+        DTOMapper dtoMapper
     ) {
-        return ResponseEntity.of(
-            groups
-                .findByUuidAndOwner(uuid, getOwner(principal))
-                .map(dtoMapper::map)
-        );
-    }
-
-    @PutMapping("/{uuid}")
-    public ResponseEntity<ListProductGroupDTO> updateProductGroup(
-        @PathVariable UUID uuid,
-        @RequestBody CreateProductGroupDTO createProductGroupDTO,
-        @AuthenticationPrincipal Object principal
-    ) {
-        return ResponseEntity.of(
-            groups
-                .findByUuidAndOwner(uuid, getOwner(principal))
-                .map(p -> {
-                    dtoMapper.update(
-                        p,
-                        createProductGroupDTO
-                    );
-                    return p;
-                })
-                .map(groups::saveAndFlush)
-                .map(dtoMapper::map)
-        );
-    }
-
-    @DeleteMapping("/{uuid}")
-    public void deleteProductGroup(@PathVariable UUID uuid, @AuthenticationPrincipal Object principal) {
-        groups.deleteByUuidAndOwner(uuid, getOwner(principal));
-    }
-
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<ListProductGroupDTO> createProductGroup(
-        @RequestBody CreateProductGroupDTO createProductGroupDTO,
-        @AuthenticationPrincipal Object principal,
-        UriComponentsBuilder uriBuilder
-    ) {
-        ListProductGroupDTO ret = dtoMapper.map(groups.saveAndFlush(dtoMapper.create(
-            createProductGroupDTO,
-            getOwner(principal)
-        )));
-        return ResponseEntity
-            .created(
-                uriBuilder
-                    .pathSegment("api", "productGroups", "{uuid}")
-                    .build(ret.uuid())
-            )
-            .body(ret);
+        super(repository, new Owned<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), new String[] {"api", "productGroups", "{uuid}"});
+        this.dtoMapper = dtoMapper;
     }
 
     @GetMapping
@@ -98,7 +44,7 @@ public class ProductGroupController {
         @AuthenticationPrincipal Object principal
     ) {
         return ResponseEntity.ok(
-            groups
+            repository
                 .findAllByOwnerAndNameContainingIgnoreCase(getOwner(principal), name, pageable)
                 .map(dtoMapper::map)
         );

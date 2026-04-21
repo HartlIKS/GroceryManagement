@@ -11,7 +11,7 @@ import java.util.UUID;
 @Data
 @Entity
 @Table
-public class ProductGroup implements HasUUID {
+public class ProductGroup implements HasUUID, HasOwner {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;

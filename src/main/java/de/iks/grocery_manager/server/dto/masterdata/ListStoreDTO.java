@@ -1,5 +1,7 @@
 package de.iks.grocery_manager.server.dto.masterdata;
 
+import de.iks.grocery_manager.server.dto.HasUUID_DTO;
+
 import java.util.Currency;
 import java.util.UUID;
 
@@ -9,5 +11,5 @@ public record ListStoreDTO(
     String logo,
     AddressDTO address,
     Currency currency
-) {
+) implements HasUUID_DTO {
 }
