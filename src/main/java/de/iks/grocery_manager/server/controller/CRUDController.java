@@ -1,7 +1,7 @@
 package de.iks.grocery_manager.server.controller;
 
-import de.iks.grocery_manager.server.dto.EntityMapper;
-import de.iks.grocery_manager.server.dto.HasUUID_DTO;
+import de.iks.grocery_manager.server.mapping.EntityMapper;
+import de.iks.grocery_manager.server.mapping.HasUUID_DTO;
 import de.iks.grocery_manager.server.model.HasUUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;

@@ -1,8 +1,8 @@
 package de.iks.grocery_manager.server.controller.masterdata;
 
 import de.iks.grocery_manager.server.controller.CRUDController;
-import de.iks.grocery_manager.server.dto.DTOMapper;
-import de.iks.grocery_manager.server.dto.EntityMapper;
+import de.iks.grocery_manager.server.mapping.DTOMapper;
+import de.iks.grocery_manager.server.mapping.EntityMapper;
 import de.iks.grocery_manager.server.dto.masterdata.CreateStoreDTO;
 import de.iks.grocery_manager.server.dto.masterdata.ListStoreDTO;
 import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;

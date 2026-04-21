@@ -1,6 +1,6 @@
 package de.iks.grocery_manager.server.controller.share;
 
-import de.iks.grocery_manager.server.dto.DTOMapper;
+import de.iks.grocery_manager.server.mapping.DTOMapper;
 import de.iks.grocery_manager.server.dto.share.CreateShareDTO;
 import de.iks.grocery_manager.server.dto.share.ShareDTO;
 import de.iks.grocery_manager.server.jpa.share.JoinLinkRepository;

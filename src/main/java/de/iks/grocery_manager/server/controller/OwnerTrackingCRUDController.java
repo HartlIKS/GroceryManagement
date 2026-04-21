@@ -1,8 +1,8 @@
 package de.iks.grocery_manager.server.controller;
 
-import de.iks.grocery_manager.server.dto.EntityMapper;
-import de.iks.grocery_manager.server.dto.EntityMapper.Owned;
-import de.iks.grocery_manager.server.dto.HasUUID_DTO;
+import de.iks.grocery_manager.server.mapping.EntityMapper;
+import de.iks.grocery_manager.server.mapping.EntityMapper.Owned;
+import de.iks.grocery_manager.server.mapping.HasUUID_DTO;
 import de.iks.grocery_manager.server.jpa.OwnerTrackingJpaRepository;
 import de.iks.grocery_manager.server.model.HasOwner;
 import de.iks.grocery_manager.server.model.HasUUID;

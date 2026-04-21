@@ -1,8 +1,8 @@
 package de.iks.grocery_manager.server.controller;
 
 import de.iks.grocery_manager.server.dto.CreateProductGroupDTO;
-import de.iks.grocery_manager.server.dto.DTOMapper;
-import de.iks.grocery_manager.server.dto.EntityMapper.Owned;
+import de.iks.grocery_manager.server.mapping.DTOMapper;
+import de.iks.grocery_manager.server.mapping.EntityMapper.Owned;
 import de.iks.grocery_manager.server.dto.ListProductGroupDTO;
 import de.iks.grocery_manager.server.jpa.ProductGroupRepository;
 import de.iks.grocery_manager.server.model.ProductGroup;

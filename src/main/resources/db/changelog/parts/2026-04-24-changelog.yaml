@@ -1,0 +1,387 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1777028272678-1
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_externalapi
+                  name: uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+            tableName: externalapi
+  - changeSet:
+      id: 1777028272678-2
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_externalapi_productmappings
+                  name: api
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: remote_id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_externalapi_productmappings
+                  name: local_id
+                  type: UUID
+            tableName: externalapi_product_mappings
+        - addUniqueConstraint:
+            columnNames: api, local_id
+            constraintName: uc_d5eb4d3533cd64223ddee4887
+            tableName: externalapi_product_mappings
+        - addUniqueConstraint:
+            columnNames: api, remote_id
+            constraintName: uc_d0f8c609f729f9255b35f9494
+            tableName: externalapi_product_mappings
+        - addForeignKeyConstraint:
+            baseColumnNames: api
+            baseTableName: externalapi_product_mappings
+            constraintName: fk_externalapi_productmappings_on_external_a_p_i
+            referencedColumnNames: uuid
+            referencedTableName: externalapi
+        - addForeignKeyConstraint:
+            baseColumnNames: local_id
+            baseTableName: externalapi_product_mappings
+            constraintName: fk_externalapi_productmappings_on_product
+            referencedColumnNames: uuid
+            referencedTableName: product
+  - changeSet:
+      id: 1777028272678-3
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_externalapi_storemappings
+                  name: api
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: remote_id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_externalapi_storemappings
+                  name: local_id
+                  type: UUID
+            tableName: externalapi_store_mappings
+        - addUniqueConstraint:
+            columnNames: api, remote_id
+            constraintName: uc_d29f0986b199d293b47a02602
+            tableName: externalapi_store_mappings
+        - addUniqueConstraint:
+            columnNames: api, local_id
+            constraintName: uc_5c668c3437add2acb62c9282c
+            tableName: externalapi_store_mappings
+        - addForeignKeyConstraint:
+            baseColumnNames: api
+            baseTableName: externalapi_store_mappings
+            constraintName: fk_externalapi_storemappings_on_external_a_p_i
+            referencedColumnNames: uuid
+            referencedTableName: externalapi
+        - addForeignKeyConstraint:
+            baseColumnNames: local_id
+            baseTableName: externalapi_store_mappings
+            constraintName: fk_externalapi_storemappings_on_store
+            referencedColumnNames: uuid
+            referencedTableName: store
+  - changeSet:
+      id: 1777028272678-4
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_priceendpoint
+                  name: uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: api_uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: base_url
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: base_path
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: product_handling_type
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: store_handling_type
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: price_path
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: time_format
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: valid_from_path
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: valid_until_path
+                  type: VARCHAR(255)
+              - column:
+                  name: page_size_header
+                  type: VARCHAR(255)
+              - column:
+                  name: page_size_query_parameter
+                  type: VARCHAR(255)
+              - column:
+                  name: page_header
+                  type: VARCHAR(255)
+              - column:
+                  name: page_query_parameter
+                  type: VARCHAR(255)
+              - column:
+                  name: item_count_header
+                  type: VARCHAR(255)
+              - column:
+                  name: item_count_query_parameter
+                  type: VARCHAR(255)
+              - column:
+                  name: product_header
+                  type: VARCHAR(255)
+              - column:
+                  name: product_query_parameter
+                  type: VARCHAR(255)
+              - column:
+                  name: product_path
+                  type: VARCHAR(255)
+              - column:
+                  name: store_header
+                  type: VARCHAR(255)
+              - column:
+                  name: store_query_parameter
+                  type: VARCHAR(255)
+              - column:
+                  name: store_path
+                  type: VARCHAR(255)
+            tableName: price_endpoint
+        - addForeignKeyConstraint:
+            baseColumnNames: api_uuid
+            baseTableName: price_endpoint
+            constraintName: FK_PRICEENDPOINT_ON_API_UUID
+            referencedColumnNames: uuid
+            referencedTableName: externalapi
+  - changeSet:
+      id: 1777028272678-5
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_productendpoint
+                  name: uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: api_uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: base_url
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: base_path
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: product_id_path
+                  type: VARCHAR(255)
+              - column:
+                  name: product_name_path
+                  type: VARCHAR(255)
+              - column:
+                  name: product_image_path
+                  type: VARCHAR(255)
+              - column:
+                  name: producteanpath
+                  type: VARCHAR(255)
+              - column:
+                  name: page_size_header
+                  type: VARCHAR(255)
+              - column:
+                  name: page_size_query_parameter
+                  type: VARCHAR(255)
+              - column:
+                  name: page_header
+                  type: VARCHAR(255)
+              - column:
+                  name: page_query_parameter
+                  type: VARCHAR(255)
+              - column:
+                  name: item_count_header
+                  type: VARCHAR(255)
+              - column:
+                  name: item_count_query_parameter
+                  type: VARCHAR(255)
+            tableName: product_endpoint
+        - addForeignKeyConstraint:
+            baseColumnNames: api_uuid
+            baseTableName: product_endpoint
+            constraintName: FK_PRODUCTENDPOINT_ON_API_UUID
+            referencedColumnNames: uuid
+            referencedTableName: externalapi
+  - changeSet:
+      id: 1777028272678-6
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_storeendpoint
+                  name: uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: api_uuid
+                  type: UUID
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: base_url
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: base_path
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: store_id_path
+                  type: VARCHAR(255)
+              - column:
+                  name: store_name_path
+                  type: VARCHAR(255)
+              - column:
+                  name: store_logo_path
+                  type: VARCHAR(255)
+              - column:
+                  name: address_path
+                  type: VARCHAR(255)
+              - column:
+                  name: store_currency_path
+                  type: VARCHAR(255)
+              - column:
+                  name: page_size_header
+                  type: VARCHAR(255)
+              - column:
+                  name: page_size_query_parameter
+                  type: VARCHAR(255)
+              - column:
+                  name: page_header
+                  type: VARCHAR(255)
+              - column:
+                  name: page_query_parameter
+                  type: VARCHAR(255)
+              - column:
+                  name: item_count_header
+                  type: VARCHAR(255)
+              - column:
+                  name: item_count_query_parameter
+                  type: VARCHAR(255)
+              - column:
+                  name: country_path
+                  type: VARCHAR(255)
+              - column:
+                  name: city_path
+                  type: VARCHAR(255)
+              - column:
+                  name: zip_path
+                  type: VARCHAR(255)
+              - column:
+                  name: street_path
+                  type: VARCHAR(255)
+              - column:
+                  name: number_path
+                  type: VARCHAR(255)
+            tableName: store_endpoint
+        - addForeignKeyConstraint:
+            baseColumnNames: api_uuid
+            baseTableName: store_endpoint
+            constraintName: FK_STOREENDPOINT_ON_API_UUID
+            referencedColumnNames: uuid
+            referencedTableName: externalapi
+

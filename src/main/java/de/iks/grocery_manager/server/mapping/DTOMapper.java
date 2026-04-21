@@ -1,11 +1,13 @@
-package de.iks.grocery_manager.server.dto;
+package de.iks.grocery_manager.server.mapping;
 
+import de.iks.grocery_manager.server.dto.*;
 import de.iks.grocery_manager.server.dto.masterdata.*;
+import de.iks.grocery_manager.server.dto.mdi.*;
+import de.iks.grocery_manager.server.dto.mdi.handling.*;
 import de.iks.grocery_manager.server.dto.share.CreateJoinLinkDTO;
 import de.iks.grocery_manager.server.dto.share.CreateShareDTO;
 import de.iks.grocery_manager.server.dto.share.JoinLinkDTO;
 import de.iks.grocery_manager.server.dto.share.ShareDTO;
-import de.iks.grocery_manager.server.jpa.mapping.CrudRepositoryMapper;
 import de.iks.grocery_manager.server.model.HasUUID;
 import de.iks.grocery_manager.server.model.ProductGroup;
 import de.iks.grocery_manager.server.model.ShoppingList;
@@ -14,6 +16,8 @@ import de.iks.grocery_manager.server.model.masterdata.Address;
 import de.iks.grocery_manager.server.model.masterdata.PriceListing;
 import de.iks.grocery_manager.server.model.masterdata.Product;
 import de.iks.grocery_manager.server.model.masterdata.Store;
+import de.iks.grocery_manager.server.model.mdi.*;
+import de.iks.grocery_manager.server.model.mdi.handling.*;
 import de.iks.grocery_manager.server.model.share.JoinLink;
 import de.iks.grocery_manager.server.model.share.Share;
 import org.mapstruct.*;
@@ -26,10 +30,12 @@ import java.util.UUID;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
+import static org.mapstruct.SubclassExhaustiveStrategy.RUNTIME_EXCEPTION;
 
 @Mapper(
     componentModel = SPRING,
     nullValuePropertyMappingStrategy = IGNORE,
+    subclassExhaustiveStrategy = RUNTIME_EXCEPTION,
     uses = {
         CrudRepositoryMapper.Prices.class,
         CrudRepositoryMapper.Products.class,
@@ -38,6 +44,8 @@ import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
         CrudRepositoryMapper.ProductGroups.class,
         CrudRepositoryMapper.ShoppingLists.class,
         CrudRepositoryMapper.ShoppingTrips.class,
+
+        CrudRepositoryMapper.ExternalAPIs.class,
     }
 )
 public interface DTOMapper {
@@ -60,8 +68,6 @@ public interface DTOMapper {
 
     @Mapping(target = "uuid", ignore = true)
     void update(@MappingTarget Product target, CreateProductDTO update);
-
-    Map<UUID, BigDecimal> toProductUUIDs(Map<Product, BigDecimal> map);
 
     Map<Product, BigDecimal> toProducts(Map<UUID, BigDecimal> map);
 
@@ -95,10 +101,6 @@ public interface DTOMapper {
         @MappingTarget ProductGroup target,
         CreateProductGroupDTO update
     );
-
-    Map<UUID, BigDecimal> toGroupUUIDs(Map<ProductGroup, BigDecimal> map);
-
-    Map<ProductGroup, BigDecimal> toGroups(Map<UUID, BigDecimal> map);
 
     ShoppingListDTO map(ShoppingList list);
 
@@ -167,4 +169,95 @@ public interface DTOMapper {
     );
 
     List<JoinLinkDTO> map(List<JoinLink> links);
+
+    default WrappedParameterDTO map2(Parameter parameter) {
+        return new WrappedParameterDTO(map(parameter));
+    }
+
+    default Parameter create(WrappedParameterDTO parameterDTO) {
+        return create(parameterDTO.parameter());
+    }
+
+    ParameterDTO map(Parameter parameter);
+
+    Parameter create(ParameterDTO parameterDTO);
+
+    void update(@MappingTarget Parameter target, ParameterDTO update);
+
+    OneForAllDTO map(OneForAll oneForAll);
+
+    OneForAll create(OneForAllDTO oneForAllDTO);
+
+    @SubclassMapping(source = Parameter.class, target = WrappedParameterDTO.class)
+    @SubclassMapping(source = Path.class, target = PathDTO.class)
+    ProductHandlingDTO map(ProductHandling productHandling);
+
+    @SubclassMapping(source = WrappedParameterDTO.class, target = Parameter.class)
+    @SubclassMapping(source = PathDTO.class, target = Path.class)
+    ProductHandling create(ProductHandlingDTO productHandlingDTO);
+
+    @SubclassMapping(source = Parameter.class, target = WrappedParameterDTO.class)
+    @SubclassMapping(source = Path.class, target = PathDTO.class)
+    @SubclassMapping(source = OneForAll.class, target = OneForAllDTO.class)
+    StoreHandlingDTO map(StoreHandling storeHandling);
+
+    @SubclassMapping(source = WrappedParameterDTO.class, target = Parameter.class)
+    @SubclassMapping(source = PathDTO.class, target = Path.class)
+    @SubclassMapping(source = OneForAllDTO.class, target = OneForAll.class)
+    StoreHandling create(StoreHandlingDTO storeHandlingDTO);
+
+    ProductEndpointDTO map(ProductEndpoint endpoint);
+
+    @Mapping(target = "uuid", ignore = true)
+    ProductEndpoint create(CreateProductEndpointDTO createProductEndpointDTO, UUID api);
+
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "api", ignore = true)
+    void update(@MappingTarget ProductEndpoint target, CreateProductEndpointDTO update);
+
+    AddressPathsDTO map(AddressPaths paths);
+
+    AddressPaths map(AddressPathsDTO pathsDTO);
+
+    void update(@MappingTarget AddressPaths target, AddressPathsDTO update);
+
+    StoreEndpointDTO map(StoreEndpoint endpoint);
+
+    @Mapping(target = "uuid", ignore = true)
+    StoreEndpoint create(CreateStoreEndpointDTO createStoreEndpointDTO, UUID api);
+
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "api", ignore = true)
+    void update(@MappingTarget StoreEndpoint target, CreateStoreEndpointDTO update);
+
+    PriceEndpointDTO map(PriceEndpoint endpoint);
+
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "productHandlingType", ignore = true)
+    @Mapping(target = "productPath", ignore = true)
+    @Mapping(target = "productParameters", ignore = true)
+    @Mapping(target = "storeHandlingType", ignore = true)
+    @Mapping(target = "storePath", ignore = true)
+    @Mapping(target = "storeParameters", ignore = true)
+    PriceEndpoint create(CreatePriceEndpointDTO createPriceEndpointDTO, UUID api);
+
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "api", ignore = true)
+    @Mapping(target = "productHandlingType", ignore = true)
+    @Mapping(target = "productPath", ignore = true)
+    @Mapping(target = "productParameters", ignore = true)
+    @Mapping(target = "storeHandlingType", ignore = true)
+    @Mapping(target = "storePath", ignore = true)
+    @Mapping(target = "storeParameters", ignore = true)
+    void update(@MappingTarget PriceEndpoint target, CreatePriceEndpointDTO update);
+
+    ExternalAPIDTO map(ExternalAPI api);
+
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "endpoints", ignore = true)
+    ExternalAPI create(CreateExternalAPIDTO createExternalAPIDTO);
+
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "endpoints", ignore = true)
+    void update(@MappingTarget ExternalAPI target, CreateExternalAPIDTO update);
 }

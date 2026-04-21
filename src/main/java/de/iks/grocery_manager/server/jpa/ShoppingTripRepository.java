@@ -1,6 +1,6 @@
 package de.iks.grocery_manager.server.jpa;
 
-import de.iks.grocery_manager.server.jpa.mapping.CrudRepositoryMapper;
+import de.iks.grocery_manager.server.mapping.CrudRepositoryMapper;
 import de.iks.grocery_manager.server.model.ShoppingTrip;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -1,4 +1,4 @@
-package de.iks.grocery_manager.server.dto;
+package de.iks.grocery_manager.server.mapping;
 
 import java.util.UUID;
 
