@@ -6,7 +6,6 @@ import de.iks.grocery_manager.server.dto.HasUUID_DTO;
 import de.iks.grocery_manager.server.jpa.OwnerTrackingJpaRepository;
 import de.iks.grocery_manager.server.model.HasOwner;
 import de.iks.grocery_manager.server.model.HasUUID;
-import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,14 +18,13 @@ import java.util.UUID;
 
 import static de.iks.grocery_manager.server.util.OwnerUtils.getOwner;
 
-@RequiredArgsConstructor
 @Transactional
 public abstract class OwnerTrackingCRUDController<Entity extends HasUUID & HasOwner, ListDTO extends HasUUID_DTO, CreateDTO, UpdateDTO, Repository extends OwnerTrackingJpaRepository<@NonNull Entity>> {
     public static abstract class Standard<Entity extends HasUUID & HasOwner, ListDTO extends HasUUID_DTO, CreateDTO, Repository extends OwnerTrackingJpaRepository<@NonNull Entity>> extends OwnerTrackingCRUDController<Entity, ListDTO, CreateDTO, CreateDTO, Repository> {
         public Standard(
             Repository repository,
             Owned<Entity, ListDTO, CreateDTO, CreateDTO> dtoMapper,
-            String[] pathSegments
+            String ...pathSegments
         ) {
             super(repository, dtoMapper, pathSegments);
         }
@@ -35,6 +33,16 @@ public abstract class OwnerTrackingCRUDController<Entity extends HasUUID & HasOw
     protected final Repository repository;
     private final EntityMapper.Owned<Entity, ListDTO, CreateDTO, UpdateDTO> dtoMapper;
     private final String[] pathSegments;
+
+    public OwnerTrackingCRUDController(
+        Repository repository,
+        Owned<Entity, ListDTO, CreateDTO, UpdateDTO> dtoMapper,
+        String ...pathSegments
+    ) {
+        this.repository = repository;
+        this.dtoMapper = dtoMapper;
+        this.pathSegments = pathSegments;
+    }
 
     @GetMapping("/{uuid}")
     @Transactional(readOnly = true)

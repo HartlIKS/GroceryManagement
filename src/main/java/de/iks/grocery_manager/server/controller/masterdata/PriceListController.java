@@ -39,7 +39,7 @@ public class PriceListController extends CRUDController<PriceListing, ListPriceD
         PriceRepository repository,
         DTOMapper dtoMapper
     ) {
-        super(repository, new EntityMapper<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), new String[] {"api", "masterdata", "price", "{uuid}"});
+        super(repository, new EntityMapper<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), "api", "masterdata", "price", "{uuid}");
         this.dtoMapper = dtoMapper;
     }
 

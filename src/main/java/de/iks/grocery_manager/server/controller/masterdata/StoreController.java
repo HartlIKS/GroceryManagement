@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class StoreController extends CRUDController.Standard<Store, ListStoreDTO, CreateStoreDTO, StoreRepository> {
     private final DTOMapper dtoMapper;
     public StoreController(StoreRepository repository, DTOMapper dtoMapper) {
-        super(repository, new EntityMapper<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), new String[] {"api", "masterdata", "store", "{uuid}"});
+        super(repository, new EntityMapper<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), "api", "masterdata", "store", "{uuid}");
         this.dtoMapper = dtoMapper;
     }
 

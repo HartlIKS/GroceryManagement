@@ -3,7 +3,6 @@ package de.iks.grocery_manager.server.controller;
 import de.iks.grocery_manager.server.dto.EntityMapper;
 import de.iks.grocery_manager.server.dto.HasUUID_DTO;
 import de.iks.grocery_manager.server.model.HasUUID;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,14 +12,13 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.UUID;
 
-@RequiredArgsConstructor
 @Transactional
 public abstract class CRUDController<Entity extends HasUUID, ListDTO extends HasUUID_DTO, CreateDTO, UpdateDTO, Repository extends JpaRepository<Entity, UUID>> {
     public static abstract class Standard<Entity extends HasUUID, ListDTO extends HasUUID_DTO, CreateDTO, Repository extends JpaRepository<Entity, UUID>> extends CRUDController<Entity, ListDTO, CreateDTO, CreateDTO, Repository> {
         public Standard(
             Repository repository,
             EntityMapper<Entity, ListDTO, CreateDTO, CreateDTO> dtoMapper,
-            String[] pathSegments
+            String ...pathSegments
         ) {
             super(repository, dtoMapper, pathSegments);
         }
@@ -29,6 +27,16 @@ public abstract class CRUDController<Entity extends HasUUID, ListDTO extends Has
     protected final Repository repository;
     private final EntityMapper<Entity, ListDTO, CreateDTO, UpdateDTO> dtoMapper;
     private final String[] pathSegments;
+
+    public CRUDController(
+        Repository repository,
+        EntityMapper<Entity, ListDTO, CreateDTO, UpdateDTO> dtoMapper,
+        String ...pathSegments
+    ) {
+        this.repository = repository;
+        this.dtoMapper = dtoMapper;
+        this.pathSegments = pathSegments;
+    }
 
     @GetMapping("/{uuid}")
     @Transactional(readOnly = true)

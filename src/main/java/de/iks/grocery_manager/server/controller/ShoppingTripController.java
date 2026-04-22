@@ -35,7 +35,7 @@ public class ShoppingTripController extends OwnerTrackingCRUDController.Standard
         ShoppingTripRepository repository,
         DTOMapper dtoMapper
     ) {
-        super(repository, new Owned<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), new String[] {"api", "shoppingTrips", "{uuid}"});
+        super(repository, new Owned<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), "api", "shoppingTrips", "{uuid}");
         this.dtoMapper = dtoMapper;
     }
 

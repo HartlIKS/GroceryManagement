@@ -30,7 +30,7 @@ public class ProductController extends CRUDController.Standard<Product, ListProd
         ProductRepository repository,
         DTOMapper dtoMapper
     ) {
-        super(repository, new EntityMapper<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), new String[] {"api", "masterdata", "product", "{uuid}"});
+        super(repository, new EntityMapper<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), "api", "masterdata", "product", "{uuid}");
         this.dtoMapper = dtoMapper;
     }
 

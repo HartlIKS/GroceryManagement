@@ -32,7 +32,7 @@ public class ProductGroupController extends OwnerTrackingCRUDController.Standard
         ProductGroupRepository repository,
         DTOMapper dtoMapper
     ) {
-        super(repository, new Owned<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), new String[] {"api", "productGroups", "{uuid}"});
+        super(repository, new Owned<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), "api", "productGroups", "{uuid}");
         this.dtoMapper = dtoMapper;
     }
 
