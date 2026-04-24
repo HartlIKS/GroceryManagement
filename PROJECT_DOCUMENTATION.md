@@ -37,15 +37,20 @@ GroceryManagement/
 │   │   │   ├── config/              # Security and configuration
 │   │   │   ├── controller/          # REST controllers
 │   │   │   │   ├── masterdata/      # Master data controllers
+│   │   │   │   ├── mdi/             # External API integration controllers
 │   │   │   │   └── share/           # Share functionality controllers
 │   │   │   ├── dto/                 # Data Transfer Objects
 │   │   │   │   ├── masterdata/      # Master data DTOs
+│   │   │   │   ├── mdi/             # External API integration DTOs
 │   │   │   │   └── share/           # Share DTOs
 │   │   │   ├── jpa/                 # JPA repositories
 │   │   │   │   ├── masterdata/      # Master data repositories
+│   │   │   │   ├── mdi/             # External API integration repositories
 │   │   │   │   └── share/           # Share repositories
+│   │   │   ├── mapping/             # MapStruct mappers
 │   │   │   ├── model/               # JPA entities
 │   │   │   │   ├── masterdata/      # Master data entities
+│   │   │   │   ├── mdi/             # External API integration entities
 │   │   │   │   └── share/           # Share entities
 │   │   │   └── util/                # Utility classes
 │   │   └── resources/               # Application resources
@@ -54,6 +59,7 @@ GroceryManagement/
 │           ├── Testdata.java                          # Test data constants
 │           └── controller/          # Controller tests
 │               ├── masterdata/      # Master data controller tests
+│               ├── mdi/             # External API integration controller tests
 │               └── share/           # Share controller tests
 └── frontend/                        # Angular frontend
     ├── package.json                 # Node.js dependencies
@@ -177,6 +183,79 @@ Join links provide a mechanism for users to gain access to shares with specific 
 
 ### Permissions
 Enum defining access levels: **NONE**, **READ**, **WRITE**, **ADMIN**
+
+### ExternalAPI
+- **uuid**: Primary identifier (UUID)
+- **name**: API name (required, String)
+- **endpoints**: List of endpoints for this API (List<Endpoint>)
+- **productMappings**: Map of products to remote IDs (Map<Product, String>)
+- **storeMappings**: Map of stores to remote IDs (Map<Store, String>)
+
+ExternalAPIs represent external systems that the grocery management system can integrate with for syncing product and store data.
+
+### Endpoint (Base Class)
+- **uuid**: Primary identifier (UUID)
+- **api**: Reference to ExternalAPI (ExternalAPI, required)
+- **name**: Endpoint name (required, String)
+- **baseUrl**: Base URL for the endpoint (required, String)
+- **pageSize**: Parameter configuration for page size (Parameter)
+- **page**: Parameter configuration for page number (Parameter)
+- **itemCount**: Parameter configuration for item count (Parameter)
+- **basePath**: Base path for the endpoint (required, String)
+
+Base class for all endpoint types.
+
+### PriceEndpoint (extends Endpoint)
+- **productHandlingType**: How products are handled in requests (ProductHandlingType)
+- **productParameters**: Parameter configuration for product IDs (Parameter)
+- **productPath**: Path configuration for product IDs (Path)
+- **storeHandlingType**: How stores are handled in requests (StoreHandlingType)
+- **storeParameters**: Parameter configuration for store IDs (Parameter)
+- **storePath**: Path configuration for store IDs (Path)
+- **pricePath**: JSON path to price in response (required, String)
+- **timeFormat**: Date format for time fields (required, String)
+- **validFromPath**: JSON path to validFrom date in response (required, String)
+- **validUntilPath**: JSON path to validUntil date in response (required, String)
+
+PriceEndpoints define how to fetch price data from external APIs.
+
+### ProductEndpoint (extends Endpoint)
+- **productIdPath**: JSON path to product ID in response (required, String)
+- **productNamePath**: JSON path to product name in response (optional, String)
+- **productImagePath**: JSON path to image URL in response (optional, String)
+- **productEANPath**: JSON path to EAN in response (optional, String)
+
+ProductEndpoints define how to fetch product data from external APIs.
+
+### StoreEndpoint (extends Endpoint)
+- **storeIdPath**: JSON path to store ID in response (required, String)
+- **storeNamePath**: JSON path to store name in response (optional, String)
+- **storeLogoPath**: JSON path to logo URL in response (optional, String)
+- **addressPath**: JSON path to address in response (optional, String)
+- **addressPaths**: JSON paths to address components in response (AddressPaths)
+- **storeCurrencyPath**: JSON path to currency in response (required, String)
+
+StoreEndpoints define how to fetch store data from external APIs.
+
+### Parameter
+- **header**: Header parameter name (optional, String)
+- **queryParameter**: Query parameter name (optional, String)
+
+Parameter configuration for API requests (used for header or query parameter placement).
+
+### Path
+- **path**: Path parameter name (optional, String)
+
+Path configuration for API requests (used for path parameter placement).
+
+### AddressPaths
+- **countryPath**: JSON path to country (required, String)
+- **cityPath**: JSON path to city (required, String)
+- **zipPath**: JSON path to ZIP code (required, String)
+- **streetPath**: JSON path to street (required, String)
+- **numberPath**: JSON path to house number (required, String)
+
+JSON path configuration for address components in API responses.
 
 ## User Interface Features
 
@@ -353,6 +432,50 @@ Enum defining access levels: **NONE**, **READ**, **WRITE**, **ADMIN**
 - **Route**: `/planboard` - Interactive shopping planning interface
 - **Features**: Shopping list integration, price comparison, store assignment, planned trip generation
 
+### External APIs (`/masterdata/interface`)
+- `GET /masterdata/interface/{uuid}` - Get external API by UUID
+- `PUT /masterdata/interface/{uuid}` - Update external API
+- `POST /masterdata/interface` - Create new external API
+- `DELETE /masterdata/interface/{uuid}` - Delete external API
+- `GET /masterdata/interface` - Search external APIs (with optional name parameter, paginated)
+
+### Price Endpoints (`/masterdata/interface/{parentUuid}/endpoint/price`)
+- `GET /masterdata/interface/{parentUuid}/endpoint/price/{uuid}` - Get price endpoint by UUID
+- `PUT /masterdata/interface/{parentUuid}/endpoint/price/{uuid}` - Update price endpoint
+- `POST /masterdata/interface/{parentUuid}/endpoint/price` - Create new price endpoint
+- `DELETE /masterdata/interface/{parentUuid}/endpoint/price/{uuid}` - Delete price endpoint
+- `GET /masterdata/interface/{parentUuid}/endpoint/price` - Search price endpoints (with optional name parameter, paginated)
+
+### Product Endpoints (`/masterdata/interface/{parentUuid}/endpoint/product`)
+- `GET /masterdata/interface/{parentUuid}/endpoint/product/{uuid}` - Get product endpoint by UUID
+- `PUT /masterdata/interface/{parentUuid}/endpoint/product/{uuid}` - Update product endpoint
+- `POST /masterdata/interface/{parentUuid}/endpoint/product` - Create new product endpoint
+- `DELETE /masterdata/interface/{parentUuid}/endpoint/product/{uuid}` - Delete product endpoint
+- `GET /masterdata/interface/{parentUuid}/endpoint/product` - Search product endpoints (with optional name parameter, paginated)
+
+### Store Endpoints (`/masterdata/interface/{parentUuid}/endpoint/store`)
+- `GET /masterdata/interface/{parentUuid}/endpoint/store/{uuid}` - Get store endpoint by UUID
+- `PUT /masterdata/interface/{parentUuid}/endpoint/store/{uuid}` - Update store endpoint
+- `POST /masterdata/interface/{parentUuid}/endpoint/store` - Create new store endpoint
+- `DELETE /masterdata/interface/{parentUuid}/endpoint/store/{uuid}` - Delete store endpoint
+- `GET /masterdata/interface/{parentUuid}/endpoint/store` - Search store endpoints (with optional name parameter, paginated)
+
+### Product Mapping Table (`/masterdata/interface/{uuid}/mapping/product`)
+- `GET /masterdata/interface/{uuid}/mapping/product/in/{remoteId}` - Get local product ID for remote ID
+- `PUT /masterdata/interface/{uuid}/mapping/product/in/{remoteId}` - Set mapping from remote ID to local product ID
+- `DELETE /masterdata/interface/{uuid}/mapping/product/in/{remoteId}` - Remove mapping
+- `GET /masterdata/interface/{uuid}/mapping/product/out/{localId}` - Get remote ID for local product
+- `PUT /masterdata/interface/{uuid}/mapping/product/out/{localId}` - Set mapping from local product to remote ID
+- `DELETE /masterdata/interface/{uuid}/mapping/product/out/{localId}` - Remove mapping
+
+### Store Mapping Table (`/masterdata/interface/{uuid}/mapping/store`)
+- `GET /masterdata/interface/{uuid}/mapping/store/in/{remoteId}` - Get local store ID for remote ID
+- `PUT /masterdata/interface/{uuid}/mapping/store/in/{remoteId}` - Set mapping from remote ID to local store ID
+- `DELETE /masterdata/interface/{uuid}/mapping/store/in/{remoteId}` - Remove mapping
+- `GET /masterdata/interface/{uuid}/mapping/store/out/{localId}` - Get remote ID for local store
+- `PUT /masterdata/interface/{uuid}/mapping/store/out/{localId}` - Set mapping from local store to remote ID
+- `DELETE /masterdata/interface/{uuid}/mapping/store/out/{localId}` - Remove mapping
+
 ## Development Setup
 
 ### Prerequisites
@@ -497,6 +620,35 @@ This will:
   - ShareFilter authentication and authorization testing
   - Owner-based data cleanup verification
   - Comprehensive error handling for unauthorized access
+- **ExternalAPIController tests** with complete CRUD operations and search functionality:
+  - Basic CRUD operations with authorization testing
+  - Search functionality with name filtering and pagination
+  - Transactional test pattern for data isolation
+- **PriceEndpointController tests** with full CRUD coverage and parent-child relationship validation:
+  - Parent-child relationship with ExternalAPI
+  - Complete CRUD operations with authorization testing
+  - Search functionality with name filtering and pagination
+  - Transactional test pattern for data isolation
+- **ProductEndpointController tests** with full CRUD coverage and parent-child relationship validation:
+  - Parent-child relationship with ExternalAPI
+  - Complete CRUD operations with authorization testing
+  - Search functionality with name filtering and pagination
+  - Transactional test pattern for data isolation
+- **StoreEndpointController tests** with full CRUD coverage and parent-child relationship validation:
+  - Parent-child relationship with ExternalAPI
+  - Complete CRUD operations with authorization testing
+  - Search functionality with name filtering and pagination
+  - Transactional test pattern for data isolation
+- **ProductMappingTableController tests** with bidirectional mapping operations:
+  - Inbound mapping (remote ID to local product ID)
+  - Outbound mapping (local product ID to remote ID)
+  - Authorization testing for mapping operations
+  - Error handling for non-existent entities
+- **StoreMappingTableController tests** with bidirectional mapping operations:
+  - Inbound mapping (remote ID to local store ID)
+  - Outbound mapping (local store ID to remote ID)
+  - Authorization testing for mapping operations
+  - Error handling for non-existent entities
 - **Enhanced test architecture** with canary pattern for data isolation and comprehensive validation
 
 ## API Documentation
@@ -542,3 +694,8 @@ This will:
 - **Enhanced Price Search API**: Improved repository methods with inclusive boundary conditions for accurate date-based price queries
 - **Share-First Testing**: CurrentShareController tests verify ShareFilter integration and permission-based access control
 - **Data Cleanup Verification**: Tests ensure proper cleanup of share-associated data when shares are deleted
+- **External API Integration**: New controllers for managing external API integrations with comprehensive test coverage
+- **Endpoint Configuration**: Support for configuring price, product, and store endpoints with flexible parameter and path configuration
+- **Mapping Table Functionality**: Bidirectional mapping between local IDs and remote IDs for products and stores
+- **Transactional Test Pattern**: Consistent use of @Transactional annotation with deleteAll() in @BeforeEach for test data isolation
+- **Persistence Context Management**: clearAutomatically = true on @Modifying queries to ensure proper entity visibility in tests
