@@ -53,6 +53,11 @@ const masterDataNavItems: NavItem[] = [
     icon: 'price_check',
     title: 'Prices',
   },
+  {
+    path: '/master-data/external-api',
+    icon: 'api',
+    title: 'Endpoints',
+  },
 ];
 
 export const routes: Routes = [
@@ -111,7 +116,7 @@ export const routes: Routes = [
       },
       {
         path: 'dashboard',
-        loadComponent: () => import('./master-data/components').then(m => m.DashboardComponent)
+        loadComponent: () => import('./master-data/components/dashboard').then(m => m.DashboardComponent)
       },
       {
         path: 'products',
@@ -124,6 +129,10 @@ export const routes: Routes = [
       {
         path: 'prices',
         loadChildren: () => import('./master-data/prices.routes').then(m => m.pricesRoutes)
+      },
+      {
+        path: 'external-api',
+        loadChildren: () => import('./master-data/externalAPIRoutes').then(m => m.externalAPIRoutes)
       }
     ]
   },

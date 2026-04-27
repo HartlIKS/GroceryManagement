@@ -1,6 +1,8 @@
 import { HttpResourceRef } from '@angular/common/http';
 import { Observable, of, tap } from 'rxjs';
 import { GetApiEndpoint, ApiParam } from './api.service';
+import { Page } from '../models';
+import { Signal } from '@angular/core';
 
 export abstract class CacheService<T, U = T> {
   private cache: Record<string, HttpResourceRef<T | undefined>> = {};
@@ -46,4 +48,12 @@ export abstract class CacheService<T, U = T> {
     if(uuid === undefined) this.cache = {};
     else delete this.cache[uuid];
   }
+}
+
+export abstract class NamedCacheService<T, U = T> extends CacheService<T, U> {
+  public abstract search(
+    name?: Signal<string> | string,
+    page?: Signal<number> | number,
+    size?: Signal<number> | number
+  ): HttpResourceRef<Page<T> | undefined>;
 }

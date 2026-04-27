@@ -77,13 +77,15 @@ export class ApiService {
   }
 
   // Generic CRUD operations
-  get<T>(endpoint: string, params?: Record<string, Signal<ApiParam> | ApiParam>, share?: boolean) {
+  get<T>(endpoint: Signal<string | undefined> | string, params?: Record<string, Signal<ApiParam> | ApiParam>, share?: boolean) {
+    endpoint = resolve(endpoint);
     const httpParams = this.toParamSignal(params, share);
     return httpResource<T>(() => {
+      const end = endpoint();
       const headers = this.headers();
-      if(headers === undefined) return undefined;
+      if(end === undefined || headers === undefined) return undefined;
       return {
-        url: `${this.baseUrl}${endpoint}`,
+        url: `${this.baseUrl}${end}`,
         params: httpParams(),
         headers,
         credentials: 'include',

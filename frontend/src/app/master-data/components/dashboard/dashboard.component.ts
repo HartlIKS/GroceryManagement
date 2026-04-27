@@ -15,8 +15,8 @@ import { PriceService, ProductService, StoreService } from '../../services';
 })
 export class DashboardComponent {
   // Create HTTP resources for dashboard data
-  private readonly productsResource = inject(ProductService).getProducts('', 0, 1);
-  private readonly storesResource = inject(StoreService).getStores('', 0, 1);
+  private readonly productsResource = inject(ProductService).search('', 0, 1);
+  private readonly storesResource = inject(StoreService).search('', 0, 1);
   private readonly pricesResource = inject(PriceService).getPrices(0, 1);
 
   // Computed properties from resources

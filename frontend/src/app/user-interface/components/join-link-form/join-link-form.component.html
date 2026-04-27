@@ -1,5 +1,5 @@
 <div class="container">
-  <mat-card class="form-container">
+  <mat-card>
     <mat-card-header>
       <mat-card-title>{{ isEditMode() ? 'Edit Join Link' : 'Create New Join Link' }}</mat-card-title>
       <mat-card-subtitle>
@@ -57,8 +57,8 @@
           <!-- Expiry Date -->
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Expiry Date (Optional)</mat-label>
-            <input matInput 
-                   [matDatepicker]="expiryPicker" 
+            <input matInput
+                   [matDatepicker]="expiryPicker"
                    formControlName="validTo"
                    placeholder="Leave empty for no expiry">
             <mat-datepicker-toggle matSuffix [for]="expiryPicker"></mat-datepicker-toggle>
@@ -68,15 +68,15 @@
 
           <!-- Form Actions -->
           <div class="form-actions">
-            <button mat-stroked-button 
+            <button mat-stroked-button
                     type="button"
                     (click)="onCancel()"
                     [disabled]="isSubmitting()">
               <mat-icon>cancel</mat-icon>
               Cancel
             </button>
-            
-            <button mat-raised-button 
+
+            <button mat-raised-button
                     color="primary"
                     type="submit"
                     [disabled]="joinLinkForm.invalid || isSubmitting()">

@@ -1,0 +1,57 @@
+<div class="search-section">
+  @if (availableEntities().length > 0) {
+    <mat-form-field appearance="outline" class="half-width">
+      <mat-label>Local ID</mat-label>
+      <mat-select [(ngModel)]="newLocalId" placeholder="Select local ID">
+        @for (entity of availableEntities(); track entity.uuid) {
+          <mat-option [value]="entity.uuid">{{ entity.name }} ({{ entity.uuid }})</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  } @else {
+    <mat-form-field appearance="outline" class="half-width">
+      <mat-label>Local ID</mat-label>
+      <input matInput [(ngModel)]="newLocalId" placeholder="Enter local ID">
+    </mat-form-field>
+  }
+  <mat-form-field appearance="outline" class="half-width">
+    <mat-label>Remote ID</mat-label>
+    <input matInput [(ngModel)]="newRemoteId" placeholder="Enter remote ID">
+  </mat-form-field>
+  <button type="button" mat-raised-button color="primary" (click)="onAddMapping()">
+    <mat-icon>add</mat-icon>
+    Add
+  </button>
+</div>
+
+<div class="table-container">
+  <mat-table [dataSource]="dataSource()" class="table">
+    <ng-container matColumnDef="localId">
+      <mat-header-cell *matHeaderCellDef>Local ID</mat-header-cell>
+      <mat-cell *matCellDef="let mapping">{{ mapping.localId }}</mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="remoteId">
+      <mat-header-cell *matHeaderCellDef>Remote ID</mat-header-cell>
+      <mat-cell *matCellDef="let mapping">{{ mapping.remoteId }}</mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+      <mat-cell *matCellDef="let mapping">
+        <button type="button" mat-icon-button color="warn" (click)="onDeleteMapping(mapping.localId, mapping.remoteId)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row *matRowDef="let _; columns: displayedColumns;"></mat-row>
+  </mat-table>
+
+  @if (dataSource().data.length === 0) {
+    <div class="no-data">
+      <p>No mappings found</p>
+    </div>
+  }
+</div>

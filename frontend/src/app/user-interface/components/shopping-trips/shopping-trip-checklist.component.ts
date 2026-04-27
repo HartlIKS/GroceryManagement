@@ -37,8 +37,8 @@ export class ShoppingTripChecklistComponent {
 
   // Create HTTP resources
   private readonly shoppingTripResource = inject(ShoppingTripService).getShoppingTrip(this.shoppingTripUuid);
-  private readonly storesResource = inject(StoreService).getStores('', 0, 1000);
-  private readonly productsResource = inject(ProductService).getProducts('', 0, 1000);
+  private readonly storesResource = inject(StoreService).search('', 0, 1000);
+  private readonly productsResource = inject(ProductService).search('', 0, 1000);
   private readonly priceService = inject(PriceService);
 
   // Computed properties from resources

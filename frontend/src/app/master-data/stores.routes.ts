@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { StoreFormComponent, StoreListComponent } from './components';
+import { StoreFormComponent, StoreListComponent } from './components/stores';
 
 export const storesRoutes: Routes = [
   {

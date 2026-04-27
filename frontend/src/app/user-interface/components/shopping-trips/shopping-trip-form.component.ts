@@ -43,8 +43,8 @@ export class ShoppingTripFormComponent implements OnInit {
   private readonly shoppingTripService = inject(ShoppingTripService);
 
   // Create HTTP resources
-  private readonly productsResource = inject(ProductService).getProducts('', 0, 1000);
-  private readonly storesResource = inject(StoreService).getStores('', 0, 1000);
+  private readonly productsResource = inject(ProductService).search('', 0, 1000);
+  private readonly storesResource = inject(StoreService).search('', 0, 1000);
   private readonly shoppingTripResource = this.shoppingTripService.getShoppingTrip(this.shoppingTripUuid);
 
   // Product management properties

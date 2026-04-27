@@ -175,10 +175,6 @@ mat-cell, mat-header-cell {
 
 .table {
   width: 100%;
-  background: var(--mat-sys-surface);
-  border-radius: var(--border-radius-md);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
 }
 
 .table-spaced {
@@ -205,13 +201,6 @@ mat-cell, mat-header-cell {
   background-color: var(--mat-sys-error-container);
   border-radius: var(--border-radius-sm);
   margin-top: var(--spacing-md);
-}
-
-/* Forms */
-.form-container {
-  background: var(--mat-sys-surface);
-  border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-sm);
 }
 
 .form-row {

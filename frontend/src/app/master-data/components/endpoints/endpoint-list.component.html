@@ -1,0 +1,63 @@
+<div class="container">
+  <div class="search-section">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search</mat-label>
+      <input matInput [(ngModel)]="searchTerm" placeholder="Enter endpoint name">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+    <span class="half-width"></span>
+    <button type="button" mat-raised-button color="accent" (click)="endpointsResource.reload()" class="refresh-btn">
+      <mat-icon>refresh</mat-icon>
+      Refresh
+    </button>
+    <a mat-raised-button color="primary" [routerLink]="[formPath(), 'new']">
+      <mat-icon>add</mat-icon>
+      Add
+    </a>
+  </div>
+
+  <div class="table-container">
+    <mat-table [dataSource]="dataSource()" class="table">
+      <ng-container matColumnDef="name">
+        <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
+        <mat-cell *matCellDef="let endpoint">{{ endpoint.name }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="baseUrl">
+        <mat-header-cell *matHeaderCellDef>Base URL</mat-header-cell>
+        <mat-cell *matCellDef="let endpoint">{{ endpoint.baseUrl }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+        <mat-cell *matCellDef="let endpoint">
+          <a mat-icon-button color="primary" [routerLink]="[formPath(), endpoint.uuid]">
+            <mat-icon>edit</mat-icon>
+          </a>
+          <button type="button" mat-icon-button color="warn" (click)="onDeleteEndpoint(endpoint.uuid)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </mat-cell>
+      </ng-container>
+
+      <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+      <mat-row *matRowDef="let _; columns: displayedColumns;"></mat-row>
+    </mat-table>
+
+    @if (loading()) {
+      <div class="loading">
+        <mat-spinner/>
+      </div>
+    } @else if (endpoints().length === 0) {
+      <div class="no-data">
+        <p>No endpoints found</p>
+      </div>
+    }
+
+    @if (error()) {
+      <div class="error">
+        <p>{{ error() }}</p>
+      </div>
+    }
+  </div>
+</div>

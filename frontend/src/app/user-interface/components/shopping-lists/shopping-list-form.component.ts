@@ -46,7 +46,7 @@ export class ShoppingListFormComponent implements OnInit {
   private readonly shoppingListService = inject(ShoppingListService);
 
   // Create HTTP resources
-  private readonly productsResource = inject(ProductService).getProducts('', 0, 1000);
+  private readonly productsResource = inject(ProductService).search('', 0, 1000);
   private readonly productGroupsResource = inject(ProductGroupService).getProductGroups('', 0, 1000);
   private readonly shoppingListResource = this.shoppingListService.getShoppingList(this.shoppingListUuid);
 

@@ -55,8 +55,8 @@ export class PriceListComponent {
   private readonly priceService = inject(PriceService);
 
   // Create HTTP resources
-  private readonly productsResource = this.productService.getProducts('', 0, 1000);
-  private readonly storesResource = this.storeService.getStores('', 0, 1000);
+  private readonly productsResource = this.productService.search('', 0, 1000);
+  private readonly storesResource = this.storeService.search('', 0, 1000);
   protected readonly pricesResource = this.priceService.getPrices(
     this.currentPage,
     this.pageSize,

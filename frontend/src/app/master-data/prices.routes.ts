@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { PriceFormComponent, PriceListComponent } from './components';
+import { PriceFormComponent, PriceListComponent } from './components/prices';
 
 export const pricesRoutes: Routes = [
   {

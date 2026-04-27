@@ -1,0 +1,129 @@
+<div class="container">
+  <div class="header header-centered header-margin-bottom-20">
+    <h1>{{ isEditing() ? 'Edit Product Endpoint' : 'Add New Product Endpoint' }}</h1>
+  </div>
+
+  @if (!loading()) {
+    <div>
+      <form [formGroup]="productEndpointForm" (ngSubmit)="onSave()">
+        <mat-card>
+          <mat-card-content>
+            <div class="section-header">
+              <h3>Basic Information</h3>
+            </div>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Name *</mat-label>
+                <input matInput formControlName="name" placeholder="Enter endpoint name">
+                @if (productEndpointForm.get('name')?.hasError('required')) {
+                  <mat-error>Name is required</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Base URL *</mat-label>
+                <input matInput formControlName="baseUrl" placeholder="Enter base URL">
+                @if (productEndpointForm.get('baseUrl')?.hasError('required')) {
+                  <mat-error>Base URL is required</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <div class="section-header">
+              <h3>Pagination Parameters</h3>
+            </div>
+            <div class="form-row">
+              <div formGroupName="pageSize" class="half-width">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Page Size Header</mat-label>
+                  <input matInput formControlName="header" placeholder="Header name">
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Page Size Query Parameter</mat-label>
+                  <input matInput formControlName="queryParameter" placeholder="Query parameter name">
+                </mat-form-field>
+              </div>
+              <div formGroupName="page" class="half-width">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Page Header</mat-label>
+                  <input matInput formControlName="header" placeholder="Header name">
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Page Query Parameter</mat-label>
+                  <input matInput formControlName="queryParameter" placeholder="Query parameter name">
+                </mat-form-field>
+              </div>
+            </div>
+            <div class="form-row">
+              <div formGroupName="itemCount" class="full-width">
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Item Count Header</mat-label>
+                  <input matInput formControlName="header" placeholder="Header name">
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Item Count Query Parameter</mat-label>
+                  <input matInput formControlName="queryParameter" placeholder="Query parameter name">
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="section-header">
+              <h3>Product Paths</h3>
+            </div>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Base Path *</mat-label>
+                <input matInput formControlName="basePath" placeholder="Enter base path">
+                @if (productEndpointForm.get('basePath')?.hasError('required')) {
+                  <mat-error>Base path is required</mat-error>
+                }
+              </mat-form-field>
+            </div>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Product ID Path *</mat-label>
+                <input matInput formControlName="productIdPath" placeholder="Enter product ID path">
+                @if (productEndpointForm.get('productIdPath')?.hasError('required')) {
+                  <mat-error>Product ID path is required</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Product Name Path *</mat-label>
+                <input matInput formControlName="productNamePath" placeholder="Enter product name path">
+                @if (productEndpointForm.get('productNamePath')?.hasError('required')) {
+                  <mat-error>Product name path is required</mat-error>
+                }
+              </mat-form-field>
+            </div>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Product Image Path</mat-label>
+                <input matInput formControlName="productImagePath" placeholder="Enter product image path">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Product EAN Path</mat-label>
+                <input matInput formControlName="productEANPath" placeholder="Enter product EAN path">
+              </mat-form-field>
+            </div>
+          </mat-card-content>
+
+          <mat-card-actions align="end">
+            <a mat-raised-button type="button" [routerLink]="['/master-data/external-api', parentUuid(), 'product-endpoint']">Cancel</a>
+            <button mat-raised-button color="primary" type="submit" [disabled]="productEndpointForm.invalid">
+              {{ isEditing() ? 'Update' : 'Create' }}
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </form>
+
+      @if (error()) {
+        <div class="error">
+          <p>{{ error() }}</p>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="loading">
+      <mat-spinner></mat-spinner>
+    </div>
+  }
+</div>

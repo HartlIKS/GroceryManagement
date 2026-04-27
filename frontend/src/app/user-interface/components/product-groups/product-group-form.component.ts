@@ -43,7 +43,7 @@ export class ProductGroupFormComponent implements OnInit {
 
   private readonly productGroupService = inject(ProductGroupService);
   // Create HTTP resources
-  private readonly productsResource = inject(ProductService).getProducts('', 0, 1000);
+  private readonly productsResource = inject(ProductService).search('', 0, 1000);
   private readonly productGroupResource = this.productGroupService.getProductGroup(this.productGroupUuid);
 
   // Product management properties

@@ -1,13 +1,13 @@
 import { Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiService, CacheService, GetApiEndpoint } from '../../services';
+import { ApiService, GetApiEndpoint, NamedCacheService } from '../../services';
 import { CreateStoreDTO, ListStoreDTO } from '../models';
 import { Page } from '../../models';
 
 @Injectable({
   providedIn: 'root'
 })
-export class StoreService extends CacheService<ListStoreDTO, CreateStoreDTO> {
+export class StoreService extends NamedCacheService<ListStoreDTO, CreateStoreDTO> {
   private readonly endpoint = '/masterdata/store';
 
   constructor(private apiService: ApiService) {
@@ -27,7 +27,7 @@ export class StoreService extends CacheService<ListStoreDTO, CreateStoreDTO> {
   }
 
 // Get stores with pagination and search
-  getStores(
+  public override search(
     name: Signal<string> | string = '',
     page: Signal<number> | number = 0,
     size: Signal<number> | number = 20

@@ -1,0 +1,153 @@
+<div class="container">
+  <div class="header header-centered header-margin-bottom-20">
+    <h1>{{ isEditing() ? 'Edit Price Endpoint' : 'Add New Price Endpoint' }}</h1>
+  </div>
+
+  @if (!loading()) {
+    <div>
+      <form [formGroup]="priceEndpointForm" (ngSubmit)="onSave()">
+        <mat-card>
+          <mat-card-content>
+            <div class="section-header">
+              <h3>Basic Information</h3>
+            </div>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Name *</mat-label>
+                <input matInput formControlName="name" placeholder="Enter endpoint name">
+                @if (priceEndpointForm.get('name')?.hasError('required')) {
+                  <mat-error>Name is required</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Base URL *</mat-label>
+                <input matInput formControlName="baseUrl" placeholder="Enter base URL">
+                @if (priceEndpointForm.get('baseUrl')?.hasError('required')) {
+                  <mat-error>Base URL is required</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <div class="section-header">
+              <h3>Pagination Parameters</h3>
+            </div>
+            <div class="form-row">
+              <div formGroupName="pageSize" class="half-width">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Page Size Header</mat-label>
+                  <input matInput formControlName="header" placeholder="Header name">
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Page Size Query Parameter</mat-label>
+                  <input matInput formControlName="queryParameter" placeholder="Query parameter name">
+                </mat-form-field>
+              </div>
+              <div formGroupName="page" class="half-width">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Page Header</mat-label>
+                  <input matInput formControlName="header" placeholder="Header name">
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Page Query Parameter</mat-label>
+                  <input matInput formControlName="queryParameter" placeholder="Query parameter name">
+                </mat-form-field>
+              </div>
+            </div>
+            <div class="form-row">
+              <div formGroupName="itemCount" class="full-width">
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Item Count Header</mat-label>
+                  <input matInput formControlName="header" placeholder="Header name">
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Item Count Query Parameter</mat-label>
+                  <input matInput formControlName="queryParameter" placeholder="Query parameter name">
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="section-header">
+              <h3>Product Handling</h3>
+            </div>
+            <div class="form-row" formGroupName="productHandling">
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Handling Type</mat-label>
+                <mat-select formControlName="type">
+                  <mat-option value="path">Path</mat-option>
+                  <mat-option value="parameter">Parameter</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="section-header">
+              <h3>Store Handling</h3>
+            </div>
+            <div class="form-row" formGroupName="storeHandling">
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Handling Type</mat-label>
+                <mat-select formControlName="type">
+                  <mat-option value="path">Path</mat-option>
+                  <mat-option value="parameter">Parameter</mat-option>
+                  <mat-option value="oneForAll">One For All</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="section-header">
+              <h3>Price Paths</h3>
+            </div>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Base Path *</mat-label>
+                <input matInput formControlName="basePath" placeholder="Enter base path">
+                @if (priceEndpointForm.get('basePath')?.hasError('required')) {
+                  <mat-error>Base path is required</mat-error>
+                }
+              </mat-form-field>
+            </div>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Price Path *</mat-label>
+                <input matInput formControlName="pricePath" placeholder="Enter price path">
+                @if (priceEndpointForm.get('pricePath')?.hasError('required')) {
+                  <mat-error>Price path is required</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Time Format</mat-label>
+                <input matInput formControlName="timeFormat" placeholder="Enter time format">
+              </mat-form-field>
+            </div>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Valid From Path</mat-label>
+                <input matInput formControlName="validFromPath" placeholder="Enter valid from path">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Valid Until Path</mat-label>
+                <input matInput formControlName="validUntilPath" placeholder="Enter valid until path">
+              </mat-form-field>
+            </div>
+          </mat-card-content>
+
+          <mat-card-actions align="end">
+            <a mat-raised-button type="button" [routerLink]="['/master-data/external-api', parentUuid(), 'price-endpoint']">Cancel</a>
+            <button mat-raised-button color="primary" type="submit" [disabled]="priceEndpointForm.invalid">
+              {{ isEditing() ? 'Update' : 'Create' }}
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </form>
+
+      @if (error()) {
+        <div class="error">
+          <p>{{ error() }}</p>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="loading">
+      <mat-spinner></mat-spinner>
+    </div>
+  }
+</div>

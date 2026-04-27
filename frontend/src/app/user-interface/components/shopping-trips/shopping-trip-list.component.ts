@@ -48,7 +48,7 @@ export class ShoppingTripListComponent {
     toDate(this.fromDate),
     toDate(this.toDate)
   );
-  private readonly storesResource = this.storeService.getStores('', 0, 1000);
+  private readonly storesResource = this.storeService.search('', 0, 1000);
 
   // Computed properties from resources
   public readonly shoppingTrips = computed(() => this.shoppingTripsResource.value()?.content ?? []);

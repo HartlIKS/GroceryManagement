@@ -1,0 +1,64 @@
+<div class="container">
+  <div class="header">
+    <h1>External APIs</h1>
+    <div class="header-actions">
+      <button mat-raised-button color="accent" (click)="externalAPIsResource.reload()" class="refresh-btn">
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+      <a mat-raised-button color="primary" routerLink="/master-data/external-api/new">
+        <mat-icon>add</mat-icon>
+        Add External API
+      </a>
+    </div>
+  </div>
+
+  <div class="search-section">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search external APIs</mat-label>
+      <input matInput [(ngModel)]="searchTerm" placeholder="Enter API name">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+    <button mat-raised-button (click)="externalAPIsResource.reload()">Search</button>
+  </div>
+
+  <div class="table-container">
+    <mat-table [dataSource]="dataSource()" class="table">
+      <ng-container matColumnDef="name">
+        <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
+        <mat-cell *matCellDef="let api">{{ api.name }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+        <mat-cell *matCellDef="let api">
+          <a mat-icon-button color="primary" [routerLink]="['/master-data/external-api', api.uuid]">
+            <mat-icon>edit</mat-icon>
+          </a>
+          <button mat-icon-button color="warn" (click)="onDeleteExternalAPI(api.uuid)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </mat-cell>
+      </ng-container>
+
+      <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+      <mat-row *matRowDef="let _; columns: displayedColumns;"></mat-row>
+    </mat-table>
+
+    @if (loading()) {
+      <div class="loading">
+        <mat-spinner></mat-spinner>
+      </div>
+    } @else if (externalAPIs().length === 0) {
+      <div class="no-data">
+        <p>No external APIs found</p>
+      </div>
+    }
+
+    @if (error()) {
+      <div class="error">
+        <p>{{ error() }}</p>
+      </div>
+    }
+  </div>
+</div>
