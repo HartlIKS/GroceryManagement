@@ -48,6 +48,10 @@
 
         @let response = parsedResponse();
         <h3>Results</h3>
+        <button mat-raised-button color="primary" (click)="acceptAll()">
+          <mat-icon>check</mat-icon>
+          Accept All
+        </button>
         @for (item of response ?? []; track item.uuid) {
           <ng-template [ngComponentOutlet]="diffComponent" [ngComponentOutletInputs]="{item, api: parentUuid()}"/>
         }

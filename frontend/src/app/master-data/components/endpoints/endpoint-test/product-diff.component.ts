@@ -14,6 +14,7 @@ import {
   ProductListingComponent
 } from '../../../../user-interface/components/product-listing/product-listing.component';
 import { firstValueFrom } from 'rxjs';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-product-diff',
@@ -29,7 +30,8 @@ import { firstValueFrom } from 'rxjs';
     MatInput,
     FormRoot,
     FormField,
-    ProductListingComponent
+    ProductListingComponent,
+    MatProgressSpinner
   ],
   templateUrl: './product-diff.component.html',
   styleUrls: ['./product-diff.component.css']
@@ -81,18 +83,7 @@ export class ProductDiffComponent {
     schema(() => {}),
     {
       submission: {
-        action: async () => {
-          const {uuid, ...createDTO} = this.combinedItem();
-          if(uuid) {
-            await firstValueFrom(this.mappingService.setInboundTranslation(this.api(), this.item().uuid, uuid))
-            await firstValueFrom(this.productService.update(uuid, createDTO));
-            this.hasDiff.set(false);
-          } else {
-            const {uuid} = await firstValueFrom(this.productService.createProduct(createDTO));
-            await firstValueFrom(this.mappingService.setInboundTranslation(this.api(), this.item().uuid, uuid));
-            this.hasDiff.set(false);
-          }
-        }
+        action: () => this.accept()
       }
     }
   );
@@ -112,4 +103,19 @@ export class ProductDiffComponent {
     }
     return uuids;
   });
+  protected readonly loading = computed(() => this.mappedIdResource.isLoading() || this.mappedProductResource.isLoading() || this.searchedProductsResource.isLoading());
+
+  async accept() {
+    if(this.loading() || this.isIgnored() || !this.hasDiff()) return;
+    const {uuid, ...createDTO} = this.combinedItem();
+    if(uuid) {
+      await firstValueFrom(this.mappingService.setInboundTranslation(this.api(), this.item().uuid, uuid))
+      await firstValueFrom(this.productService.update(uuid, createDTO));
+      this.hasDiff.set(false);
+    } else {
+      const {uuid} = await firstValueFrom(this.productService.createProduct(createDTO));
+      await firstValueFrom(this.mappingService.setInboundTranslation(this.api(), this.item().uuid, uuid));
+      this.hasDiff.set(false);
+    }
+  }
 }

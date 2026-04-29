@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, linkedSignal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -6,15 +6,15 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ListStoreDTO, Store } from '../../../models';
-import { StoreService } from '../../../services';
+import { ListStoreDTO } from '../../../models';
+import { StoreMappingTableService, StoreService } from '../../../services';
 import { MatInput } from '@angular/material/input';
-
-interface DiffField {
-  field: string;
-  remote: string;
-  local: string;
-}
+import { form, FormField, FormRoot, schema } from '@angular/forms/signals';
+import { firstValueFrom } from 'rxjs';
+import {
+  ProductListingComponent
+} from '../../../../user-interface/components/product-listing/product-listing.component';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-store-diff',
@@ -27,105 +27,112 @@ interface DiffField {
     MatFormFieldModule,
     MatSelectModule,
     MatIconModule,
-    MatInput
+    MatInput,
+    FormRoot,
+    ProductListingComponent,
+    FormField,
+    MatProgressSpinner
   ],
   templateUrl: './store-diff.component.html',
   styleUrls: ['./store-diff.component.css']
 })
 export class StoreDiffComponent {
+  readonly api = input.required<string>();
   readonly item = input.required<Partial<ListStoreDTO> & {uuid: string}>();
   private readonly storeService = inject(StoreService);
+  private readonly mappingService = inject(StoreMappingTableService);
+  private readonly mappedIdResource = this.mappingService.translateInbound(this.api, computed(() => this.item().uuid));
+  protected readonly mappedId = linkedSignal(() => this.mappedIdResource.value() ?? undefined);
 
-  protected readonly isCollapsed = signal(true);
-  protected readonly selectedLocalUuid = signal<string | undefined>(undefined);
-  protected readonly searchQuery = signal('');
-  protected readonly availableStoresResource = this.storeService.search(this.searchQuery);
-  protected readonly availableStores = computed(() => this.availableStoresResource.value()?.content ?? []);
+  protected readonly mappedItem = computed(() => {
+    const it = this.item();
+    const mid = this.mappedId();
+    if(mid === undefined) {
+      const {uuid, ...ret} = it;
+      return ret;
+    }
+    return {
+      ...it,
+      uuid: mid,
+    };
+  });
+  protected readonly mappedStoreResource = this.storeService.getStore(this.mappedId);
+  protected readonly hasDiff = linkedSignal(() => {
+    const it = this.mappedItem();
+    const mp = this.mappedStoreResource.value();
+    if(it === undefined) return false;
+    if(mp === undefined) return true;
+    if(it.name !== undefined && it.name !== mp.name) return true;
+    if(it.logo !== undefined && it.logo !== mp.logo) return true;
+    if(it.address !== undefined) {
+      const iadr = it.address;
+      const madr = mp.address;
+      if(iadr.street !== undefined && iadr.street !== madr.street) return true;
+      if(iadr.number !== undefined && iadr.number !== madr.number) return true;
+      if(iadr.zip !== undefined && iadr.zip !== madr.zip) return true;
+      if(iadr.city !== undefined && iadr.city !== madr.city) return true;
+      if(iadr.country !== undefined && iadr.country !== madr.country) return true;
+    }
+    return it.currency !== undefined && it.currency !== mp.currency;
 
-  protected readonly selectedLocalStore = computed(() => {
-    const uuid = this.selectedLocalUuid();
-    if (!uuid) return null;
-    return this.availableStores().find(s => s.uuid === uuid) || null;
+  });
+  protected readonly combinedItem = linkedSignal(() => {
+    const it = this.mappedItem();
+    return {
+      ...(this.mappedStoreResource.value() ?? {
+        uuid: undefined,
+        name: '',
+        logo: '',
+        address: {
+          street: '',
+          number: '',
+          zip: '',
+          city: '',
+          country: ''
+        },
+        currency: ''
+      }),
+      ...it
+    };
+  });
+  protected readonly form = form(
+    this.combinedItem,
+    schema(() => {}),
+    {
+      submission: {
+        action: () => this.accept()
+      }
+    }
+  );
+  protected readonly isIgnored = linkedSignal(() => {
+    this.combinedItem();
+    return false;
   });
 
-  protected readonly differences = computed<DiffField[]>(() => {
-    const remote = this.item();
-    const local = this.selectedLocalStore();
-    if (!local) return [];
-
-    const diffs: DiffField[] = [];
-
-    if (remote.name !== local.name) {
-      diffs.push({ field: 'Name', remote: remote.name || '', local: local.name });
+  protected readonly searchText = linkedSignal(() => this.item().name ?? '');
+  private readonly searchedStoresResource = this.storeService.search(this.searchText);
+  protected readonly searchedStores = computed(() => {
+    const products = this.searchedStoresResource.value()?.content ?? [];
+    const uuids = products.map(({uuid}) => uuid);
+    const mappedId = this.mappedId();
+    if(mappedId !== undefined && !uuids.includes(mappedId)) {
+      return [mappedId, ...uuids];
     }
-    if (remote.logo !== local.logo) {
-      diffs.push({ field: 'Logo', remote: remote.logo || '', local: local.logo });
-    }
-    if (remote.currency !== local.currency) {
-      diffs.push({ field: 'Currency', remote: remote.currency || '', local: local.currency });
-    }
-
-    // Address comparison
-    if (remote.address && local.address) {
-      if (remote.address.street !== local.address.street) {
-        diffs.push({ field: 'Street', remote: remote.address.street || '', local: local.address.street });
-      }
-      if (remote.address.number !== local.address.number) {
-        diffs.push({ field: 'Number', remote: remote.address.number || '', local: local.address.number });
-      }
-      if (remote.address.zip !== local.address.zip) {
-        diffs.push({ field: 'ZIP', remote: remote.address.zip || '', local: local.address.zip });
-      }
-      if (remote.address.city !== local.address.city) {
-        diffs.push({ field: 'City', remote: remote.address.city || '', local: local.address.city });
-      }
-      if (remote.address.country !== local.address.country) {
-        diffs.push({ field: 'Country', remote: remote.address.country || '', local: local.address.country });
-      }
-    }
-
-    return diffs;
+    return uuids;
   });
 
-  protected readonly hasDifferences = computed(() => this.differences().length > 0);
-
-  constructor() {
-    // Auto-collapse if no differences when a store is selected
-    // This will be handled in the template
-  }
-
-  toggleCollapse(): void {
-    this.isCollapsed.set(!this.isCollapsed());
-  }
-
-  onIgnore(): void {
-    this.isCollapsed.set(true);
-  }
-
-  onAccept(): void {
-    const localUuid = this.selectedLocalUuid();
-    const remoteUuid = this.item().uuid;
-
-    if (!localUuid) return;
-
-    // TODO: Send mapping to backend via mapping service
-    // This would call the mapping service to set the inbound translation
-    console.log(`Accept mapping: remote ${remoteUuid} -> local ${localUuid}`);
-
-    // Also update local store if there are differences
-    if (this.hasDifferences()) {
-      const updates: Partial<Store> = {};
-      const remote = this.item();
-
-      if (remote.name) updates.name = remote.name;
-      if (remote.logo) updates.logo = remote.logo;
-      if (remote.currency) updates.currency = remote.currency;
-      if (remote.address) updates.address = remote.address;
-
-      // TODO: Update store via storeService
-      console.log('Update store with:', updates);
+  protected readonly loading = computed(() => this.mappedIdResource.isLoading() || this.mappedStoreResource.isLoading() || this.searchedStoresResource.isLoading());
+  async accept() {
+    if(this.loading() || this.isIgnored() || !this.hasDiff()) return;
+    const {uuid, ...createDTO} = this.combinedItem();
+    if(uuid) {
+      await firstValueFrom(this.mappingService.setInboundTranslation(this.api(), this.item().uuid, uuid))
+      await firstValueFrom(this.storeService.update(uuid, createDTO));
+      this.hasDiff.set(false);
+    } else {
+      const {uuid} = await firstValueFrom(this.storeService.createStore(createDTO));
+      await firstValueFrom(this.mappingService.setInboundTranslation(this.api(), this.item().uuid, uuid));
+      this.hasDiff.set(false);
     }
-
-    this.isCollapsed.set(true);
   }
 }

@@ -1,4 +1,6 @@
-@if (isIgnored()) {
+@if(loading()) {
+  <mat-spinner/>
+} @else if (isIgnored()) {
   <button mat-raised-button (click)="isIgnored.set(false)">
     <mat-icon>expand_more</mat-icon>
     Show

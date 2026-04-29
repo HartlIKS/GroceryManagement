@@ -1,5 +1,15 @@
-import { Component, computed, inject, InjectionToken, linkedSignal, OnInit, signal, Type } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  Component,
+  computed,
+  inject,
+  InjectionToken,
+  linkedSignal,
+  OnInit,
+  signal,
+  Type,
+  viewChildren
+} from '@angular/core';
+import { CommonModule, NgComponentOutlet } from '@angular/common';
 import { HttpHeaders, HttpParams, httpResource } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -10,11 +20,12 @@ import { ActivatedRoute } from '@angular/router';
 import { EndpointService } from '../../../services';
 import { EndpointDTO, ParameterDTO } from '../../../models';
 import { form, FormField, FormRoot, schema } from '@angular/forms/signals';
+import { MatIcon } from '@angular/material/icon';
 
 export type EndpointConfig<E extends EndpointDTO, T extends {uuid: string, name: string}> = {
   endpointService: EndpointService<E, any>;
   toPartials: (endpoint: E, requestResult: any) => (Partial<T> & {uuid: string})[];
-  diffComponent: Type<any>;
+  diffComponent: Type<{accept(): any}>;
 };
 
 export const ENDPOINT_TOKEN = new InjectionToken<EndpointConfig<EndpointDTO, {uuid: string, name: string}>>('EndpointConfig');
@@ -36,7 +47,8 @@ function writeParameter(value: string | number, param: ParameterDTO, headers: Ht
     MatInput,
     MatProgressSpinner,
     FormRoot,
-    FormField
+    FormField,
+    MatIcon
   ],
   templateUrl: './endpoint-test.component.html',
   styleUrls: ['./endpoint-test.component.css']
@@ -99,6 +111,8 @@ export class EndpointTestComponent implements OnInit {
     return this.endpointConfig.toPartials(endpoint, response);
   })
 
+  private readonly diffs = viewChildren(NgComponentOutlet<{accept(): any}>);
+
   ngOnInit(): void {
     this.route.params.subscribe(({id, endpointId}) => {
       this.endpointId.set(endpointId);
@@ -122,5 +136,11 @@ export class EndpointTestComponent implements OnInit {
       pageSize: p.pageSize,
       itemCount: 0
     }));
+  }
+
+  acceptAll() {
+    for(const c of this.diffs()) {
+      c.componentInstance?.accept();
+    }
   }
 }
