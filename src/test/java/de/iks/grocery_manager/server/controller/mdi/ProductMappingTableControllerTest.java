@@ -93,7 +93,7 @@ class ProductMappingTableControllerTest {
                     get("/api/masterdata/interface/{uuid}/mapping/product/in/{remoteId}", api.getUuid(), "nonexistent_remote_id")
                         .with(admin_jwt)
                 )
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNoContent());
         }
 
         @Test
@@ -188,7 +188,7 @@ class ProductMappingTableControllerTest {
                     get("/api/masterdata/interface/{uuid}/mapping/product/out/{localId}", api.getUuid(), Testdata.PRODUCT_1_UUID)
                         .with(admin_jwt)
                 )
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNoContent());
         }
 
         @Test

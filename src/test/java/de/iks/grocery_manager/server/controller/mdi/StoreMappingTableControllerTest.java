@@ -93,7 +93,7 @@ class StoreMappingTableControllerTest {
                     get("/api/masterdata/interface/{uuid}/mapping/store/in/{remoteId}", api.getUuid(), "nonexistent_remote_id")
                         .with(admin_jwt)
                 )
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNoContent());
         }
 
         @Test
@@ -188,7 +188,7 @@ class StoreMappingTableControllerTest {
                     get("/api/masterdata/interface/{uuid}/mapping/store/out/{localId}", api.getUuid(), Testdata.STORE_1_UUID)
                         .with(admin_jwt)
                 )
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNoContent());
         }
 
         @Test
