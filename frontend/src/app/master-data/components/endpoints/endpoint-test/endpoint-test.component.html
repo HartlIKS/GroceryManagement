@@ -1,0 +1,74 @@
+<div class="container">
+  <div class="header header-centered header-margin-bottom-20">
+    <h1>Run Endpoint</h1>
+  </div>
+
+  <div class="main-content">
+    <mat-card>
+      <mat-card-content>
+        <div class="section-header">
+          <h3>Pagination Parameters</h3>
+        </div>
+        <form [formRoot]="pagingForm">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Page</mat-label>
+              <input matInput type="number" [formField]="pagingForm.page" placeholder="Page number">
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Page Size</mat-label>
+              <input matInput type="number" [formField]="pagingForm.pageSize" placeholder="Items per page">
+            </mat-form-field>
+          </div>
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Item Count</mat-label>
+              <input matInput type="number" [formField]="pagingForm.itemCount" placeholder="Total items">
+            </mat-form-field>
+          </div>
+
+          <div class="header-actions">
+            <button mat-raised-button color="primary" type="submit">
+              Send Request
+            </button>
+          </div>
+        </form>
+
+        @if (requestResource.isLoading()) {
+          <div class="loading">
+            <mat-spinner></mat-spinner>
+          </div>
+        }
+
+        @if (requestResource.error()) {
+          <div class="error">
+            <p>{{ requestResource.error() }}</p>
+          </div>
+        }
+
+        @let response = parsedResponse();
+        <h3>Results</h3>
+        @for (item of response ?? []; track item.uuid) {
+          <ng-template [ngComponentOutlet]="diffComponent" [ngComponentOutletInputs]="{item, api: parentUuid()}"/>
+        }
+      </mat-card-content>
+      <mat-card-actions>
+        <button
+          type="button"
+          mat-raised-button
+          color="primary"
+          (click)="nextPage()"
+          [disabled]="requestResource.isLoading()">
+          Next Page
+        </button>
+        <button
+          type="button"
+          mat-raised-button
+          (click)="resetPages()"
+          [disabled]="requestResource.isLoading()">
+          Reset Paging
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>

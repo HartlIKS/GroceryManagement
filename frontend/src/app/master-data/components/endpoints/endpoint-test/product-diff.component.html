@@ -1,0 +1,77 @@
+@if (isIgnored()) {
+  <button mat-raised-button (click)="isIgnored.set(false)">
+    <mat-icon>expand_more</mat-icon>
+    Show
+  </button>
+} @else if (hasDiff()) {
+  <form [formRoot]="form">
+    <div class="form-row">
+      <mat-select [(value)]="mappedId">
+        <mat-option>Create New Product</mat-option>
+        @for (product of searchedProducts(); track product) {
+          <mat-option [value]="product">
+            <app-product-listing [uuid]="product"/>
+          </mat-option>
+        }
+      </mat-select>
+    </div>
+    @let n = mappedItem();
+    @let o = mappedProductResource.value();
+    @if (n.name ?? '' !== o?.name) {
+      <div class="form-row">
+        @if (o) {
+          <mat-form-field appearance="outline">
+            <mat-label>Old Name</mat-label>
+            <input matInput disabled [value]="o.name"/>
+          </mat-form-field>
+        }
+        <mat-form-field appearance="outline">
+          <mat-label>New Name</mat-label>
+          <input matInput disabled [value]="n.name"/>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Name</mat-label>
+          <input matInput [formField]="form.name"/>
+        </mat-form-field>
+      </div>
+    }
+    @if (n.image !== o?.image) {
+      <div class="form-row">
+        @if (o) {
+          <mat-form-field appearance="outline">
+            <mat-label>Old Image</mat-label>
+            <input matInput disabled [value]="o.image"/>
+          </mat-form-field>
+        }
+        <mat-form-field appearance="outline">
+          <mat-label>New Image</mat-label>
+          <input matInput disabled [value]="n.image"/>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Image</mat-label>
+          <input matInput [formField]="form.image"/>
+        </mat-form-field>
+      </div>
+    }
+    @if (n.EAN !== o?.EAN) {
+      <div class="form-row">
+        @if (o) {
+          <mat-form-field appearance="outline">
+            <mat-label>Old EAN</mat-label>
+            <input matInput disabled [value]="o.EAN"/>
+          </mat-form-field>
+        }
+        <mat-form-field appearance="outline">
+          <mat-label>New EAN</mat-label>
+          <input matInput disabled [value]="n.EAN"/>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>EAN</mat-label>
+          <input matInput [formField]="form.EAN"/>
+        </mat-form-field>
+      </div>
+    }
+    <button type="button" mat-raised-button (click)="isIgnored.set(true)">Ignore</button>
+    <button type="submit" mat-raised-button color="primary">Accept</button>
+  </form>
+}

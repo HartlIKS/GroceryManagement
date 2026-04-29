@@ -141,16 +141,32 @@ export class ApiService {
   }
 
   post<T>(endpoint: string, data: any): Observable<T> {
+    let headers = this.headers();
+    if(typeof data === 'string') {
+      data = JSON.stringify(data);
+      headers = {
+        ...(headers ?? {}),
+        'Content-Type': 'application/json',
+      };
+    }
     return this.http.post<T>(`${this.baseUrl}${endpoint}`, data, {
-      headers: this.headers(),
+      headers,
       params: this.shareParams(),
       withCredentials: true,
     });
   }
 
   put<T>(endpoint: string, id: string, data: any): Observable<T> {
+    let headers = this.headers();
+    if(typeof data === 'string') {
+      data = JSON.stringify(data);
+      headers = {
+        ...(headers ?? {}),
+        'Content-Type': 'application/json',
+      };
+    }
     return this.http.put<T>(`${this.baseUrl}${endpoint}/${id}`, data, {
-      headers: this.headers(),
+      headers,
       params: this.shareParams(),
       withCredentials: true,
     });

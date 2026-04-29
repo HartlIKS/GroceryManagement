@@ -1,0 +1,77 @@
+@if (isCollapsed()) {
+  <button mat-raised-button (click)="toggleCollapse()" class="full-width">
+    <mat-icon>expand_more</mat-icon>
+    View Diff for {{ item().name || item().uuid }}
+  </button>
+} @else {
+  <mat-card class="table-spaced">
+    <mat-card-content>
+      <div class="header">
+        <h3>Remote Store: {{ item().name || item().uuid }}</h3>
+        <button mat-icon-button (click)="onIgnore()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Map to Local Store</mat-label>
+          <mat-select [(value)]="selectedLocalUuid" placeholder="Select a store">
+            <mat-option (click)="searchQuery.set('')">All Stores</mat-option>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Search</mat-label>
+                <input matInput [(ngModel)]="searchQuery" placeholder="Search stores...">
+              </mat-form-field>
+            </div>
+            @for (store of availableStores(); track store.uuid) {
+              <mat-option [value]="store.uuid">{{ store.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      @if (selectedLocalStore()) {
+        <div class="form-row">
+          <p><strong>Selected Local:</strong> {{ selectedLocalStore()!.name }}</p>
+        </div>
+
+        @if (hasDifferences()) {
+          <div class="section-header">
+            <h3>Differences</h3>
+          </div>
+          @for (diff of differences(); track diff.field) {
+            <mat-card class="form-row">
+              <mat-card-content>
+                <h4>{{ diff.field }}</h4>
+                <div class="form-row">
+                  <div class="half-width">
+                    <p><strong>Remote:</strong> {{ diff.remote }}</p>
+                  </div>
+                  <div class="half-width">
+                    <p><strong>Local:</strong> {{ diff.local }}</p>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+        } @else {
+          <div class="no-data">
+            <mat-icon>check_circle</mat-icon>
+            <p>No differences - stores match</p>
+          </div>
+        }
+      }
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-raised-button (click)="onIgnore()">Ignore</button>
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="onAccept()"
+        [disabled]="!selectedLocalUuid()">
+        Accept
+      </button>
+    </mat-card-actions>
+  </mat-card>
+}

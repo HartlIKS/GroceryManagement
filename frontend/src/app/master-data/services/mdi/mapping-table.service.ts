@@ -23,7 +23,7 @@ export abstract class MappingTableService {
 
   // Set inbound translation: remote ID -> local UUID
   setInboundTranslation(uuid: string, remoteId: string, localId: string): Observable<string> {
-    return this.apiService.put<string>(`${this.endpoint1}/${uuid}/mapping/${this.endpoint2}/in/`, remoteId, localId);
+    return this.apiService.put<string>(`${this.endpoint1}/${uuid}/mapping/${this.endpoint2}/in`, remoteId, localId);
   }
 
   // Translate outbound: local UUID -> remote ID
@@ -40,6 +40,6 @@ export abstract class MappingTableService {
 
   // Set outbound translation: local UUID -> remote ID
   setOutboundTranslation(uuid: string, localId: string, remoteId: string): Observable<string> {
-    return this.apiService.put<string>(`${this.endpoint1}/${uuid}/mapping/${this.endpoint2}/out/`, localId, remoteId);
+    return this.apiService.put<string>(`${this.endpoint1}/${uuid}/mapping/${this.endpoint2}/out`, localId, remoteId);
   }
 }
