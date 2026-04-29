@@ -35,7 +35,7 @@ export class ProductListComponent {
   private readonly productService = inject(ProductService);
 
   // Create HTTP resource
-  protected readonly productsResource = this.productService.search(this.searchTerm());
+  protected readonly productsResource = this.productService.search(this.searchTerm);
 
   // Computed properties from resource
   public readonly products = computed(() => this.productsResource.value()?.content ?? []);
