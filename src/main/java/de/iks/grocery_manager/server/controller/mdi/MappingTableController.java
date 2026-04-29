@@ -36,9 +36,10 @@ public abstract class MappingTableController<
         @PathVariable UUID uuid,
         @PathVariable String remoteId
     ) {
-        return ResponseEntity.of(
-            mappingHandler.translateInbound().apply(uuid, remoteId)
-        );
+        return mappingHandler.translateInbound()
+            .apply(uuid, remoteId)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> repository.existsById(uuid) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build());
     }
 
     @PutMapping("/in/{remoteId}")
@@ -70,9 +71,10 @@ public abstract class MappingTableController<
         @PathVariable UUID uuid,
         @PathVariable UUID localId
     ) {
-        return ResponseEntity.of(
-            mappingHandler.translateOutbound().apply(uuid, localId)
-        );
+        return mappingHandler.translateOutbound()
+            .apply(uuid, localId)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> repository.existsById(uuid) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build());
     }
 
     @PutMapping("/out/{localId}")
