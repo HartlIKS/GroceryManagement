@@ -1,0 +1,21 @@
+@if (loading()) {
+  <mat-list-item>
+    <mat-spinner type="indeterminate"/>
+  </mat-list-item>
+} @else {
+  <mat-list-item>
+    @let logo = store()?.logo;
+    @if (logo) {
+      <img class="image-large" matListItemIcon [src]="logo" [alt]="store()?.name"/>
+    } @else {
+      <div class="image-large" matListItemIcon></div>
+    }
+    <div>
+      <div>{{ store()?.name ?? 'Unknown Store' }}</div>
+      <div class="address">{{ store()?.address?.street ?? '' }}{{ store()?.address?.street && store()?.address?.city ? ', ' : '' }}{{ store()?.address?.city ?? '' }}</div>
+    </div>
+    <div matListItemMeta>
+      <span>{{ store()?.currency ?? '' }}</span>
+    </div>
+  </mat-list-item>
+}

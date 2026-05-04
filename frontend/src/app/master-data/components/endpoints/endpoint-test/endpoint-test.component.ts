@@ -4,7 +4,7 @@ import {
   inject,
   InjectionToken,
   linkedSignal,
-  OnInit,
+  OnInit, Signal,
   signal,
   Type,
   viewChildren
@@ -22,10 +22,20 @@ import { EndpointDTO, ParameterDTO } from '../../../models';
 import { form, FormField, FormRoot, schema } from '@angular/forms/signals';
 import { MatIcon } from '@angular/material/icon';
 
+export type DiffStatus = 'loading' | 'ignored' | 'create' | 'same' | 'different';
+
+export interface DiffComponent {
+  readonly status: Signal<DiffStatus>;
+  accept(status?: {
+    create?: boolean,
+    different?: boolean,
+  }): any;
+}
+
 export type EndpointConfig<E extends EndpointDTO, T extends {uuid: string, name: string}> = {
   endpointService: EndpointService<E, any>;
   toPartials: (endpoint: E, requestResult: any) => (Partial<T> & {uuid: string})[];
-  diffComponent: Type<{accept(): any}>;
+  diffComponent: Type<DiffComponent>;
 };
 
 export const ENDPOINT_TOKEN = new InjectionToken<EndpointConfig<EndpointDTO, {uuid: string, name: string}>>('EndpointConfig');
@@ -111,7 +121,17 @@ export class EndpointTestComponent implements OnInit {
     return this.endpointConfig.toPartials(endpoint, response);
   })
 
-  private readonly diffs = viewChildren(NgComponentOutlet<{accept(): any}>);
+  private readonly diffs = viewChildren<NgComponentOutlet<DiffComponent>>(NgComponentOutlet);
+  protected readonly diffCounts = computed(() => this.diffs()
+    .reduce<Record<DiffStatus | 'total', number>>(
+      (a, v) => {
+        a.total++;
+        a[v.componentInstance?.status() ?? 'loading']++;
+        return a;
+      },
+      {loading: 0, ignored: 0, create: 0, same: 0, different: 0, total: 0}
+    )
+  )
 
   ngOnInit(): void {
     this.route.params.subscribe(({id, endpointId}) => {
@@ -138,9 +158,12 @@ export class EndpointTestComponent implements OnInit {
     }));
   }
 
-  acceptAll() {
+  acceptAll(status?: {
+    create?: boolean,
+    different?: boolean,
+  }) {
     for(const c of this.diffs()) {
-      c.componentInstance?.accept();
+      c.componentInstance?.accept(status);
     }
   }
 }

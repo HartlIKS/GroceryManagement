@@ -1,0 +1,33 @@
+.numLoading,
+.numIgnored,
+.numCreate,
+.numDiff,
+.numSame
+{
+  color: var(--mat-sys-background);
+  display: inline-block;
+}
+
+.numLoading {
+  background-color: var(--mat-sys-primary);
+}
+
+.numIgnored {
+  background-color: darkgray;
+}
+
+.numCreate {
+  background-color: lawngreen;
+}
+
+.numDiff {
+  background-color: darkorange;
+}
+
+.numSame {
+  background-color: darkgreen;
+}
+
+.barGraph {
+  flex: 1;
+}

@@ -23,13 +23,20 @@ import { ProductEndpointService, StoreEndpointService } from './services';
 import { inject } from '@angular/core';
 import jp from 'jsonpath';
 
+function jsonValue(a: any, path?: string): any {
+  if(!path) return undefined;
+  const e = /^'([^']*)'$/.exec(path);
+  if(e) return e[1];
+  return jp.value(a, path);
+}
+
 function toAddress(a: any, paths: AddressPathsDTO): AddressDTO {
   return {
-    street: jp.value(a, paths.streetPath),
-    number: jp.value(a, paths.numberPath),
-    zip: jp.value(a, paths.zipPath),
-    city: jp.value(a, paths.cityPath),
-    country: jp.value(a, paths.countryPath)
+    street: jsonValue(a, paths.streetPath),
+    number: jsonValue(a, paths.numberPath),
+    zip: jsonValue(a, paths.zipPath),
+    city: jsonValue(a, paths.cityPath),
+    country: jsonValue(a, paths.countryPath),
   };
 }
 
@@ -79,13 +86,12 @@ export const externalAPIRoutes: Routes = [
         useFactory: (): EndpointConfig<ProductEndpointDTO, ListProductDTO> => ({
           endpointService: inject(ProductEndpointService),
           toPartials: (endpoint, response) => jp.query(response, endpoint.basePath).map(p => {
-            const ret: Partial<ListProductDTO> & {uuid: string} = {
-              uuid: jp.value(p, endpoint.productIdPath),
+            return {
+              uuid: jsonValue(p, endpoint.productIdPath),
+              name: jsonValue(p, endpoint.productNamePath),
+              image: jsonValue(p, endpoint.productImagePath),
+              EAN: jsonValue(p, endpoint.productEANPath),
             };
-            if(endpoint.productNamePath) ret.name = jp.value(p, endpoint.productNamePath);
-            if(endpoint.productImagePath) ret.image = jp.value(p, endpoint.productImagePath);
-            if(endpoint.productEANPath) ret.EAN = jp.value(p, endpoint.productEANPath);
-            return ret;
           }),
           diffComponent: ProductDiffComponent,
         })
@@ -101,14 +107,13 @@ export const externalAPIRoutes: Routes = [
         useFactory: (): EndpointConfig<StoreEndpointDTO, ListStoreDTO> => ({
           endpointService: inject(StoreEndpointService),
           toPartials: (endpoint, response) => jp.query(response, endpoint.basePath).map(p => {
-            const ret: Partial<ListStoreDTO> & {uuid: string} = {
-              uuid: jp.value(p, endpoint.storeIdPath)
+            return {
+              uuid: jsonValue(p, endpoint.storeIdPath),
+              name: jsonValue(p, endpoint.storeNamePath),
+              logo: jsonValue(p, endpoint.storeLogoPath),
+              address: toAddress(jsonValue(p, endpoint.addressPath), endpoint.addressPaths),
+              currency: jsonValue(p, endpoint.storeCurrencyPath),
             };
-            if(endpoint.storeNamePath) ret.name = jp.value(p, endpoint.storeNamePath);
-            if(endpoint.storeLogoPath) ret.logo = jp.value(p, endpoint.storeLogoPath);
-            if(endpoint.addressPath) ret.address = toAddress(jp.value(p, endpoint.addressPath), endpoint.addressPaths);
-            if(endpoint.storeCurrencyPath) ret.currency = jp.value(p, endpoint.storeCurrencyPath);
-            return ret;
           }),
           diffComponent: StoreDiffComponent,
         })

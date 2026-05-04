@@ -48,10 +48,43 @@
 
         @let response = parsedResponse();
         <h3>Results</h3>
-        <button mat-raised-button color="primary" (click)="acceptAll()">
+        @let stats = diffCounts();
+        <button mat-raised-button (click)="acceptAll({create: true})" [disabled]="stats.create === 0">
+          <mat-icon>check</mat-icon>
+          Accept all new
+        </button>
+        <button mat-raised-button (click)="acceptAll({different: true})" [disabled]="stats.different === 0">
+          <mat-icon>check</mat-icon>
+          Accept all changed
+        </button>
+        <button mat-raised-button color="primary" (click)="acceptAll()"
+                [disabled]="stats.create + stats.different === 0">
           <mat-icon>check</mat-icon>
           Accept All
         </button>
+        <hr>
+        <div class="form-row">
+          <span class="barGraph">
+            <span class="numLoading" [ngStyle]="{
+              width: `${stats.loading / stats.total * 100}%`
+            }" [textContent]="stats.loading"></span>
+            <span class="numIgnored" [ngStyle]="{
+              width: `${stats.ignored / stats.total * 100}%`
+            }" [textContent]="stats.ignored"></span>
+            <span class="numCreate" [ngStyle]="{
+              width: `${stats.create / stats.total * 100}%`
+            }" [textContent]="stats.create"></span>
+            <span class="numDiff" [ngStyle]="{
+              width: `${stats.different / stats.total * 100}%`
+            }" [textContent]="stats.different"></span>
+            <span class="numSame" [ngStyle]="{
+              width: `${stats.same / stats.total * 100}%`
+            }" [textContent]="stats.same"></span>
+          </span>
+          <span>/</span>
+          <span [textContent]="stats.total"></span>
+        </div>
+        <hr>
         @for (item of response ?? []; track item.uuid) {
           <ng-template [ngComponentOutlet]="diffComponent" [ngComponentOutletInputs]="{item, api: parentUuid()}"/>
         }

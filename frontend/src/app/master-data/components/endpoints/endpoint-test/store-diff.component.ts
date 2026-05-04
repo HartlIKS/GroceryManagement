@@ -11,10 +11,9 @@ import { StoreMappingTableService, StoreService } from '../../../services';
 import { MatInput } from '@angular/material/input';
 import { form, FormField, FormRoot, schema } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
-import {
-  ProductListingComponent
-} from '../../../../user-interface/components/product-listing/product-listing.component';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { StoreListingComponent } from '../../../../user-interface/components/store-listing/store-listing.component';
+import { DiffComponent } from './endpoint-test.component';
 
 @Component({
   selector: 'app-store-diff',
@@ -29,14 +28,14 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
     MatIconModule,
     MatInput,
     FormRoot,
-    ProductListingComponent,
     FormField,
-    MatProgressSpinner
+    MatProgressSpinner,
+    StoreListingComponent
   ],
   templateUrl: './store-diff.component.html',
   styleUrls: ['./store-diff.component.css']
 })
-export class StoreDiffComponent {
+export class StoreDiffComponent implements DiffComponent {
   readonly api = input.required<string>();
   readonly item = input.required<Partial<ListStoreDTO> & {uuid: string}>();
   private readonly storeService = inject(StoreService);
@@ -122,17 +121,33 @@ export class StoreDiffComponent {
   });
 
   protected readonly loading = computed(() => this.mappedIdResource.isLoading() || this.mappedStoreResource.isLoading() || this.searchedStoresResource.isLoading());
-  async accept() {
-    if(this.loading() || this.isIgnored() || !this.hasDiff()) return;
+
+  readonly status = computed(() => {
+    if(this.loading()) return 'loading';
+    if(this.isIgnored()) return 'ignored';
+    if(this.mappedId() === undefined) return 'create';
+    if(this.hasDiff()) return 'different';
+    return 'same';
+  })
+
+  async accept(status: {
+    create?: boolean,
+    different?: boolean,
+  } = {
+    create: true,
+    different: true,
+  }) {
+    const st = this.status();
+    if(st === 'loading' || st === 'ignored' || st === 'same') return;
+    if(!status[st]) return;
     const {uuid, ...createDTO} = this.combinedItem();
     if(uuid) {
       await firstValueFrom(this.mappingService.setInboundTranslation(this.api(), this.item().uuid, uuid))
-      await firstValueFrom(this.storeService.update(uuid, createDTO));
-      this.hasDiff.set(false);
+      this.mappedStoreResource.set(await firstValueFrom(this.storeService.update(uuid, createDTO)));
     } else {
       const {uuid} = await firstValueFrom(this.storeService.createStore(createDTO));
       await firstValueFrom(this.mappingService.setInboundTranslation(this.api(), this.item().uuid, uuid));
-      this.hasDiff.set(false);
+      this.mappedId.set(uuid);
     }
   }
 }

@@ -9,10 +9,10 @@
   <form [formRoot]="form">
     <div class="form-row">
       <mat-select [(value)]="mappedId">
-        <mat-option>Create New Product</mat-option>
-        @for (product of searchedStores(); track product) {
-          <mat-option [value]="product">
-            <app-product-listing [uuid]="product"/>
+        <mat-option [value]="undefined">Create New Store</mat-option>
+        @for (store of searchedStores(); track store) {
+          <mat-option [value]="store">
+            <app-store-listing [uuid]="store"/>
           </mat-option>
         }
       </mat-select>
