@@ -1,6 +1,7 @@
 package de.iks.grocery_manager.server.controller.mdi;
 
 import de.iks.grocery_manager.server.dto.JsonString;
+import de.iks.grocery_manager.server.mapping.DTOMapper;
 import de.iks.grocery_manager.server.mapping.MappingHandler;
 import de.iks.grocery_manager.server.model.HasUUID;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,6 +31,19 @@ public abstract class MappingTableController<
     protected final P repository;
     private final MappingHandler<E, E2> mappingHandler;
     protected final P2 mappedRepository;
+    protected final DTOMapper dtoMapper;
+
+    @GetMapping
+    @Transactional(readOnly = true)
+    public ResponseEntity<Map<UUID, String>> getMappings(
+        @PathVariable UUID uuid
+    ) {
+        return ResponseEntity.of(
+            repository.findById(uuid)
+                .map(mappingHandler.getMappings())
+                .map(dtoMapper::toUUIDMap)
+        );
+    }
 
     @GetMapping("/in/{remoteId}")
     @Transactional(readOnly = true)

@@ -32,15 +32,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ExternalAPIControllerTest {
     private static final String EXTERNAL_API_1_CREATE_JSON = """
         {
-          "name": "External API 1",
-          "productMappings": {},
-          "storeMappings": {}
+          "name": "External API 1"
         }""";
     private static final String EXTERNAL_API_1_UPDATE_JSON = """
         {
-          "name": "External API 1 Updated",
-          "productMappings": {},
-          "storeMappings": {}
+          "name": "External API 1 Updated"
         }""";
 
     private MockMvc mockMvc;

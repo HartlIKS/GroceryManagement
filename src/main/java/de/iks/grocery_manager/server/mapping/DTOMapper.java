@@ -53,6 +53,8 @@ public interface DTOMapper {
         return entity.getUuid();
     }
 
+    Map<UUID, String> toUUIDMap(Map<? extends HasUUID, String> map);
+
     ListStoreDTO map(Store store);
 
     @Mapping(target = "uuid", ignore = true)
@@ -255,9 +257,13 @@ public interface DTOMapper {
 
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "endpoints", ignore = true)
+    @Mapping(target = "productMappings", ignore = true)
+    @Mapping(target = "storeMappings", ignore = true)
     ExternalAPI create(CreateExternalAPIDTO createExternalAPIDTO);
 
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "endpoints", ignore = true)
+    @Mapping(target = "productMappings", ignore = true)
+    @Mapping(target = "storeMappings", ignore = true)
     void update(@MappingTarget ExternalAPI target, CreateExternalAPIDTO update);
 }
