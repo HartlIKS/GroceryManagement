@@ -254,4 +254,53 @@ class ProductMappingTableControllerTest {
                 .andExpect(status().isNotFound());
         }
     }
+
+    @Nested
+    class GetMappings {
+        @Test
+        void shouldReturnMappingsWhenMappingsExist() throws Exception {
+            // Set up mappings
+            api.getProductMappings().put(
+                productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow(),
+                "remote_product_1"
+            );
+            api.getProductMappings().put(
+                productRepository.findById(Testdata.PRODUCT_2_UUID).orElseThrow(),
+                "remote_product_2"
+            );
+            api = externalAPIRepository.save(api);
+
+            mockMvc
+                .perform(
+                    get("/api/masterdata/interface/{uuid}/mapping/product", api.getUuid())
+                        .with(admin_jwt)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$." + Testdata.PRODUCT_1_UUID).value("remote_product_1"))
+                .andExpect(jsonPath("$." + Testdata.PRODUCT_2_UUID).value("remote_product_2"));
+        }
+
+        @Test
+        void shouldReturnEmptyMapWhenNoMappingsExist() throws Exception {
+            mockMvc
+                .perform(
+                    get("/api/masterdata/interface/{uuid}/mapping/product", api.getUuid())
+                        .with(admin_jwt)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isEmpty());
+        }
+
+        @Test
+        void shouldReturn404WhenApiNotFound() throws Exception {
+            mockMvc
+                .perform(
+                    get("/api/masterdata/interface/{uuid}/mapping/product", Testdata.BAD_UUID)
+                        .with(admin_jwt)
+                )
+                .andExpect(status().isNotFound());
+        }
+    }
 }

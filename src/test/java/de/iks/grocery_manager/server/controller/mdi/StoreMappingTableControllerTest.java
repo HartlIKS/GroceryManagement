@@ -254,4 +254,53 @@ class StoreMappingTableControllerTest {
                 .andExpect(status().isNotFound());
         }
     }
+
+    @Nested
+    class GetMappings {
+        @Test
+        void shouldReturnMappingsWhenMappingsExist() throws Exception {
+            // Set up mappings
+            api.getStoreMappings().put(
+                storeRepository.findById(Testdata.STORE_1_UUID).orElseThrow(),
+                "remote_store_1"
+            );
+            api.getStoreMappings().put(
+                storeRepository.findById(Testdata.STORE_2_UUID).orElseThrow(),
+                "remote_store_2"
+            );
+            api = externalAPIRepository.save(api);
+
+            mockMvc
+                .perform(
+                    get("/api/masterdata/interface/{uuid}/mapping/store", api.getUuid())
+                        .with(admin_jwt)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$." + Testdata.STORE_1_UUID).value("remote_store_1"))
+                .andExpect(jsonPath("$." + Testdata.STORE_2_UUID).value("remote_store_2"));
+        }
+
+        @Test
+        void shouldReturnEmptyMapWhenNoMappingsExist() throws Exception {
+            mockMvc
+                .perform(
+                    get("/api/masterdata/interface/{uuid}/mapping/store", api.getUuid())
+                        .with(admin_jwt)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isEmpty());
+        }
+
+        @Test
+        void shouldReturn404WhenApiNotFound() throws Exception {
+            mockMvc
+                .perform(
+                    get("/api/masterdata/interface/{uuid}/mapping/store", Testdata.BAD_UUID)
+                        .with(admin_jwt)
+                )
+                .andExpect(status().isNotFound());
+        }
+    }
 }
