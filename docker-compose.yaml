@@ -42,7 +42,7 @@ services:
       SPRING_CONFIG_IMPORT: optional:configtree:/run/secrets/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER: "http://localhost:8081/auth/v1"
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER: "http://localhost:8081/auth/v1/"
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "http://rauthy:8081/auth/v1/oidc/certs"
     secrets:
       - source: postgres_pw
