@@ -65,6 +65,7 @@ export class ProductEndpointFormComponent implements OnInit {
         header: [''],
         queryParameter: ['']
       }),
+      responseType: ['JSON', Validators.required],
       basePath: ['', Validators.required],
       productIdPath: ['', Validators.required],
       productNamePath: ['', Validators.required],

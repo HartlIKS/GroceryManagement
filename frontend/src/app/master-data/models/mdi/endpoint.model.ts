@@ -1,4 +1,5 @@
 import { ParameterDTO } from './handling.model';
+import { ResponseType } from './response-type.enum';
 
 export type EndpointDTO = {
   uuid: string;
@@ -7,6 +8,7 @@ export type EndpointDTO = {
   pageSize: ParameterDTO;
   page: ParameterDTO;
   itemCount: ParameterDTO;
+  responseType: ResponseType;
   basePath: string;
 }
 
@@ -16,5 +18,6 @@ export type CreateEndpointDTO = {
   pageSize: ParameterDTO;
   page: ParameterDTO;
   itemCount: ParameterDTO;
+  responseType: ResponseType;
   basePath: string;
 }

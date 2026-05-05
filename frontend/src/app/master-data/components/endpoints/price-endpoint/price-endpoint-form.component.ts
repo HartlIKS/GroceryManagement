@@ -65,6 +65,7 @@ export class PriceEndpointFormComponent implements OnInit {
         header: [''],
         queryParameter: ['']
       }),
+      responseType: ['JSON', Validators.required],
       basePath: ['', Validators.required],
       productHandling: this.fb.group({
         type: ['path']

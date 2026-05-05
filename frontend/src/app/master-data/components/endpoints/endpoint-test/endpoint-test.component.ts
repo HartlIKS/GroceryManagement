@@ -34,7 +34,7 @@ export interface DiffComponent {
 
 export type EndpointConfig<E extends EndpointDTO, T extends {uuid: string, name: string}> = {
   endpointService: EndpointService<E, any>;
-  toPartials: (endpoint: E, requestResult: any) => (Partial<T> & {uuid: string})[];
+  toPartials: (endpoint: E, requestResult: string) => (Partial<T> & {uuid: string})[];
   diffComponent: Type<DiffComponent>;
 };
 
@@ -73,8 +73,6 @@ export class EndpointTestComponent implements OnInit {
 
   private readonly endpointResource = this.endpointConfig.endpointService.getEndpoint(this.parentUuid, this.endpointId);
   protected readonly endpoint = computed(() => this.endpointResource.value());
-  protected readonly loadingConfig = computed(() => this.endpointResource.status() === 'loading');
-
 
   private readonly pagingInfo = signal({
     page: 0,
@@ -97,7 +95,7 @@ export class EndpointTestComponent implements OnInit {
     }
   );
   protected readonly requestInfo = linkedSignal(() => ({...this.pagingInfo(), send: false}));
-  protected readonly requestResource = httpResource(() => {
+  protected readonly requestResource = httpResource.text(() => {
     const reqInfo = this.requestInfo();
     if(!reqInfo.send) return undefined;
     const endpoint = this.endpoint();

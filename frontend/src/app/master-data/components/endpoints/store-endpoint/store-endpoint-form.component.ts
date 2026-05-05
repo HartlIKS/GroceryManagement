@@ -65,6 +65,7 @@ export class StoreEndpointFormComponent implements OnInit {
         header: [''],
         queryParameter: ['']
       }),
+      responseType: ['JSON', Validators.required],
       basePath: ['', Validators.required],
       storeIdPath: ['', Validators.required],
       storeNamePath: ['', Validators.required],

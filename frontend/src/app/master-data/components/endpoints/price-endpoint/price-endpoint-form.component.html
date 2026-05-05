@@ -67,6 +67,23 @@
             </div>
 
             <div class="section-header">
+              <h3>Response Type</h3>
+            </div>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Response Type *</mat-label>
+                <mat-select formControlName="responseType">
+                  <mat-option value="JSON">JSON</mat-option>
+                  <mat-option value="XML">XML</mat-option>
+                  <mat-option value="HTML">HTML</mat-option>
+                </mat-select>
+                @if (priceEndpointForm.get('responseType')?.hasError('required')) {
+                  <mat-error>Response type is required</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <div class="section-header">
               <h3>Product Handling</h3>
             </div>
             <div class="form-row" formGroupName="productHandling">
