@@ -461,20 +461,18 @@ JSON path configuration for address components in API responses.
 - `GET /masterdata/interface/{parentUuid}/endpoint/store` - Search store endpoints (with optional name parameter, paginated)
 
 ### Product Mapping Table (`/masterdata/interface/{uuid}/mapping/product`)
+- `GET /masterdata/interface/{uuid}/mapping/product` - Get all product mappings as Map<UUID, String>
 - `GET /masterdata/interface/{uuid}/mapping/product/in/{remoteId}` - Get local product ID for remote ID
 - `PUT /masterdata/interface/{uuid}/mapping/product/in/{remoteId}` - Set mapping from remote ID to local product ID
-- `DELETE /masterdata/interface/{uuid}/mapping/product/in/{remoteId}` - Remove mapping
 - `GET /masterdata/interface/{uuid}/mapping/product/out/{localId}` - Get remote ID for local product
 - `PUT /masterdata/interface/{uuid}/mapping/product/out/{localId}` - Set mapping from local product to remote ID
-- `DELETE /masterdata/interface/{uuid}/mapping/product/out/{localId}` - Remove mapping
 
 ### Store Mapping Table (`/masterdata/interface/{uuid}/mapping/store`)
+- `GET /masterdata/interface/{uuid}/mapping/store` - Get all store mappings as Map<UUID, String>
 - `GET /masterdata/interface/{uuid}/mapping/store/in/{remoteId}` - Get local store ID for remote ID
 - `PUT /masterdata/interface/{uuid}/mapping/store/in/{remoteId}` - Set mapping from remote ID to local store ID
-- `DELETE /masterdata/interface/{uuid}/mapping/store/in/{remoteId}` - Remove mapping
 - `GET /masterdata/interface/{uuid}/mapping/store/out/{localId}` - Get remote ID for local store
 - `PUT /masterdata/interface/{uuid}/mapping/store/out/{localId}` - Set mapping from local store to remote ID
-- `DELETE /masterdata/interface/{uuid}/mapping/store/out/{localId}` - Remove mapping
 
 ## Development Setup
 
