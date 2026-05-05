@@ -215,7 +215,7 @@ ExternalAPIs represent external systems that the grocery management system can i
 - **page**: Parameter configuration for page number (Parameter)
 - **itemCount**: Parameter configuration for item count (Parameter)
 - **basePath**: Base path for the endpoint (required, String)
-- **responseType**: Response format type (ResponseType, required, default: JSON)
+- **responseType**: Response format type (ResponseType, required, default: JSON) - Determines how response data is parsed in the endpoint testing interface
 
 Base class for all endpoint types.
 
@@ -327,11 +327,21 @@ JSON path configuration for address components in API responses.
 - **External API management** - Complete CRUD operations for external APIs (`/master-data/external-api`)
 - **Endpoint configuration** - Configure price, product, and store endpoints
 - **Mapping table management** - Manage product and store mappings between local and remote IDs
-- **Endpoint testing interface** - Test endpoints with diff comparison for products and stores
+- **Endpoint testing interface** - Test endpoints with diff comparison for products and stores, supporting JSON, XML, and HTML response types with appropriate parsing logic
 - **Endpoint list component** - View and manage all endpoints for an external API
 - **Mapping list component** - Table-based interface for managing ID mappings with add/delete operations
 - **Product diff component** - Compare local products with remote API product data
 - **Store diff component** - Compare local stores with remote API store data
+
+### Response Type Handling Implementation
+The frontend implements comprehensive response type handling for endpoint testing:
+
+- **JSON Responses**: Parsed using JSONPath queries with the `jsonpath` library for extracting data from nested JSON structures
+- **XML/HTML Responses**: Parsed using DOMParser with CSS selectors for element-based data extraction
+- **Type-Safe Parsing**: Different parsing functions (`jsonValue` for JSON, `elementValue` for XML/HTML) ensure proper data extraction based on response type
+- **Address Handling**: Separate functions for address parsing (`toAddressJson` vs `toAddressElement`) based on response format
+
+The implementation uses a switch statement in the `toPartials` function within `externalAPIRoutes.ts` to handle different response types appropriately, with the endpoint's `responseType` field determining the parsing strategy.
 
 ### Share Administration
 - **Share management interface** for creating and editing shares (`/share-admin`)
