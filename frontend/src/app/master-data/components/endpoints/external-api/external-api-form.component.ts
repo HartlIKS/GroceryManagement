@@ -57,7 +57,6 @@ import { firstValueFrom } from 'rxjs';
 export class ExternalAPIFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  isEditing = computed(() => !!this.externalAPIId())
   externalAPIId = signal<string | undefined>(undefined);
 
   private readonly externalAPIService = inject(ExternalAPIService);

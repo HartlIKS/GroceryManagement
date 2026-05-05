@@ -1,23 +1,22 @@
 @let externalAPI = externalAPIId();
-@if (externalAPI) {
-  <div class="container">
-    <div class="header header-centered header-margin-bottom-20">
-      <h1>{{ isEditing() ? 'Edit External API' : 'Add New External API' }}</h1>
-    </div>
+<div class="container">
+  <div class="header header-centered header-margin-bottom-20">
+    <h1>{{ externalAPI ? 'Edit External API' : 'Add New External API' }}</h1>
+  </div>
 
-    @if (!loading()) {
-      <mat-card>
-        <div>
-          <form [formRoot]="externalAPIForm">
-            <mat-card-content>
-              <div class="form-row">
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>API Name *</mat-label>
-                  <input matInput [formField]="externalAPIForm.name" placeholder="Enter API name">
-                  <mat-error/>
-                </mat-form-field>
-              </div>
-
+  @if (!loading()) {
+    <mat-card>
+      <div>
+        <form [formRoot]="externalAPIForm">
+          <mat-card-content>
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>API Name *</mat-label>
+                <input matInput [formField]="externalAPIForm.name" placeholder="Enter API name">
+                <mat-error/>
+              </mat-form-field>
+            </div>
+            @if (externalAPI) {
               <ng-template #mappingTable>
                 <app-mapping-list [parentUuid]="externalAPI" class="full-width"/>
               </ng-template>
@@ -46,63 +45,61 @@
                   </ng-template>
                 </mat-expansion-panel>
 
-                @if (isEditing()) {
-                  <ng-template let-endpointType="endpointType" #endpointList>
-                    <app-endpoint-list [parentUuid]="externalAPI" [endpointType]="endpointType"/>
-                  </ng-template>
-                  <mat-expansion-panel>
-                    <mat-expansion-panel-header>
-                      <mat-panel-title>Price Endpoints</mat-panel-title>
-                    </mat-expansion-panel-header>
-                    <ng-template [ngTemplateOutlet]="endpointList"
-                                 [ngTemplateOutletContext]="{ endpointType: 'price-endpoint' }"
-                                 [ngTemplateOutletInjector]="priceServiceInjector"
-                    />
-                  </mat-expansion-panel>
+                <ng-template let-endpointType="endpointType" #endpointList>
+                  <app-endpoint-list [parentUuid]="externalAPI" [endpointType]="endpointType"/>
+                </ng-template>
+                <mat-expansion-panel>
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>Price Endpoints</mat-panel-title>
+                  </mat-expansion-panel-header>
+                  <ng-template [ngTemplateOutlet]="endpointList"
+                               [ngTemplateOutletContext]="{ endpointType: 'price-endpoint' }"
+                               [ngTemplateOutletInjector]="priceServiceInjector"
+                  />
+                </mat-expansion-panel>
 
-                  <mat-expansion-panel>
-                    <mat-expansion-panel-header>
-                      <mat-panel-title>Product Endpoints</mat-panel-title>
-                    </mat-expansion-panel-header>
-                    <ng-template [ngTemplateOutlet]="endpointList"
-                                 [ngTemplateOutletContext]="{ endpointType: 'product-endpoint' }"
-                                 [ngTemplateOutletInjector]="productServiceInjector"
-                    />
-                  </mat-expansion-panel>
+                <mat-expansion-panel>
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>Product Endpoints</mat-panel-title>
+                  </mat-expansion-panel-header>
+                  <ng-template [ngTemplateOutlet]="endpointList"
+                               [ngTemplateOutletContext]="{ endpointType: 'product-endpoint' }"
+                               [ngTemplateOutletInjector]="productServiceInjector"
+                  />
+                </mat-expansion-panel>
 
-                  <mat-expansion-panel>
-                    <mat-expansion-panel-header>
-                      <mat-panel-title>Store Endpoints</mat-panel-title>
-                    </mat-expansion-panel-header>
-                    <ng-template [ngTemplateOutlet]="endpointList"
-                                 [ngTemplateOutletContext]="{ endpointType: 'store-endpoint' }"
-                                 [ngTemplateOutletInjector]="storeServiceInjector"
-                    />
-                  </mat-expansion-panel>
-                }
+                <mat-expansion-panel>
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>Store Endpoints</mat-panel-title>
+                  </mat-expansion-panel-header>
+                  <ng-template [ngTemplateOutlet]="endpointList"
+                               [ngTemplateOutletContext]="{ endpointType: 'store-endpoint' }"
+                               [ngTemplateOutletInjector]="storeServiceInjector"
+                  />
+                </mat-expansion-panel>
               </mat-accordion>
-            </mat-card-content>
+            }
+          </mat-card-content>
 
-            <mat-card-actions align="end">
-              <a mat-raised-button type="button" routerLink="/master-data/external-api">Cancel</a>
-              <button mat-raised-button color="primary" type="submit" [disabled]="!externalAPIForm().valid()">
-                {{ isEditing() ? 'Update' : 'Create' }}
-              </button>
-            </mat-card-actions>
-          </form>
+          <mat-card-actions align="end">
+            <a mat-raised-button type="button" routerLink="/master-data/external-api">Cancel</a>
+            <button mat-raised-button color="primary" type="submit" [disabled]="!externalAPIForm().valid()">
+              {{ externalAPI ? 'Update' : 'Create' }}
+            </button>
+          </mat-card-actions>
+        </form>
 
-          @if (error()) {
-            <div class="error">
-              <p>{{ error() }}</p>
-            </div>
-          }
-        </div>
-      </mat-card>
-
-    } @else {
-      <div class="loading">
-        <mat-spinner></mat-spinner>
+        @if (error()) {
+          <div class="error">
+            <p>{{ error() }}</p>
+          </div>
+        }
       </div>
-    }
-  </div>
-}
+    </mat-card>
+
+  } @else {
+    <div class="loading">
+      <mat-spinner></mat-spinner>
+    </div>
+  }
+</div>
