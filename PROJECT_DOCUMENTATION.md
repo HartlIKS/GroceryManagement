@@ -194,6 +194,9 @@ Join links provide a mechanism for users to gain access to shares with specific 
 ### Permissions
 Enum defining access levels: **NONE**, **READ**, **WRITE**, **ADMIN**
 
+### ResponseType
+Enum defining response format types for endpoints: **JSON**, **XML**, **HTML**
+
 ### ExternalAPI
 - **uuid**: Primary identifier (UUID)
 - **name**: API name (required, String)
@@ -212,6 +215,7 @@ ExternalAPIs represent external systems that the grocery management system can i
 - **page**: Parameter configuration for page number (Parameter)
 - **itemCount**: Parameter configuration for item count (Parameter)
 - **basePath**: Base path for the endpoint (required, String)
+- **responseType**: Response format type (ResponseType, required, default: JSON)
 
 Base class for all endpoint types.
 
