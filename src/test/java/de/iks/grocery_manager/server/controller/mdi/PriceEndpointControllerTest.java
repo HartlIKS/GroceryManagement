@@ -6,6 +6,7 @@ import de.iks.grocery_manager.server.jpa.mdi.ExternalAPIRepository;
 import de.iks.grocery_manager.server.jpa.mdi.PriceEndpointRepository;
 import de.iks.grocery_manager.server.model.mdi.ExternalAPI;
 import de.iks.grocery_manager.server.model.mdi.PriceEndpoint;
+import de.iks.grocery_manager.server.model.mdi.ResponseType;
 import de.iks.grocery_manager.server.model.mdi.handling.Parameter;
 import de.iks.grocery_manager.server.model.mdi.handling.ProductHandlingType;
 import de.iks.grocery_manager.server.model.mdi.handling.StoreHandlingType;
@@ -72,7 +73,8 @@ class PriceEndpointControllerTest {
           "pricePath": "$.price",
           "timeFormat": "yyyy-MM-dd",
           "validFromPath": "$.validFrom",
-          "validUntilPath": "$.validUntil"
+          "validUntilPath": "$.validUntil",
+          "responseType": "JSON"
         }""";
     private static final String PRICE_ENDPOINT_1_UPDATE_JSON = """
         {
@@ -101,7 +103,8 @@ class PriceEndpointControllerTest {
           "pricePath": "$.price",
           "timeFormat": "yyyy-MM-dd",
           "validFromPath": "$.validFrom",
-          "validUntilPath": "$.validUntil"
+          "validUntilPath": "$.validUntil",
+          "responseType": "JSON"
         }""";
 
     private MockMvc mockMvc;
@@ -164,6 +167,7 @@ class PriceEndpointControllerTest {
             storeParam.setHeader("Store-Header");
             storeParam.setQueryParameter("storeId");
             endpoint.setStoreParameters(storeParam);
+            endpoint.setResponseType(ResponseType.JSON);
             endpoint = priceEndpointRepository.save(endpoint);
 
             mockMvc
@@ -212,6 +216,7 @@ class PriceEndpointControllerTest {
             storeParam.setHeader("Store-Header");
             storeParam.setQueryParameter("storeId");
             endpoint.setStoreParameters(storeParam);
+            endpoint.setResponseType(ResponseType.JSON);
             endpoint = priceEndpointRepository.save(endpoint);
 
             long initialCount = priceEndpointRepository.count();
@@ -273,6 +278,7 @@ class PriceEndpointControllerTest {
             storeParam.setHeader("Store-Header");
             storeParam.setQueryParameter("storeId");
             endpoint.setStoreParameters(storeParam);
+            endpoint.setResponseType(ResponseType.JSON);
             endpoint = priceEndpointRepository.save(endpoint);
 
             long initialCount = priceEndpointRepository.count();
@@ -356,6 +362,7 @@ class PriceEndpointControllerTest {
             storeParam.setHeader("Store-Header");
             storeParam.setQueryParameter("storeId");
             endpoint.setStoreParameters(storeParam);
+            endpoint.setResponseType(ResponseType.JSON);
             endpoint = priceEndpointRepository.save(endpoint);
 
             long initialCount = priceEndpointRepository.count();
@@ -394,6 +401,7 @@ class PriceEndpointControllerTest {
             storeParam.setHeader("Store-Header");
             storeParam.setQueryParameter("storeId");
             endpoint.setStoreParameters(storeParam);
+            endpoint.setResponseType(ResponseType.JSON);
             endpoint = priceEndpointRepository.save(endpoint);
 
             long initialCount = priceEndpointRepository.count();
@@ -435,6 +443,7 @@ class PriceEndpointControllerTest {
             storeParam1.setHeader("Store-Header");
             storeParam1.setQueryParameter("storeId");
             endpoint1.setStoreParameters(storeParam1);
+            endpoint1.setResponseType(ResponseType.JSON);
             endpoint1 = priceEndpointRepository.save(endpoint1);
 
             PriceEndpoint endpoint2 = new PriceEndpoint();
@@ -456,6 +465,7 @@ class PriceEndpointControllerTest {
             storeParam2.setHeader("Store-Header");
             storeParam2.setQueryParameter("storeId");
             endpoint2.setStoreParameters(storeParam2);
+            endpoint2.setResponseType(ResponseType.JSON);
             endpoint2 = priceEndpointRepository.save(endpoint2);
 
             mockMvc
@@ -496,6 +506,7 @@ class PriceEndpointControllerTest {
             storeParam1.setHeader("Store-Header");
             storeParam1.setQueryParameter("storeId");
             endpoint1.setStoreParameters(storeParam1);
+            endpoint1.setResponseType(ResponseType.JSON);
             endpoint1 = priceEndpointRepository.save(endpoint1);
 
             PriceEndpoint endpoint2 = new PriceEndpoint();
@@ -517,6 +528,7 @@ class PriceEndpointControllerTest {
             storeParam2.setHeader("Store-Header");
             storeParam2.setQueryParameter("storeId");
             endpoint2.setStoreParameters(storeParam2);
+            endpoint2.setResponseType(ResponseType.JSON);
             endpoint2 = priceEndpointRepository.save(endpoint2);
 
             mockMvc

@@ -6,6 +6,7 @@ import de.iks.grocery_manager.server.jpa.mdi.ExternalAPIRepository;
 import de.iks.grocery_manager.server.jpa.mdi.StoreEndpointRepository;
 import de.iks.grocery_manager.server.model.mdi.AddressPaths;
 import de.iks.grocery_manager.server.model.mdi.ExternalAPI;
+import de.iks.grocery_manager.server.model.mdi.ResponseType;
 import de.iks.grocery_manager.server.model.mdi.StoreEndpoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -64,7 +65,8 @@ class StoreEndpointControllerTest {
             "streetPath": "$.street",
             "numberPath": "$.number"
           },
-          "storeCurrencyPath": "$.currency"
+          "storeCurrencyPath": "$.currency",
+          "responseType": "JSON"
         }""";
     private static final String STORE_ENDPOINT_1_UPDATE_JSON = """
         {
@@ -94,7 +96,8 @@ class StoreEndpointControllerTest {
             "streetPath": "$.street",
             "numberPath": "$.number"
           },
-          "storeCurrencyPath": "$.currency"
+          "storeCurrencyPath": "$.currency",
+          "responseType": "JSON"
         }""";
 
     private MockMvc mockMvc;
@@ -151,6 +154,7 @@ class StoreEndpointControllerTest {
             addressPaths.setStreetPath("$.street");
             addressPaths.setNumberPath("$.number");
             endpoint.setAddressPaths(addressPaths);
+            endpoint.setResponseType(ResponseType.JSON);
             endpoint = storeEndpointRepository.save(endpoint);
 
             mockMvc
@@ -193,6 +197,7 @@ class StoreEndpointControllerTest {
             addressPaths.setStreetPath("$.street");
             addressPaths.setNumberPath("$.number");
             endpoint.setAddressPaths(addressPaths);
+            endpoint.setResponseType(ResponseType.JSON);
             endpoint = storeEndpointRepository.save(endpoint);
 
             long initialCount = storeEndpointRepository.count();
@@ -248,6 +253,7 @@ class StoreEndpointControllerTest {
             addressPaths.setStreetPath("$.street");
             addressPaths.setNumberPath("$.number");
             endpoint.setAddressPaths(addressPaths);
+            endpoint.setResponseType(ResponseType.JSON);
             endpoint = storeEndpointRepository.save(endpoint);
 
             long initialCount = storeEndpointRepository.count();
@@ -325,6 +331,7 @@ class StoreEndpointControllerTest {
             addressPaths.setStreetPath("$.street");
             addressPaths.setNumberPath("$.number");
             endpoint.setAddressPaths(addressPaths);
+            endpoint.setResponseType(ResponseType.JSON);
             endpoint = storeEndpointRepository.save(endpoint);
 
             long initialCount = storeEndpointRepository.count();
@@ -357,6 +364,7 @@ class StoreEndpointControllerTest {
             addressPaths.setStreetPath("$.street");
             addressPaths.setNumberPath("$.number");
             endpoint.setAddressPaths(addressPaths);
+            endpoint.setResponseType(ResponseType.JSON);
             endpoint = storeEndpointRepository.save(endpoint);
 
             long initialCount = storeEndpointRepository.count();
@@ -392,6 +400,7 @@ class StoreEndpointControllerTest {
             addressPaths1.setStreetPath("$.street");
             addressPaths1.setNumberPath("$.number");
             endpoint1.setAddressPaths(addressPaths1);
+            endpoint1.setResponseType(ResponseType.JSON);
             endpoint1 = storeEndpointRepository.save(endpoint1);
 
             StoreEndpoint endpoint2 = new StoreEndpoint();
@@ -407,6 +416,7 @@ class StoreEndpointControllerTest {
             addressPaths2.setStreetPath("$.street");
             addressPaths2.setNumberPath("$.number");
             endpoint2.setAddressPaths(addressPaths2);
+            endpoint2.setResponseType(ResponseType.JSON);
             endpoint2 = storeEndpointRepository.save(endpoint2);
 
             mockMvc
@@ -441,6 +451,7 @@ class StoreEndpointControllerTest {
             addressPaths1.setStreetPath("$.street");
             addressPaths1.setNumberPath("$.number");
             endpoint1.setAddressPaths(addressPaths1);
+            endpoint1.setResponseType(ResponseType.JSON);
             endpoint1 = storeEndpointRepository.save(endpoint1);
 
             StoreEndpoint endpoint2 = new StoreEndpoint();
@@ -456,6 +467,7 @@ class StoreEndpointControllerTest {
             addressPaths2.setStreetPath("$.street");
             addressPaths2.setNumberPath("$.number");
             endpoint2.setAddressPaths(addressPaths2);
+            endpoint2.setResponseType(ResponseType.JSON);
             endpoint2 = storeEndpointRepository.save(endpoint2);
 
             mockMvc

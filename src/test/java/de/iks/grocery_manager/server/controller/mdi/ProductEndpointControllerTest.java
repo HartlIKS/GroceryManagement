@@ -6,6 +6,7 @@ import de.iks.grocery_manager.server.jpa.mdi.ExternalAPIRepository;
 import de.iks.grocery_manager.server.jpa.mdi.ProductEndpointRepository;
 import de.iks.grocery_manager.server.model.mdi.ExternalAPI;
 import de.iks.grocery_manager.server.model.mdi.ProductEndpoint;
+import de.iks.grocery_manager.server.model.mdi.ResponseType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -55,7 +56,8 @@ class ProductEndpointControllerTest {
           "productIdPath": "$.id",
           "productNamePath": "$.name",
           "productImagePath": "$.image",
-          "productEANPath": "$.ean"
+          "productEANPath": "$.ean",
+          "responseType": "JSON"
         }""";
     private static final String PRODUCT_ENDPOINT_1_UPDATE_JSON = """
         {
@@ -77,7 +79,8 @@ class ProductEndpointControllerTest {
           "productIdPath": "$.id",
           "productNamePath": "$.name",
           "productImagePath": "$.image",
-          "productEANPath": "$.ean"
+          "productEANPath": "$.ean",
+          "responseType": "JSON"
         }""";
 
     private MockMvc mockMvc;
@@ -127,6 +130,7 @@ class ProductEndpointControllerTest {
             endpoint.setBaseUrl("https://api.example.com");
             endpoint.setBasePath("/products");
             endpoint.setProductIdPath("$.id");
+            endpoint.setResponseType(ResponseType.JSON);
             endpoint = productEndpointRepository.save(endpoint);
 
             mockMvc
@@ -162,6 +166,7 @@ class ProductEndpointControllerTest {
             endpoint.setBaseUrl("https://api.example.com");
             endpoint.setBasePath("/products");
             endpoint.setProductIdPath("$.id");
+            endpoint.setResponseType(ResponseType.JSON);
             endpoint = productEndpointRepository.save(endpoint);
 
             long initialCount = productEndpointRepository.count();
@@ -210,6 +215,7 @@ class ProductEndpointControllerTest {
             endpoint.setBaseUrl("https://api.example.com");
             endpoint.setBasePath("/products");
             endpoint.setProductIdPath("$.id");
+            endpoint.setResponseType(ResponseType.JSON);
             endpoint = productEndpointRepository.save(endpoint);
 
             long initialCount = productEndpointRepository.count();
@@ -280,6 +286,7 @@ class ProductEndpointControllerTest {
             endpoint.setBaseUrl("https://api.example.com");
             endpoint.setBasePath("/products");
             endpoint.setProductIdPath("$.id");
+            endpoint.setResponseType(ResponseType.JSON);
             endpoint = productEndpointRepository.save(endpoint);
 
             long initialCount = productEndpointRepository.count();
@@ -305,6 +312,7 @@ class ProductEndpointControllerTest {
             endpoint.setBaseUrl("https://api.example.com");
             endpoint.setBasePath("/products");
             endpoint.setProductIdPath("$.id");
+            endpoint.setResponseType(ResponseType.JSON);
             endpoint = productEndpointRepository.save(endpoint);
 
             long initialCount = productEndpointRepository.count();
@@ -333,6 +341,7 @@ class ProductEndpointControllerTest {
             endpoint1.setBaseUrl("https://api.example.com");
             endpoint1.setBasePath("/products");
             endpoint1.setProductIdPath("$.id");
+            endpoint1.setResponseType(ResponseType.JSON);
             endpoint1 = productEndpointRepository.save(endpoint1);
 
             ProductEndpoint endpoint2 = new ProductEndpoint();
@@ -341,6 +350,7 @@ class ProductEndpointControllerTest {
             endpoint2.setBaseUrl("https://api.example.com");
             endpoint2.setBasePath("/products");
             endpoint2.setProductIdPath("$.id");
+            endpoint2.setResponseType(ResponseType.JSON);
             endpoint2 = productEndpointRepository.save(endpoint2);
 
             mockMvc
@@ -368,6 +378,7 @@ class ProductEndpointControllerTest {
             endpoint1.setBaseUrl("https://api.example.com");
             endpoint1.setBasePath("/products");
             endpoint1.setProductIdPath("$.id");
+            endpoint1.setResponseType(ResponseType.JSON);
             endpoint1 = productEndpointRepository.save(endpoint1);
 
             ProductEndpoint endpoint2 = new ProductEndpoint();
@@ -376,6 +387,7 @@ class ProductEndpointControllerTest {
             endpoint2.setBaseUrl("https://api.example.com");
             endpoint2.setBasePath("/products");
             endpoint2.setProductIdPath("$.id");
+            endpoint2.setResponseType(ResponseType.JSON);
             endpoint2 = productEndpointRepository.save(endpoint2);
 
             mockMvc
