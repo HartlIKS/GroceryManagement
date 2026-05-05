@@ -337,8 +337,12 @@ JSON path configuration for address components in API responses.
 The frontend implements comprehensive response type handling for endpoint testing:
 
 - **JSON Responses**: Parsed using JSONPath queries with the `jsonpath` library for extracting data from nested JSON structures
-- **XML/HTML Responses**: Parsed using DOMParser with CSS selectors for element-based data extraction
+- **XML/HTML Responses**: Parsed using DOMParser with XPath expressions for element-based data extraction
 - **Type-Safe Parsing**: Different parsing functions (`jsonValue` for JSON, `elementValue` for XML/HTML) ensure proper data extraction based on response type
+- **XPath Implementation**: Uses `document.evaluate()` with XPath expressions for more precise element selection in XML/HTML documents
+- **Generator Function**: The `elementValues` function is a generator that yields nodes using XPath `ORDERED_NODE_ITERATOR_TYPE` for efficient iteration
+- **XPath Value Extraction**: The `elementValue` function uses `XPathResult.STRING_TYPE` to extract string values from nodes
+- **Node Retrieval**: The `elementNodeValue` function uses `XPathResult.FIRST_ORDERED_NODE_TYPE` to retrieve single nodes for complex object extraction
 - **Address Handling**: Separate functions for address parsing (`toAddressJson` vs `toAddressElement`) based on response format
 
 The implementation uses a switch statement in the `toPartials` function within `externalAPIRoutes.ts` to handle different response types appropriately, with the endpoint's `responseType` field determining the parsing strategy.
