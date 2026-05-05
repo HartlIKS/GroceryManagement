@@ -32,11 +32,27 @@ function jsonValue(a: any, path?: string): any {
   return jp.value(a, path);
 }
 
-function elementValue(a: Element | null, path?: string): string | undefined {
+function elementValue(a?: Node, path?: string): string | undefined {
   if(!path) return undefined;
   const e = /^'([^']*)'$/.exec(path);
   if(e) return e[1];
-  return a?.querySelector(path)?.textContent;
+  return a?.ownerDocument?.evaluate(path, a, null, XPathResult.STRING_TYPE)?.stringValue;
+}
+
+function elementNodeValue(a?: Node, path?: string): Node | undefined {
+  if(!path) return undefined;
+  return a?.ownerDocument?.evaluate(path, a, null, XPathResult.FIRST_ORDERED_NODE_TYPE)?.singleNodeValue ?? undefined;
+}
+
+function* elementValues(a?: Node, path?: string): Generator<Node> {
+  if(!path) return;
+  const result = a?.ownerDocument?.evaluate(path, a, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE);
+  if(!result) return;
+  while(true) {
+    const n = result.iterateNext();
+    if(!n) break;
+    yield n;
+  }
 }
 
 function toAddressJson(a: any, paths: AddressPathsDTO): AddressDTO {
@@ -49,7 +65,7 @@ function toAddressJson(a: any, paths: AddressPathsDTO): AddressDTO {
   };
 }
 
-function toAddressElement(a: Element | null, paths: AddressPathsDTO): AddressDTO {
+function toAddressElement(a: Node | undefined, paths: AddressPathsDTO): AddressDTO {
   return {
     street: elementValue(a, paths.streetPath) ?? '',
     number: elementValue(a, paths.numberPath) ?? '',
@@ -118,7 +134,7 @@ export const externalAPIRoutes: Routes = [
               case 'HTML':
               case 'XML':
                 const dom = domParser.parseFromString(response, endpoint.responseType == 'HTML' ? 'text/html' : 'text/xml');
-                return [...dom.querySelectorAll(endpoint.basePath).values()].map(p => {
+                return [...elementValues(dom, endpoint.basePath)].map(p => {
                   return {
                     uuid: elementValue(p, endpoint.productIdPath),
                     name: elementValue(p, endpoint.productNamePath),
@@ -156,12 +172,12 @@ export const externalAPIRoutes: Routes = [
               case 'HTML':
               case 'XML':
                 const dom = domParser.parseFromString(response, endpoint.responseType == 'HTML' ? 'text/html' : 'text/xml');
-                return [...dom.querySelectorAll(endpoint.basePath).values()].map(p => {
+                return [...elementValues(dom, endpoint.basePath)].map(p => {
                   return {
                     uuid: elementValue(p, endpoint.storeIdPath),
                     name: elementValue(p, endpoint.storeNamePath),
                     logo: elementValue(p, endpoint.storeLogoPath),
-                    address: toAddressElement(p.querySelector(endpoint.addressPath), endpoint.addressPaths),
+                    address: toAddressElement(elementNodeValue(p, endpoint.addressPath), endpoint.addressPaths),
                     currency: elementValue(p, endpoint.storeCurrencyPath),
                   };
                 });
