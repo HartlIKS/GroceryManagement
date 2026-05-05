@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1777965540389-1
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: response_type
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                  defaultValue: "JSON"
+            tableName: price_endpoint
+  - changeSet:
+      id: 1777965540389-2
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: response_type
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                  defaultValue: "JSON"
+            tableName: product_endpoint
+  - changeSet:
+      id: 1777965540389-3
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: response_type
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                  defaultValue: "JSON"
+            tableName: store_endpoint

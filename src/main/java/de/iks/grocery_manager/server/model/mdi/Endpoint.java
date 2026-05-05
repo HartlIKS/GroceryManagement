@@ -36,5 +36,9 @@ public abstract class Endpoint implements HasUUID {
     private Parameter itemCount = new Parameter();
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ResponseType responseType;
+
+    @Column(nullable = false)
     private String basePath;
 }
