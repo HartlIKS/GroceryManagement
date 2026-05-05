@@ -75,12 +75,21 @@ GroceryManagement/
     │   │   │   │   ├── dashboard/   # Dashboard component
     │   │   │   │   ├── products/    # Product management
     │   │   │   │   ├── stores/      # Store management
-    │   │   │   │   └── prices/      # Price management
+    │   │   │   │   ├── prices/      # Price management
+    │   │   │   │   └── endpoints/   # External API endpoint management
+    │   │   │   │       ├── endpoint-list/       # Endpoint list component
+    │   │   │   │       ├── endpoint-test/       # Endpoint testing interface
+    │   │   │   │       ├── external-api/       # External API management
+    │   │   │   │       ├── mapping-list/       # Mapping table management
+    │   │   │   │       ├── price-endpoint/     # Price endpoint configuration
+    │   │   │   │       ├── product-endpoint/   # Product endpoint configuration
+    │   │   │   │       └── store-endpoint/     # Store endpoint configuration
     │   │   │   ├── models/          # Master data models
     │   │   │   ├── services/        # Master data services
     │   │   │   ├── products.routes.ts    # Lazy-loaded product routes
     │   │   │   ├── stores.routes.ts      # Lazy-loaded store routes
-    │   │   │   └── prices.routes.ts      # Lazy-loaded price routes
+    │   │   │   ├── prices.routes.ts      # Lazy-loaded price routes
+    │   │   │   └── externalAPIRoutes.ts  # Lazy-loaded external API routes
     │   │   ├── user-interface/     # User interface
     │   │   │   ├── components/      # User interface components
     │   │   │   │   ├── product-groups/  # Product group management
@@ -88,6 +97,7 @@ GroceryManagement/
     │   │   │   │   ├── shopping-trips/  # Shopping trip management
     │   │   │   │   ├── planboard/       # Shopping planning interface
     │   │   │   │   ├── product-listing/ # Product price listing component
+    │   │   │   │   ├── store-listing/   # Store price listing component
     │   │   │   │   ├── share-admin/     # Share administration interface
     │   │   │   │   ├── join-link-form/  # Join link creation/editing form
     │   │   │   │   ├── join-share/      # Join link usage interface
@@ -303,6 +313,21 @@ JSON path configuration for address components in API responses.
 - **Store-specific pricing** - Filter prices by store and date
 - **Real-time price fetching** - Integrated with backend price search API
 - **Currency formatting** - Proper display of prices with store currency
+
+### Store Listing Component
+- **Store display component** for showing store information
+- **Real-time store data fetching** - Integrated with backend store API
+- **Loading states** - Visual feedback during data retrieval
+
+### Endpoint Management (Master Data)
+- **External API management** - Complete CRUD operations for external APIs (`/master-data/external-api`)
+- **Endpoint configuration** - Configure price, product, and store endpoints
+- **Mapping table management** - Manage product and store mappings between local and remote IDs
+- **Endpoint testing interface** - Test endpoints with diff comparison for products and stores
+- **Endpoint list component** - View and manage all endpoints for an external API
+- **Mapping list component** - Table-based interface for managing ID mappings with add/delete operations
+- **Product diff component** - Compare local products with remote API product data
+- **Store diff component** - Compare local stores with remote API store data
 
 ### Share Administration
 - **Share management interface** for creating and editing shares (`/share-admin`)
