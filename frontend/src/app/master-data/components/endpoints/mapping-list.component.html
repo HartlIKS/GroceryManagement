@@ -28,7 +28,16 @@
   <mat-table [dataSource]="dataSource()" class="table">
     <ng-container matColumnDef="localId">
       <mat-header-cell *matHeaderCellDef>Local ID</mat-header-cell>
-      <mat-cell *matCellDef="let mapping">{{ mapping.localId }}</mat-cell>
+      <mat-cell *matCellDef="let mapping">
+        @if(entityDisplayComponent) {
+        <ng-template
+          [ngComponentOutlet]="entityDisplayComponent"
+          [ngComponentOutletInputs]="{ uuid: mapping.localId }"
+        />
+        } @else {
+          {{ mapping.localId }}
+        }
+      </mat-cell>
     </ng-container>
 
     <ng-container matColumnDef="remoteId">
@@ -48,6 +57,7 @@
     <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
     <mat-row *matRowDef="let _; columns: displayedColumns;"></mat-row>
   </mat-table>
+  <mat-paginator showFirstLastButtons/>
 
   @if (dataSource().data.length === 0) {
     <div class="no-data">

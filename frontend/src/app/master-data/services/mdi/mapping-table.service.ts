@@ -9,6 +9,15 @@ export abstract class MappingTableService {
   protected abstract readonly endpoint2: string;
   private readonly apiService = inject(ApiService);
 
+  getMappings(uuid: Signal<string | undefined> | string): HttpResourceRef<Record<string, string> | undefined> {
+    uuid = resolve(uuid);
+    return this.apiService.get<Record<string, string> | undefined>(computed(() => {
+      const uuidValue = uuid();
+      if(uuidValue === undefined) return undefined;
+      return `${this.endpoint1}/${uuidValue}/mapping/${this.endpoint2}`;
+    }));
+  }
+
   // Translate inbound: remote ID -> local UUID
   translateInbound(uuid: Signal<string | undefined> | string, remoteId: Signal<string | undefined> | string): HttpResourceRef<string | undefined> {
     uuid = resolve(uuid);

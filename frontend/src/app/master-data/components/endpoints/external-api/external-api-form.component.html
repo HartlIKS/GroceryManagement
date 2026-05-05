@@ -8,42 +8,42 @@
     @if (!loading()) {
       <mat-card>
         <div>
-          <form [formGroup]="externalAPIForm" (ngSubmit)="onSave()">
+          <form [formRoot]="externalAPIForm">
             <mat-card-content>
               <div class="form-row">
                 <mat-form-field appearance="outline" class="full-width">
                   <mat-label>API Name *</mat-label>
-                  <input matInput formControlName="name" placeholder="Enter API name">
-                  @if (externalAPIForm.get('name')?.hasError('required')) {
-                    <mat-error>
-                      API name is required
-                    </mat-error>
-                  }
+                  <input matInput [formField]="externalAPIForm.name" placeholder="Enter API name">
+                  <mat-error/>
                 </mat-form-field>
               </div>
 
-              <ng-template let-mappings="mappings" #mappingTable>
-                <app-mapping-list [parentUuid]="externalAPI" [mappings]="mappings" class="full-width"/>
+              <ng-template #mappingTable>
+                <app-mapping-list [parentUuid]="externalAPI" class="full-width"/>
               </ng-template>
               <mat-accordion>
                 <mat-expansion-panel>
                   <mat-expansion-panel-header>
                     <mat-panel-title>Product Mappings</mat-panel-title>
                   </mat-expansion-panel-header>
-                  <ng-template [ngTemplateOutlet]="mappingTable"
-                               [ngTemplateOutletContext]="{ mappings: externalAPIForm.get('productMappings')?.value }"
-                               [ngTemplateOutletInjector]="productServiceInjector"
-                  />
+                  <ng-template matExpansionPanelContent>
+                    <ng-template
+                      [ngTemplateOutlet]="mappingTable"
+                      [ngTemplateOutletInjector]="productServiceInjector"
+                    />
+                  </ng-template>
                 </mat-expansion-panel>
 
                 <mat-expansion-panel>
                   <mat-expansion-panel-header>
                     <mat-panel-title>Store Mappings</mat-panel-title>
                   </mat-expansion-panel-header>
-                  <ng-template [ngTemplateOutlet]="mappingTable"
-                               [ngTemplateOutletContext]="{ mappings: externalAPIForm.get('storeMappings')?.value }"
-                               [ngTemplateOutletInjector]="storeServiceInjector"
-                  />
+                  <ng-template matExpansionPanelContent>
+                    <ng-template
+                      [ngTemplateOutlet]="mappingTable"
+                      [ngTemplateOutletInjector]="storeServiceInjector"
+                    />
+                  </ng-template>
                 </mat-expansion-panel>
 
                 @if (isEditing()) {
@@ -85,7 +85,7 @@
 
             <mat-card-actions align="end">
               <a mat-raised-button type="button" routerLink="/master-data/external-api">Cancel</a>
-              <button mat-raised-button color="primary" type="submit" [disabled]="externalAPIForm.invalid">
+              <button mat-raised-button color="primary" type="submit" [disabled]="!externalAPIForm().valid()">
                 {{ isEditing() ? 'Update' : 'Create' }}
               </button>
             </mat-card-actions>

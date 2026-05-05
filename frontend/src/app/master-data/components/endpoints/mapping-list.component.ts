@@ -1,4 +1,15 @@
-import { Component, computed, inject, InjectionToken, input, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  InjectionToken,
+  input,
+  InputSignal,
+  signal,
+  Type,
+  viewChild
+} from '@angular/core';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -8,6 +19,8 @@ import { FormsModule } from '@angular/forms';
 import { MappingTableService } from '../../services';
 import { MatInput } from '@angular/material/input';
 import { NamedCacheService } from '../../../services';
+import { MatPaginator } from '@angular/material/paginator';
+import { NgComponentOutlet } from '@angular/common';
 
 export const MAPPING_SERVICE_TOKEN = new InjectionToken<MappingTableService>('MappingService');
 
@@ -17,6 +30,10 @@ export interface MappingEntry {
 }
 
 export const ENTITY_SERVICE_TOKEN = new InjectionToken<NamedCacheService<{uuid: string, name: string}, any>>('EntityService');
+
+export const ENTITY_DISPLAY_COMPONENT_TOKEN = new InjectionToken<Type<{
+  readonly uuid: InputSignal<string>,
+}>>('EntityDisplayComponent');
 
 @Component({
   selector: 'app-mapping-list',
@@ -28,7 +45,9 @@ export const ENTITY_SERVICE_TOKEN = new InjectionToken<NamedCacheService<{uuid: 
     MatFormFieldModule,
     MatSelectModule,
     FormsModule,
-    MatInput
+    MatInput,
+    MatPaginator,
+    NgComponentOutlet
   ],
   templateUrl: './mapping-list.component.html',
   styleUrls: ['./mapping-list.component.css']
@@ -37,15 +56,21 @@ export class MappingListComponent {
   displayedColumns: string[] = ['localId', 'remoteId', 'actions'];
 
   readonly parentUuid = input.required<string>();
-  readonly mappings = input.required<Record<string, string>>();
   private readonly mappingService = inject(MAPPING_SERVICE_TOKEN);
+  protected readonly mappingResource = this.mappingService.getMappings(this.parentUuid);
+  protected readonly mappings = computed(() => this.mappingResource.value() ?? {});
   private readonly entityService = inject(ENTITY_SERVICE_TOKEN);
+  protected readonly entityDisplayComponent = inject(ENTITY_DISPLAY_COMPONENT_TOKEN, {
+    optional: true,
+  });
 
   protected readonly entitySearch = signal('');
   protected readonly newLocalId = signal<string | undefined>(undefined);
   protected readonly newRemoteId = signal<string | undefined>(undefined);
   private readonly availableEntitiesResource = this.entityService.search(this.entitySearch);
   protected readonly availableEntities = computed(() => this.availableEntitiesResource.value()?.content ?? []);
+
+  private readonly paginator = viewChild(MatPaginator);
 
   public readonly dataSource = computed(() => {
     const mappingRecord = this.mappings();
@@ -54,6 +79,10 @@ export class MappingListComponent {
       remoteId
     }));
     return new MatTableDataSource<MappingEntry>(entries);
+  });
+
+  private readonly eff = effect(() => {
+    this.dataSource().paginator = this.paginator();
   });
 
   onAddMapping(): void {
