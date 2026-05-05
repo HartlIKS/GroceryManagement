@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 @RestController
 @RequestMapping(
@@ -20,8 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class PriceEndpointController extends EndpointController<PriceEndpoint, PriceEndpointDTO, CreatePriceEndpointDTO, PriceEndpointRepository> {
     public PriceEndpointController(
         PriceEndpointRepository repository,
-        DTOMapper dtoMapper
+        DTOMapper dtoMapper,
+        RestTemplate restTemplate
     ) {
-        super(repository, new EntityMapper.Parented<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), "api", "masterdata", "interface", "{parentUuid}", "endpoint", "price", "{uuid}");
+        super(repository, new EntityMapper.Parented<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), restTemplate, "api", "masterdata", "interface", "{parentUuid}", "endpoint", "price", "{uuid}");
     }
 }
