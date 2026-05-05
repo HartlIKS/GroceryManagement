@@ -36,18 +36,23 @@ function elementValue(a?: Node, path?: string): string | undefined {
   if(!path) return undefined;
   const e = /^'([^']*)'$/.exec(path);
   if(e) return e[1];
-  return a?.ownerDocument?.evaluate(path, a, null, XPathResult.STRING_TYPE)?.stringValue;
+  if(!a) return undefined;
+  const doc = a instanceof Document ? a : a.ownerDocument!;
+  return doc.evaluate(path, a, null, XPathResult.STRING_TYPE).stringValue;
 }
 
 function elementNodeValue(a?: Node, path?: string): Node | undefined {
   if(!path) return undefined;
-  return a?.ownerDocument?.evaluate(path, a, null, XPathResult.FIRST_ORDERED_NODE_TYPE)?.singleNodeValue ?? undefined;
+  if(!a) return undefined;
+  const doc = a instanceof Document ? a : a.ownerDocument!;
+  return doc.evaluate(path, a, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue ?? undefined;
 }
 
 function* elementValues(a?: Node, path?: string): Generator<Node> {
   if(!path) return;
-  const result = a?.ownerDocument?.evaluate(path, a, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE);
-  if(!result) return;
+  if(!a) return;
+  const doc = a instanceof Document ? a : a.ownerDocument!;
+  const result = doc.evaluate(path, a, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE);
   while(true) {
     const n = result.iterateNext();
     if(!n) break;
