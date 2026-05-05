@@ -161,7 +161,7 @@
           </mat-card-content>
 
           <mat-card-actions align="end">
-            <a mat-raised-button type="button" [routerLink]="['/master-data/external-api', parentUuid(), 'store-endpoint']">Cancel</a>
+            <a mat-raised-button type="button" [routerLink]="['/master-data/external-api', parentUuid()]">Cancel</a>
             <button mat-raised-button color="primary" type="submit" [disabled]="storeEndpointForm.invalid">
               {{ isEditing() ? 'Update' : 'Create' }}
             </button>
