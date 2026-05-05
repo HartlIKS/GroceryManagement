@@ -128,7 +128,7 @@ export const externalAPIRoutes: Routes = [
           toPartials: (endpoint, response) => {
             switch(endpoint.responseType) {
               case 'JSON':
-                return jp.query(response, endpoint.basePath).map(p => {
+                return jp.query(JSON.parse(response), endpoint.basePath).map(p => {
                   return {
                     uuid: jsonValue(p, endpoint.productIdPath),
                     name: jsonValue(p, endpoint.productNamePath),
@@ -165,7 +165,7 @@ export const externalAPIRoutes: Routes = [
           toPartials: (endpoint, response) => {
             switch(endpoint.responseType) {
               case 'JSON':
-                return jp.query(response, endpoint.basePath).map(p => {
+                return jp.query(JSON.parse(response), endpoint.basePath).map(p => {
                   return {
                     uuid: jsonValue(p, endpoint.storeIdPath),
                     name: jsonValue(p, endpoint.storeNamePath),
