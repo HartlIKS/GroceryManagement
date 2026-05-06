@@ -66,8 +66,7 @@ export class StoreDiffComponent implements DiffComponent {
     if(it.address !== undefined) {
       const iadr = it.address;
       const madr = mp.address;
-      if(iadr.street !== undefined && iadr.street !== madr.street) return true;
-      if(iadr.number !== undefined && iadr.number !== madr.number) return true;
+      if(iadr.streetAndNumber !== undefined && iadr.streetAndNumber !== madr.streetAndNumber) return true;
       if(iadr.zip !== undefined && iadr.zip !== madr.zip) return true;
       if(iadr.city !== undefined && iadr.city !== madr.city) return true;
       if(iadr.country !== undefined && iadr.country !== madr.country) return true;
@@ -83,8 +82,7 @@ export class StoreDiffComponent implements DiffComponent {
         name: '',
         logo: '',
         address: {
-          street: '',
-          number: '',
+          streetAndNumber: '',
           zip: '',
           city: '',
           country: ''

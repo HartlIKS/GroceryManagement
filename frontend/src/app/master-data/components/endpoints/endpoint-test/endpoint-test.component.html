@@ -26,6 +26,11 @@
               <input matInput type="number" [formField]="pagingForm.itemCount" placeholder="Total items">
             </mat-form-field>
           </div>
+          <div class="form-row">
+            <mat-checkbox [formField]="pagingForm.direct">
+              Direct
+            </mat-checkbox>
+          </div>
 
           <div class="header-actions">
             <button mat-raised-button color="primary" type="submit">

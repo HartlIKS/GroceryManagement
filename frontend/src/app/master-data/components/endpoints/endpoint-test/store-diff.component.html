@@ -42,8 +42,7 @@
     </ng-template>
     <ng-template [ngTemplateOutlet]="diffField" [ngTemplateOutletContext]="{nf: n.name, nf2: '', of: o?.name, form: form.name, fieldName: 'Name'}"/>
     <ng-template [ngTemplateOutlet]="diffField" [ngTemplateOutletContext]="{nf: n.logo, of: o?.logo, form: form.logo, fieldName: 'Logo'}"/>
-    <ng-template [ngTemplateOutlet]="diffField" [ngTemplateOutletContext]="{nf: n.address?.number, of: o?.address?.number, form: form.address.number, fieldName: 'Number'}"/>
-    <ng-template [ngTemplateOutlet]="diffField" [ngTemplateOutletContext]="{nf: n.address?.street, of: o?.address?.street, form: form.address.street, fieldName: 'Street'}"/>
+    <ng-template [ngTemplateOutlet]="diffField" [ngTemplateOutletContext]="{nf: n.address?.streetAndNumber, of: o?.address?.streetAndNumber, form: form.address.streetAndNumber, fieldName: 'Street and Number'}"/>
     <ng-template [ngTemplateOutlet]="diffField" [ngTemplateOutletContext]="{nf: n.address?.zip, of: o?.address?.zip, form: form.address.zip, fieldName: 'Zip'}"/>
     <ng-template [ngTemplateOutlet]="diffField" [ngTemplateOutletContext]="{nf: n.address?.city, of: o?.address?.city, form: form.address.city, fieldName: 'City'}"/>
     <ng-template [ngTemplateOutlet]="diffField" [ngTemplateOutletContext]="{nf: n.address?.country, of: o?.address?.country, form: form.address.country, fieldName: 'Country'}"/>

@@ -68,12 +68,8 @@ export class StoreListComponent {
 
     const parts: string[] = [];
 
-    if (address.street && address.number) {
-      parts.push(`${address.street} ${address.number}`);
-    } else if (address.street) {
-      parts.push(address.street);
-    } else if (address.number) {
-      parts.push(address.number);
+    if (address.streetAndNumber) {
+      parts.push(address.streetAndNumber);
     }
 
     if (address.zip && address.city) {

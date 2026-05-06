@@ -1,5 +1,12 @@
 import { computed, inject, Injectable, Injector, isSignal, linkedSignal, Signal } from '@angular/core';
-import { HttpClient, HttpParams, httpResource, HttpResourceRef, HttpResourceRequest } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpHeaders,
+  HttpParams,
+  httpResource,
+  HttpResourceRef,
+  HttpResourceRequest
+} from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { resolve } from '../utils/signalutils';
@@ -74,6 +81,30 @@ export class ApiService {
       }
       return httpParams;
     });
+  }
+
+  applySpecials(req: HttpResourceRequest | undefined, addShare: boolean = true): HttpResourceRequest | undefined {
+    if(req === undefined) return undefined;
+    if(req.url === undefined) return undefined;
+    if(!req.url.startsWith(this.baseUrl)) req.url = `${this.baseUrl}${req.url}`;
+    const token = this.authService.accessToken();
+    if(token === undefined) return undefined;
+    req.headers ??= {};
+    if(req.headers instanceof HttpHeaders) req.headers.set('Authorization', `Bearer ${token}`);
+    else req.headers['Authorization'] = `Bearer ${token}`;
+    if(addShare) {
+      const shareId = this.share();
+      if(shareId !== undefined) {
+        req.params ??= {};
+        if(req.params instanceof HttpParams) req.params.set('share', shareId);
+        else req.params['share'] = shareId;
+      }
+    }
+    return req;
+  }
+
+  applySpecialsSignal(req: Signal<HttpResourceRequest | undefined>, addShare: boolean = true): Signal<HttpResourceRequest | undefined> {
+    return computed(() => this.applySpecials(req(), addShare));
   }
 
   // Generic CRUD operations

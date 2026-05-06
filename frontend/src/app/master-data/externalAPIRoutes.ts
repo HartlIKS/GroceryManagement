@@ -61,9 +61,10 @@ function* elementValues(a?: Node, path?: string): Generator<Node> {
 }
 
 function toAddressJson(a: any, paths: AddressPathsDTO): AddressDTO {
+  const street = jsonValue(a, paths.streetPath);
+  const number = jsonValue(a, paths.numberPath);
   return {
-    street: jsonValue(a, paths.streetPath),
-    number: jsonValue(a, paths.numberPath),
+    streetAndNumber: street && number ? `${street} ${number}` : (street ?? number),
     zip: jsonValue(a, paths.zipPath),
     city: jsonValue(a, paths.cityPath),
     country: jsonValue(a, paths.countryPath),
@@ -71,9 +72,10 @@ function toAddressJson(a: any, paths: AddressPathsDTO): AddressDTO {
 }
 
 function toAddressElement(a: Node | undefined, paths: AddressPathsDTO): AddressDTO {
+  const street = elementValue(a, paths.streetPath);
+  const number = elementValue(a, paths.numberPath);
   return {
-    street: elementValue(a, paths.streetPath) ?? '',
-    number: elementValue(a, paths.numberPath) ?? '',
+    streetAndNumber: street && number ? `${street} ${number}` : (street ?? number ?? ''),
     zip: elementValue(a, paths.zipPath) ?? '',
     city: elementValue(a, paths.cityPath) ?? '',
     country: elementValue(a, paths.countryPath) ?? '',

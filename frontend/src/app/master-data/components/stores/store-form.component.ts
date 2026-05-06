@@ -56,8 +56,7 @@ export class StoreFormComponent implements OnInit {
         country: [''],
         city: [''],
         zip: [''],
-        street: [''],
-        number: ['']
+        streetAndNumber: ['']
       }),
       currency: ['']
     });

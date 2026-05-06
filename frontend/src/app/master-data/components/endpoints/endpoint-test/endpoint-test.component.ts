@@ -21,6 +21,9 @@ import { EndpointService } from '../../../services';
 import { EndpointDTO, ParameterDTO } from '../../../models';
 import { form, FormField, FormRoot, schema } from '@angular/forms/signals';
 import { MatIcon } from '@angular/material/icon';
+import { httpResource } from '@angular/common/http';
+import { ApiService } from '../../../../services';
+import { MatCheckbox } from '@angular/material/checkbox';
 
 export type DiffStatus = 'loading' | 'ignored' | 'create' | 'same' | 'different';
 
@@ -63,13 +66,15 @@ function writeParameter(value: string | number, param: ParameterDTO | undefined,
     MatProgressSpinner,
     FormRoot,
     FormField,
-    MatIcon
+    MatIcon,
+    MatCheckbox
   ],
   templateUrl: './endpoint-test.component.html',
   styleUrls: ['./endpoint-test.component.css']
 })
 export class EndpointTestComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly apiService = inject(ApiService);
   private readonly endpointConfig = inject(ENDPOINT_TOKEN);
   protected readonly diffComponent = this.endpointConfig.diffComponent;
 
@@ -82,14 +87,16 @@ export class EndpointTestComponent implements OnInit {
   private readonly pagingInfo = signal({
     page: 0,
     pageSize: 20,
-    itemCount: 0
+    itemCount: 0,
+    direct: false,
   });
   protected readonly pagingForm = form(
     this.pagingInfo,
     schema(() => ({
       page: {type: 'number'},
       pageSize: {type: 'number'},
-      itemCount: {type: 'number'}
+      itemCount: {type: 'number'},
+      direct: {type: 'boolean'},
     })),
     {
       submission: {
@@ -100,24 +107,36 @@ export class EndpointTestComponent implements OnInit {
     }
   );
   protected readonly requestInfo = linkedSignal(() => ({...this.pagingInfo(), send: false}));
-  protected readonly requestResource = this.endpointConfig.endpointService.exec(
-    this.parentUuid,
-    this.endpointId,
-    computed(() => {
-      const reqInfo = this.requestInfo();
-      if(!reqInfo.send) return undefined;
-      const endpoint = this.endpoint();
-      if(!endpoint) return undefined;
+  protected readonly requestResource = httpResource.text(() => {
+    const parentUuid = this.parentUuid();
+    const endpoint = this.endpoint();
+    if(parentUuid === undefined || endpoint === undefined) return undefined;
+    const reqInfo = this.requestInfo();
+    if(!reqInfo.send) return undefined;
+    if(!reqInfo.direct) {
       const ret = {
         queryParams: {},
         headers: {}
-      }
+      };
       writeParameter(reqInfo.page, endpoint?.page, ret.headers, ret.queryParams);
       writeParameter(reqInfo.pageSize, endpoint?.pageSize, ret.headers, ret.queryParams);
       writeParameter(reqInfo.itemCount, endpoint?.itemCount, ret.headers, ret.queryParams);
-      return ret;
-    })
-  );
+      return this.apiService.applySpecials({
+        url: this.endpointConfig.endpointService.execUrl(parentUuid, endpoint.uuid),
+        method: 'POST',
+        body: ret,
+      });
+    }
+    const ret = {
+      url: endpoint.baseUrl,
+      headers: {},
+      params: {},
+    };
+    writeParameter(reqInfo.page, endpoint?.page, ret.headers, ret.params);
+    writeParameter(reqInfo.pageSize, endpoint?.pageSize, ret.headers, ret.params);
+    writeParameter(reqInfo.itemCount, endpoint?.itemCount, ret.headers, ret.params);
+    return ret;
+  })
   protected readonly parsedResponse = linkedSignal(() => {
     const response = this.requestResource.value();
     if(response === undefined) return undefined;
@@ -148,15 +167,16 @@ export class EndpointTestComponent implements OnInit {
   nextPage() {
     const send = this.requestInfo().send;
     this.pagingInfo.update(p => ({
+      ...p,
       page: p.page + 1,
       itemCount: p.itemCount + p.pageSize,
-      pageSize: p.pageSize
     }));
     this.requestInfo.update(p => ({...p, send}));
   }
 
   resetPages() {
     this.pagingInfo.update(p => ({
+      ...p,
       page: 0,
       pageSize: p.pageSize,
       itemCount: 0
