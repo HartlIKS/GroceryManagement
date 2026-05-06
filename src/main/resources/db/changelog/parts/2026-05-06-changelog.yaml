@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1778069826891-1
+      author: tha@iks-gmbh.com
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - mergeColumns:
+            column1Name: street
+            column2Name: number
+            finalColumnName: street_and_number
+            finalColumnType: VARCHAR(255)
+            joinString: " "
+            tableName: store
+

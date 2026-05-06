@@ -9,6 +9,5 @@ public class Address {
     private String country;
     private String city;
     private String zip;
-    private String street;
-    private String number;
+    private String streetAndNumber;
 }
