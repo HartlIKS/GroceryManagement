@@ -1,5 +1,5 @@
 import { computed, inject, Injectable, Injector, isSignal, linkedSignal, Signal } from '@angular/core';
-import { HttpClient, HttpParams, httpResource, HttpResourceRef } from '@angular/common/http';
+import { HttpClient, HttpParams, httpResource, HttpResourceRef, HttpResourceRequest } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { resolve } from '../utils/signalutils';
@@ -153,6 +153,27 @@ export class ApiService {
       headers,
       params: this.shareParams(),
       withCredentials: true,
+    });
+  }
+
+  postResource<T>(endpoint: Signal<string | undefined> | string, data: Signal<any> | any, func: (r: () => HttpResourceRequest | undefined) => HttpResourceRef<T | undefined> = httpResource): HttpResourceRef<T | undefined> {
+    endpoint = resolve(endpoint);
+    data = resolve(data);
+    return func(() => {
+      const ep = endpoint();
+      if(ep === undefined) return undefined;
+      const dt = data();
+      if(dt === undefined) return undefined;
+      const headers = this.headers();
+      if(headers === undefined) return undefined;
+      return {
+        method: 'POST',
+        url: `${this.baseUrl}${ep}`,
+        body: dt,
+        headers,
+        params: this.shareParams(),
+        credentials: 'include',
+      }
     });
   }
 

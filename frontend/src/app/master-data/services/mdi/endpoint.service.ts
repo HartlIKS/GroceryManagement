@@ -3,6 +3,8 @@ import { Observable } from 'rxjs';
 import { ApiService } from '../../../services';
 import { Page } from '../../../models';
 import { resolve } from '../../../utils/signalutils';
+import { httpResource } from '@angular/common/http';
+import { RequestExecParams } from '../../models/mdi/request-exec-params.model';
 
 export abstract class EndpointService<T, C> {
   protected abstract readonly endpointType: string;
@@ -52,5 +54,16 @@ export abstract class EndpointService<T, C> {
   // delete endpoint
   delete(parentUuid: string, uuid: string): Observable<void> {
     return this.apiService.delete(`${this.baseEndpoint}/${parentUuid}/endpoint/${this.endpointType}`, uuid);
+  }
+
+  exec(parentUuid: Signal<string | undefined> | string, uuid: Signal<string | undefined> | string, params: Signal<RequestExecParams | undefined> | RequestExecParams) {
+    parentUuid = resolve(parentUuid);
+    uuid = resolve(uuid);
+    return this.apiService.postResource<string>(computed(() => {
+      const pid = parentUuid();
+      const id = uuid();
+      if(pid === undefined || id === undefined) return undefined;
+      return `${this.baseEndpoint}/${pid}/endpoint/${this.endpointType}/${id}/exec`;
+    }), params, httpResource.text)
   }
 }

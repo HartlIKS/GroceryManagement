@@ -4,13 +4,13 @@ import {
   inject,
   InjectionToken,
   linkedSignal,
-  OnInit, Signal,
+  OnInit,
+  Signal,
   signal,
   Type,
   viewChildren
 } from '@angular/core';
 import { CommonModule, NgComponentOutlet } from '@angular/common';
-import { HttpHeaders, HttpParams, httpResource } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -40,10 +40,15 @@ export type EndpointConfig<E extends EndpointDTO, T extends {uuid: string, name:
 
 export const ENDPOINT_TOKEN = new InjectionToken<EndpointConfig<EndpointDTO, {uuid: string, name: string}>>('EndpointConfig');
 
-function writeParameter(value: string | number, param: ParameterDTO, headers: HttpHeaders, params: HttpParams) {
-  if(param.queryParameter) params = params.append(param.queryParameter, value);
-  if(param.header) headers = headers.append(param.header, value.toString());
-  return [headers, params] as const;
+function writeParameter(value: string | number, param: ParameterDTO | undefined, headers: Record<string, string[]>, params: Record<string, string[]>) {
+  if(param?.queryParameter) {
+    params[param.queryParameter] ??= [];
+    params[param.queryParameter].push(value.toString());
+  }
+  if(param?.header) {
+    headers[param.header] ??= [];
+    headers[param.header].push(value.toString());
+  }
 }
 
 @Component({
@@ -95,22 +100,24 @@ export class EndpointTestComponent implements OnInit {
     }
   );
   protected readonly requestInfo = linkedSignal(() => ({...this.pagingInfo(), send: false}));
-  protected readonly requestResource = httpResource.text(() => {
-    const reqInfo = this.requestInfo();
-    if(!reqInfo.send) return undefined;
-    const endpoint = this.endpoint();
-    if(!endpoint) return undefined;
-    let headers = new HttpHeaders();
-    let queryParams = new HttpParams();
-    [headers, queryParams] = writeParameter(reqInfo.page, endpoint.page, headers, queryParams);
-    [headers, queryParams] = writeParameter(reqInfo.pageSize, endpoint.pageSize, headers, queryParams);
-    [headers, queryParams] = writeParameter(reqInfo.itemCount, endpoint.itemCount, headers, queryParams);
-    return {
-      url: endpoint.baseUrl,
-      headers: headers,
-      params: queryParams
-    };
-  });
+  protected readonly requestResource = this.endpointConfig.endpointService.exec(
+    this.parentUuid,
+    this.endpointId,
+    computed(() => {
+      const reqInfo = this.requestInfo();
+      if(!reqInfo.send) return undefined;
+      const endpoint = this.endpoint();
+      if(!endpoint) return undefined;
+      const ret = {
+        queryParams: {},
+        headers: {}
+      }
+      writeParameter(reqInfo.page, endpoint?.page, ret.headers, ret.queryParams);
+      writeParameter(reqInfo.pageSize, endpoint?.pageSize, ret.headers, ret.queryParams);
+      writeParameter(reqInfo.itemCount, endpoint?.itemCount, ret.headers, ret.queryParams);
+      return ret;
+    })
+  );
   protected readonly parsedResponse = linkedSignal(() => {
     const response = this.requestResource.value();
     if(response === undefined) return undefined;
