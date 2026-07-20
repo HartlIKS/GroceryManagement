@@ -21,6 +21,6 @@ RUN mvn package
 
 FROM eclipse-temurin:17-jre AS run
 WORKDIR /opt/grocery-manager
-COPY --from=backend-build /opt/build/target/grocery_manager.jar .
-COPY --from=frontend-build /opt/build/dist/frontend/browser/ public
+COPY --from=backend-build --link /opt/build/target/grocery_manager.jar .
+COPY --from=frontend-build --link /opt/build/dist/frontend/browser/ public
 CMD ["/opt/java/openjdk/bin/java", "-jar", "grocery_manager.jar"]
