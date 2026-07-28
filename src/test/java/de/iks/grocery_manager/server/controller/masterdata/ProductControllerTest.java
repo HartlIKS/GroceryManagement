@@ -1,282 +1,269 @@
 package de.iks.grocery_manager.server.controller.masterdata;
 
+import de.iks.grocery_manager.server.Sql;
 import de.iks.grocery_manager.server.Testdata;
-import de.iks.grocery_manager.server.config.AuthorityConfiguration;
+import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
-import org.junit.jupiter.api.BeforeEach;
+import io.quarkus.test.common.http.TestHTTPEndpoint;
+import io.quarkus.test.common.http.TestHTTPResource;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
+import java.util.regex.Pattern;
+
+import static de.iks.grocery_manager.server.UUIDMatcher.*;
+import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureTestDatabase
-@Sql(Testdata.SCRIPT)
+@QuarkusTest
+@TestHTTPEndpoint(ProductController.class)
+@Sql("/testdata.sql")
+@WithTestUser
 class ProductControllerTest {
-    private static final String PRODUCT_1_JSON = String.format("""
-        {
-          "uuid": "%s",
-          "name": "Product 1"
-        }""", Testdata.PRODUCT_1_UUID);
-    private static final String PRODUCT_1_UPDATE_JSON = """
+    @Inject
+    ProductRepository productRepository;
+
+    @TestHTTPResource
+    String baseURI;
+
+    @Nested
+    @TestHTTPEndpoint(ProductController.class)
+    @WithTestUser
+    class GetProduct {
+        @Test
+        void shouldReturnProductWhenFound() {
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("uuid", isUuid(Testdata.PRODUCT_1_UUID))
+                .body("name", is("Product 1"))
+                .when()
+                .get("{uuid}", Testdata.PRODUCT_1_UUID);
+        }
+
+        @Test
+        void shouldReturn404WhenProductNotFound() {
+            expect()
+                .statusCode(404)
+                .when()
+                .get("{uuid}", Testdata.BAD_UUID);
+        }
+    }
+
+    @Nested
+    @TestHTTPEndpoint(ProductController.class)
+    @WithAdminUser
+    class UpdateProduct {
+        private static final String PRODUCT_1_UPDATE_JSON = """
         {
           "name": "Product 1b",
           "EAN": "123456"
         }""";
-    private static final String PRODUCT_3_JSON = """
+
+        @Test
+        void shouldUpdateProductWhenAuthorizedAndFound() {
+            long initialCount = productRepository.count();
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("uuid", isUuid(Testdata.PRODUCT_1_UUID))
+                .body("name", is("Product 1b"))
+                .body("EAN", is("123456"))
+                .given()
+                .body(PRODUCT_1_UPDATE_JSON)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", Testdata.PRODUCT_1_UUID);
+
+            // Verify update was applied and other product unaffected
+            assertTrue(productRepository
+                           .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                           .isPresent());
+            assertTrue(productRepository
+                           .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                           .isPresent());
+            assertEquals(initialCount, productRepository.count());
+        }
+
+        @Test
+        void shouldReturn404WhenUpdatingNonExistentProduct() {
+            long initialCount = productRepository.count();
+
+            expect()
+                .statusCode(404)
+                .given()
+                .body(PRODUCT_1_UPDATE_JSON)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", Testdata.BAD_UUID);
+
+            // Verify no changes to existing products
+            assertTrue(productRepository
+                           .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                           .isPresent());
+            assertTrue(productRepository
+                           .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                           .isPresent());
+            assertEquals(initialCount, productRepository.count());
+        }
+
+        @Test
+        @WithTestUser
+        void shouldReturn403WhenUpdatingProductWithoutAuthorization() {
+            long initialCount = productRepository.count();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .body(PRODUCT_1_UPDATE_JSON)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", Testdata.PRODUCT_1_UUID);
+
+            // Verify no changes when unauthorized
+            assertTrue(productRepository
+                           .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                           .isPresent());
+            assertTrue(productRepository
+                           .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                           .isPresent());
+            assertEquals(initialCount, productRepository.count());
+        }
+    }
+
+    @Nested
+    @TestHTTPEndpoint(ProductController.class)
+    class CreateProduct {
+        private static final String PRODUCT_3_CREATE_JSON = """
         {
           "name": "Product 3",
           "EAN": "654321"
         }""";
-    private static final String PRODUCT_3_CREATE_JSON = PRODUCT_3_JSON;
-
-    private MockMvc mockMvc;
-    
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private AuthorityConfiguration authorityConfiguration;
-
-    private RequestPostProcessor admin_jwt;
-    private final RequestPostProcessor user_jwt = jwt();
-
-    @BeforeEach
-    void setup(WebApplicationContext ctx) {
-        admin_jwt = jwt()
-            .authorities(new SimpleGrantedAuthority(authorityConfiguration.getMasterdataAuthority()));
-        mockMvc = MockMvcBuilders
-            .webAppContextSetup(ctx)
-            .apply(springSecurity())
-            .build();
-    }
-
-    @Nested
-    class GetProduct {
-        @Test
-        void shouldReturnProductWhenFound() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(PRODUCT_1_JSON));
-        }
 
         @Test
-        void shouldReturn404WhenProductNotFound() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/masterdata/product/{uuid}", Testdata.BAD_UUID)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isNotFound());
-        }
-    }
-
-    @Nested
-    class UpdateProduct {
-        @Test
-        void shouldUpdateProductWhenAuthorizedAndFound() throws Exception {
+        @WithAdminUser
+        void shouldCreateProductWhenAuthorized() {
             long initialCount = productRepository.count();
-            
-            mockMvc
-                .perform(
-                    put("/api/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
-                        .content(PRODUCT_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(String.format("""
-                    {
-                      "uuid": "%s",
-                      "name": "Product 1b",
-                      "EAN": "123456"
-                    }""", Testdata.PRODUCT_1_UUID)));
-            
-            // Verify update was applied and other product unaffected
-            assertTrue(productRepository.findById(Testdata.PRODUCT_1_UUID).isPresent());
-            assertTrue(productRepository.findById(Testdata.PRODUCT_2_UUID).isPresent());
-            assertEquals(initialCount, productRepository.count());
-        }
 
-        @Test
-        void shouldReturn404WhenUpdatingNonExistentProduct() throws Exception {
-            long initialCount = productRepository.count();
-            
-            mockMvc
-                .perform(
-                    put("/api/masterdata/product/{uuid}", Testdata.BAD_UUID)
-                        .content(PRODUCT_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
+            expect()
+                .statusCode(201)
+                .header(
+                    "location", matchesRegex(
+                        String.format("%s/%s", Pattern.quote(baseURI), Testdata.UUID_PATTERN.pattern())
+                    )
                 )
-                .andExpect(status().isNotFound());
-            
-            // Verify no changes to existing products
-            assertTrue(productRepository.findById(Testdata.PRODUCT_1_UUID).isPresent());
-            assertTrue(productRepository.findById(Testdata.PRODUCT_2_UUID).isPresent());
-            assertEquals(initialCount, productRepository.count());
-        }
+                .contentType(ContentType.JSON)
+                .body("uuid", matchesRegex(Testdata.UUID_PATTERN))
+                .body("name", is("Product 3"))
+                .body("EAN", is("654321"))
+                .given()
+                .body(PRODUCT_3_CREATE_JSON)
+                .contentType(ContentType.JSON)
+                .post();
 
-        @Test
-        void shouldReturn403WhenUpdatingProductWithoutAuthorization() throws Exception {
-            long initialCount = productRepository.count();
-            
-            mockMvc
-                .perform(
-                    put("/api/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
-                        .content(PRODUCT_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isForbidden());
-            
-            // Verify no changes when unauthorized
-            assertTrue(productRepository.findById(Testdata.PRODUCT_1_UUID).isPresent());
-            assertTrue(productRepository.findById(Testdata.PRODUCT_2_UUID).isPresent());
-            assertEquals(initialCount, productRepository.count());
-        }
-    }
-
-    @Nested
-    class CreateProduct {
-        @Test
-        void shouldCreateProductWhenAuthorized() throws Exception {
-            long initialCount = productRepository.count();
-            
-            mockMvc
-                .perform(
-                    post("/api/masterdata/product")
-                        .content(PRODUCT_3_CREATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isCreated())
-                .andExpect(header().string("location", matchesRegex("http://localhost/api/masterdata/product/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(PRODUCT_3_JSON));
-            
             // Verify creation - count should increase by 1
             assertEquals(initialCount + 1, productRepository.count());
             // Verify existing products unaffected
-            assertTrue(productRepository.findById(Testdata.PRODUCT_1_UUID).isPresent());
-            assertTrue(productRepository.findById(Testdata.PRODUCT_2_UUID).isPresent());
+            assertTrue(productRepository
+                           .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                           .isPresent());
+            assertTrue(productRepository
+                           .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                           .isPresent());
         }
 
         @Test
-        void shouldReturn403WhenCreatingProductWithoutAuthorization() throws Exception {
+        @WithTestUser
+        void shouldReturn403WhenCreatingProductWithoutAuthorization() {
             long initialCount = productRepository.count();
-            
-            mockMvc
-                .perform(
-                    post("/api/masterdata/product")
-                        .content(PRODUCT_3_CREATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isForbidden());
-            
+
+            expect()
+                .statusCode(403)
+                .given()
+                .body(PRODUCT_3_CREATE_JSON)
+                .contentType(ContentType.JSON)
+                .post();
+
             // Verify no changes when unauthorized
             assertEquals(initialCount, productRepository.count());
-            assertTrue(productRepository.findById(Testdata.PRODUCT_1_UUID).isPresent());
-            assertTrue(productRepository.findById(Testdata.PRODUCT_2_UUID).isPresent());
+            assertTrue(productRepository
+                           .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                           .isPresent());
+            assertTrue(productRepository
+                           .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                           .isPresent());
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(ProductController.class)
     class DeleteProduct {
         @Test
-        void shouldDeleteProductWhenAuthorized() throws Exception {
+        @WithAdminUser
+        void shouldDeleteProductWhenAuthorized() {
             long initialCount = productRepository.count();
-            
-            mockMvc
-                .perform(
-                    delete("/api/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isOk());
-            
+
+            expect()
+                .statusCode(200)
+                .when()
+                .delete("{uuid}", Testdata.PRODUCT_1_UUID);
+
             // Verify deletion
-            assertFalse(productRepository.findById(Testdata.PRODUCT_1_UUID).isPresent());
+            assertFalse(productRepository
+                            .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                            .isPresent());
             assertEquals(initialCount - 1, productRepository.count());
             // Verify other product unaffected
-            assertTrue(productRepository.findById(Testdata.PRODUCT_2_UUID).isPresent());
+            assertTrue(productRepository
+                           .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                           .isPresent());
         }
 
         @Test
-        void shouldReturn403WhenDeletingProductWithoutAuthorization() throws Exception {
+        @WithTestUser
+        void shouldReturn403WhenDeletingProductWithoutAuthorization() {
             long initialCount = productRepository.count();
-            
-            mockMvc
-                .perform(
-                    delete("/api/masterdata/product/{uuid}", Testdata.PRODUCT_1_UUID)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isForbidden());
-            
+
+            expect()
+                .statusCode(403)
+                .when()
+                .delete("{uuid}", Testdata.PRODUCT_1_UUID);
+
             // Verify no changes when unauthorized
             assertEquals(initialCount, productRepository.count());
-            assertTrue(productRepository.findById(Testdata.PRODUCT_1_UUID).isPresent());
-            assertTrue(productRepository.findById(Testdata.PRODUCT_2_UUID).isPresent());
+            assertTrue(productRepository
+                           .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                           .isPresent());
+            assertTrue(productRepository
+                           .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                           .isPresent());
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(ProductController.class)
+    @WithTestUser
     class SearchProducts {
         @Test
-        void shouldReturnAllProductsWhenSearching() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/masterdata/product")
-                        .with(user_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(String.format("""
-                    {
-                      "page": {
-                        "number": 0,
-                        "size": 10,
-                        "totalElements": 4,
-                        "totalPages": 1
-                      },
-                      "content": [
-                        %s,
-                        {
-                          "uuid": "%s",
-                          "name": "Product 2"
-                        },
-                        {
-                          "uuid": "%s",
-                          "name": "Product 3"
-                        },
-                        {
-                          "uuid": "%s",
-                          "name": "Product 4"
-                        }
-                      ]
-                    }""", PRODUCT_1_JSON, Testdata.PRODUCT_2_UUID, Testdata.PRODUCT_3_UUID, Testdata.PRODUCT_4_UUID
-                )));
+        void shouldReturnAllProductsWhenSearching() {
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("page.number", is(0))
+                .body("page.size", is(10))
+                .body("page.totalElements", is(4))
+                .body("page.totalPages", is(1))
+                .body("content[0].uuid", isUuid(Testdata.PRODUCT_1_UUID))
+                .body("content[0].name", is("Product 1"))
+                .body("content[1].uuid", isUuid(Testdata.PRODUCT_2_UUID))
+                .body("content[1].name", is("Product 2"))
+                .body("content[2].uuid", isUuid(Testdata.PRODUCT_3_UUID))
+                .body("content[2].name", is("Product 3"))
+                .body("content[3].uuid", isUuid(Testdata.PRODUCT_4_UUID))
+                .body("content[3].name", is("Product 4"))
+                .when()
+                .get();
         }
     }
 }

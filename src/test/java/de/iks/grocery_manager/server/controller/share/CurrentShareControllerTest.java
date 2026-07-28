@@ -1,12 +1,14 @@
 package de.iks.grocery_manager.server.controller.share;
 
+import de.iks.grocery_manager.server.Sql;
 import de.iks.grocery_manager.server.Testdata;
+import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.jpa.ProductGroupRepository;
 import de.iks.grocery_manager.server.jpa.ShoppingListRepository;
 import de.iks.grocery_manager.server.jpa.ShoppingTripRepository;
-import de.iks.grocery_manager.server.jpa.share.ShareRepository;
 import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
 import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;
+import de.iks.grocery_manager.server.jpa.share.ShareRepository;
 import de.iks.grocery_manager.server.model.ProductGroup;
 import de.iks.grocery_manager.server.model.ShoppingList;
 import de.iks.grocery_manager.server.model.ShoppingTrip;
@@ -15,306 +17,343 @@ import de.iks.grocery_manager.server.model.masterdata.Store;
 import de.iks.grocery_manager.server.model.share.JoinLink;
 import de.iks.grocery_manager.server.model.share.Permissions;
 import de.iks.grocery_manager.server.model.share.Share;
-import org.junit.jupiter.api.BeforeEach;
+import io.quarkus.narayana.jta.QuarkusTransaction;
+import io.quarkus.test.common.http.TestHTTPEndpoint;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
+import static de.iks.grocery_manager.server.UUIDMatcher.*;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureTestDatabase
-@Sql(Testdata.SCRIPT)
-@Transactional
+@QuarkusTest
+@TestHTTPEndpoint(CurrentShareController.class)
+@WithTestUser
+@Sql("/testdata.sql")
 class CurrentShareControllerTest {
 
-    @Autowired
-    private ShareRepository shareRepository;
+    @Inject
+    ShareRepository shareRepository;
 
-    @Autowired
-    private ProductGroupRepository productGroupRepository;
+    @Inject
+    ProductGroupRepository productGroupRepository;
 
-    @Autowired
-    private ShoppingListRepository shoppingListRepository;
+    @Inject
+    ShoppingListRepository shoppingListRepository;
 
-    @Autowired
-    private ShoppingTripRepository shoppingTripRepository;
+    @Inject
+    ShoppingTripRepository shoppingTripRepository;
 
-    @Autowired
-    private ProductRepository productRepository;
+    @Inject
+    ProductRepository productRepository;
 
-    @Autowired
-    private StoreRepository storeRepository;
-
-    private MockMvc mockMvc;
-
-    private final RequestPostProcessor user_jwt = jwt()
-        .jwt(j -> j.subject("testuser"));
-
-    @BeforeEach
-    void setup(WebApplicationContext ctx) {
-        mockMvc = MockMvcBuilders
-            .webAppContextSetup(ctx)
-            .apply(springSecurity())
-            .build();
-
-        // Clean up any existing shares and related data
-        shareRepository.deleteAll();
-        productGroupRepository.deleteAll();
-        shoppingListRepository.deleteAll();
-        shoppingTripRepository.deleteAll();
-    }
+    @Inject
+    StoreRepository storeRepository;
 
     @Nested
+    @TestHTTPEndpoint(CurrentShareController.class)
+    @WithTestUser
     class GetCurrentShare {
         @Test
-        void shouldReturnCurrentShareWhenShareParameterProvided() throws Exception {
+        void shouldReturnCurrentShareWhenShareParameterProvided() {
+            QuarkusTransaction.begin();
+
             // Create a share with user having ADMIN permissions
-            Share testShare = createShareWithOwner("Test Share", "sub: testuser", Permissions.ADMIN);
+            Share testShare = createShareWithOwner("Test Share", WithTestUser.OWNER, Permissions.ADMIN);
 
-            mockMvc
-                .perform(get("/api/share/current?share=" + testShare.getUuid()).with(user_jwt))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").value(testShare.getUuid().toString()))
-                .andExpect(jsonPath("$.name").value("Test Share"))
-                .andExpect(jsonPath("$.permissions").value("ADMIN"));
+            shareRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("uuid", isUuidOf(testShare))
+                .body("name", is("Test Share"))
+                .body("permissions", is("ADMIN"))
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .get();
         }
 
         @Test
-        void shouldReturnCurrentShareWithWritePermissions() throws Exception {
+        void shouldReturnCurrentShareWithWritePermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share with user having WRITE permissions
-            Share testShare = createShareWithOwner("Write Share", "sub: testuser", Permissions.WRITE);
+            Share testShare = createShareWithOwner("Write Share", WithTestUser.OWNER, Permissions.WRITE);
 
-            mockMvc
-                .perform(get("/api/share/current?share=" + testShare.getUuid()).with(user_jwt))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.uuid").value(testShare.getUuid().toString()))
-                .andExpect(jsonPath("$.name").value("Write Share"))
-                .andExpect(jsonPath("$.permissions").value("WRITE"));
+            shareRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("uuid", isUuidOf(testShare))
+                .body("name", is("Write Share"))
+                .body("permissions", is("WRITE"))
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .get();
         }
 
         @Test
-        void shouldReturnCurrentShareWithReadPermissions() throws Exception {
+        void shouldReturnCurrentShareWithReadPermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share with user having READ permissions
-            Share testShare = createShareWithOwner("Read Share", "sub: testuser", Permissions.READ);
+            Share testShare = createShareWithOwner("Read Share", WithTestUser.OWNER, Permissions.READ);
 
-            mockMvc
-                .perform(get("/api/share/current?share=" + testShare.getUuid()).with(user_jwt))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.uuid").value(testShare.getUuid().toString()))
-                .andExpect(jsonPath("$.name").value("Read Share"))
-                .andExpect(jsonPath("$.permissions").value("READ"));
+            shareRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("uuid", isUuidOf(testShare))
+                .body("name", is("Read Share"))
+                .body("permissions", is("READ"))
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .get();
         }
 
         @Test
-        void shouldReturn403WhenUserHasNoPermissions() throws Exception {
+        void shouldReturn403WhenUserHasNoPermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share where user has no permissions
-            Share testShare = createShareWithOwner("No Access Share", "sub: otheruser", Permissions.ADMIN);
+            Share testShare = createShareWithOwner("No Access Share", WithTestUser2.OWNER, Permissions.ADMIN);
 
-            mockMvc
-                .perform(get("/api/share/current?share=" + testShare.getUuid()).with(user_jwt))
-                .andExpect(status().isForbidden());
+            shareRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .get();
         }
 
         @Test
-        void shouldReturn403WhenShareNotFound() throws Exception {
-            mockMvc
-                .perform(get("/api/share/current?share=" + Testdata.BAD_UUID).with(user_jwt))
-                .andExpect(status().isForbidden());
+        void shouldReturn403WhenShareNotFound() {
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", UUID.randomUUID())
+                .get();
         }
 
         @Test
-        void shouldReturn401WhenNoAuthentication() throws Exception {
-            Share testShare = createShareWithOwner("Test Share", "sub: testuser", Permissions.ADMIN);
-
-            mockMvc
-                .perform(get("/api/share/current?share=" + testShare.getUuid()))
-                .andExpect(status().isUnauthorized());
-        }
-
-        @Test
-        void shouldReturn403WhenNoShareParameterProvided() throws Exception {
-            mockMvc
-                .perform(get("/api/share/current").with(user_jwt))
-                .andExpect(status().isForbidden());
+        void shouldReturn403WhenNoShareParameterProvided() {
+            expect()
+                .statusCode(403)
+                .when()
+                .get();
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(CurrentShareController.class)
+    @WithTestUser
     class UpdateCurrentShare {
         @Test
-        void shouldUpdateCurrentShareWhenUserHasAdminPermissions() throws Exception {
+        void shouldUpdateCurrentShareWhenUserHasAdminPermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share with user having ADMIN permissions
-            Share testShare = createShareWithOwner("Original Name", "sub: testuser", Permissions.ADMIN);
+            Share testShare = createShareWithOwner("Original Name", WithTestUser.OWNER, Permissions.ADMIN);
+
+            shareRepository.flush();
+
+            QuarkusTransaction.commit();
 
             String updateJson = """
                 {
                   "name": "Updated Name"
                 }""";
 
-            mockMvc
-                .perform(put("/api/share/current?share=" + testShare.getUuid())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(updateJson))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").value(testShare.getUuid().toString()))
-                .andExpect(jsonPath("$.name").value("Updated Name"))
-                .andExpect(jsonPath("$.permissions").value("ADMIN"));
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("uuid", isUuidOf(testShare))
+                .body("name", is("Updated Name"))
+                .body("permissions", is("ADMIN"))
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .body(updateJson)
+                .contentType(ContentType.JSON)
+                .put();
 
             // Verify update in database
-            Share updatedShare = shareRepository.findById(testShare.getUuid()).orElseThrow();
+            Share updatedShare = shareRepository
+                .findByIdOptional(testShare.getUuid())
+                .orElseThrow();
             assertEquals("Updated Name", updatedShare.getName());
         }
 
         @Test
-        void shouldReturn403WhenUserHasWritePermissions() throws Exception {
+        void shouldReturn403WhenUserHasWritePermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share with user having only WRITE permissions
-            Share testShare = createShareWithOwner("Test Share", "sub: testuser", Permissions.WRITE);
+            Share testShare = createShareWithOwner("Test Share", WithTestUser.OWNER, Permissions.WRITE);
+
+            shareRepository.flush();
+
+            QuarkusTransaction.commit();
 
             String updateJson = """
                 {
                   "name": "Updated Name"
                 }""";
 
-            mockMvc
-                .perform(put("/api/share/current?share=" + testShare.getUuid())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(updateJson))
-                .andExpect(status().isForbidden());
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .body(updateJson)
+                .contentType(ContentType.JSON)
+                .put();
 
             // Verify share was not updated
-            Share unchangedShare = shareRepository.findById(testShare.getUuid()).orElseThrow();
+            Share unchangedShare = shareRepository
+                .findByIdOptional(testShare.getUuid())
+                .orElseThrow();
             assertEquals("Test Share", unchangedShare.getName());
         }
 
         @Test
-        void shouldReturn403WhenUserHasReadPermissions() throws Exception {
+        void shouldReturn403WhenUserHasReadPermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share with user having only READ permissions
-            Share testShare = createShareWithOwner("Test Share", "sub: testuser", Permissions.READ);
+            Share testShare = createShareWithOwner("Test Share", WithTestUser.OWNER, Permissions.READ);
+
+            shareRepository.flush();
+
+            QuarkusTransaction.commit();
 
             String updateJson = """
                 {
                   "name": "Updated Name"
                 }""";
 
-            mockMvc
-                .perform(put("/api/share/current?share=" + testShare.getUuid())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(updateJson))
-                .andExpect(status().isForbidden());
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .body(updateJson)
+                .contentType(ContentType.JSON)
+                .put();
 
             // Verify share was not updated
-            Share unchangedShare = shareRepository.findById(testShare.getUuid()).orElseThrow();
+            Share unchangedShare = shareRepository
+                .findByIdOptional(testShare.getUuid())
+                .orElseThrow();
             assertEquals("Test Share", unchangedShare.getName());
         }
 
         @Test
-        void shouldReturn403WhenUserHasNoPermissions() throws Exception {
+        void shouldReturn403WhenUserHasNoPermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share where user has no permissions
-            Share testShare = createShareWithOwner("Test Share", "sub: otheruser", Permissions.ADMIN);
+            Share testShare = createShareWithOwner("Test Share", WithTestUser2.OWNER, Permissions.ADMIN);
+
+            shareRepository.flush();
+
+            QuarkusTransaction.commit();
 
             String updateJson = """
                 {
                   "name": "Updated Name"
                 }""";
 
-            mockMvc
-                .perform(put("/api/share/current?share=" + testShare.getUuid())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(updateJson))
-                .andExpect(status().isForbidden());
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .body(updateJson)
+                .contentType(ContentType.JSON)
+                .put();
 
             // Verify share was not updated
-            Share unchangedShare = shareRepository.findById(testShare.getUuid()).orElseThrow();
+            Share unchangedShare = shareRepository
+                .findByIdOptional(testShare.getUuid())
+                .orElseThrow();
             assertEquals("Test Share", unchangedShare.getName());
         }
 
         @Test
-        void shouldReturn403WhenShareNotFound() throws Exception {
+        void shouldReturn403WhenShareNotFound() {
             String updateJson = """
                 {
                   "name": "Updated Name"
                 }""";
 
-            mockMvc
-                .perform(put("/api/share/current?share=" + Testdata.BAD_UUID)
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(updateJson))
-                .andExpect(status().isForbidden());
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", Testdata.BAD_UUID)
+                .body(updateJson)
+                .contentType(ContentType.JSON)
+                .put();
         }
 
         @Test
-        void shouldReturn401WhenNoAuthentication() throws Exception {
-            Share testShare = createShareWithOwner("Test Share", "sub: testuser", Permissions.ADMIN);
+        void shouldHandleEmptyNameUpdate() {
+            QuarkusTransaction.begin();
 
-            String updateJson = """
-                {
-                  "name": "Updated Name"
-                }""";
+            Share testShare = createShareWithOwner("Original Name", WithTestUser.OWNER, Permissions.ADMIN);
 
-            mockMvc
-                .perform(put("/api/share/current?share=" + testShare.getUuid())
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(updateJson))
-                .andExpect(status().isUnauthorized());
-        }
+            shareRepository.flush();
 
-        @Test
-        void shouldHandleEmptyNameUpdate() throws Exception {
-            Share testShare = createShareWithOwner("Original Name", "sub: testuser", Permissions.ADMIN);
+            QuarkusTransaction.commit();
 
             String updateJson = """
                 {
                   "name": ""
                 }""";
 
-            mockMvc
-                .perform(put("/api/share/current?share=" + testShare.getUuid())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(updateJson))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value(""));
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("name", is(""))
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .body(updateJson)
+                .contentType(ContentType.JSON)
+                .put();
 
             // Verify update in database
-            Share updatedShare = shareRepository.findById(testShare.getUuid()).orElseThrow();
+            Share updatedShare = shareRepository
+                .findByIdOptional(testShare.getUuid())
+                .orElseThrow();
             assertEquals("", updatedShare.getName());
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(CurrentShareController.class)
+    @WithTestUser
     class DeleteCurrentShare {
         @Test
-        void shouldDeleteCurrentShareAndCleanupWhenUserHasAdminPermissions() throws Exception {
+        void shouldDeleteCurrentShareAndCleanupWhenUserHasAdminPermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share with user having ADMIN permissions
-            Share testShare = createShareWithOwner("Test Share", "sub: testuser", Permissions.ADMIN);
+            Share testShare = createShareWithOwner("Test Share", WithTestUser.OWNER, Permissions.ADMIN);
 
             // Create some related data for this share
             createTestDataForShare(testShare);
@@ -324,13 +363,24 @@ class CurrentShareControllerTest {
             long initialListCount = shoppingListRepository.count();
             long initialTripCount = shoppingTripRepository.count();
 
-            mockMvc
-                .perform(delete("/api/share/current?share=" + testShare.getUuid()).with(user_jwt))
-                .andExpect(status().isOk());
+            shareRepository.flush();
+            productGroupRepository.flush();
+            shoppingListRepository.flush();
+            shoppingTripRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .delete();
 
             // Verify share was deleted
             assertEquals(initialShareCount - 1, shareRepository.count());
-            assertFalse(shareRepository.findById(testShare.getUuid()).isPresent());
+            assertFalse(shareRepository
+                            .findByIdOptional(testShare.getUuid())
+                            .isPresent());
 
             // Verify cleanup of related data
             assertEquals(initialGroupCount - 1, productGroupRepository.count());
@@ -339,9 +389,11 @@ class CurrentShareControllerTest {
         }
 
         @Test
-        void shouldReturn403WhenUserHasWritePermissions() throws Exception {
+        void shouldReturn403WhenUserHasWritePermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share with user having only WRITE permissions
-            Share testShare = createShareWithOwner("Test Share", "sub: testuser", Permissions.WRITE);
+            Share testShare = createShareWithOwner("Test Share", WithTestUser.OWNER, Permissions.WRITE);
 
             // Create some related data for this share
             createTestDataForShare(testShare);
@@ -349,77 +401,98 @@ class CurrentShareControllerTest {
             long initialShareCount = shareRepository.count();
             long initialGroupCount = productGroupRepository.count();
 
-            mockMvc
-                .perform(delete("/api/share/current?share=" + testShare.getUuid()).with(user_jwt))
-                .andExpect(status().isForbidden());
+            shareRepository.flush();
+            productGroupRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .delete();
 
             // Verify share was not deleted
             assertEquals(initialShareCount, shareRepository.count());
-            assertTrue(shareRepository.findById(testShare.getUuid()).isPresent());
+            assertTrue(shareRepository
+                           .findByIdOptional(testShare.getUuid())
+                           .isPresent());
             assertEquals(initialGroupCount, productGroupRepository.count());
         }
 
         @Test
-        void shouldReturn403WhenUserHasReadPermissions() throws Exception {
+        void shouldReturn403WhenUserHasReadPermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share with user having only READ permissions
-            Share testShare = createShareWithOwner("Test Share", "sub: testuser", Permissions.READ);
+            Share testShare = createShareWithOwner("Test Share", WithTestUser.OWNER, Permissions.READ);
 
             long initialShareCount = shareRepository.count();
 
-            mockMvc
-                .perform(delete("/api/share/current?share=" + testShare.getUuid()).with(user_jwt))
-                .andExpect(status().isForbidden());
+            shareRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .delete();
 
             // Verify share was not deleted
             assertEquals(initialShareCount, shareRepository.count());
-            assertTrue(shareRepository.findById(testShare.getUuid()).isPresent());
+            assertTrue(shareRepository
+                           .findByIdOptional(testShare.getUuid())
+                           .isPresent());
         }
 
         @Test
-        void shouldReturn403WhenUserHasNoPermissions() throws Exception {
+        void shouldReturn403WhenUserHasNoPermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share where user has no permissions
-            Share testShare = createShareWithOwner("Test Share", "sub: otheruser", Permissions.ADMIN);
+            Share testShare = createShareWithOwner("Test Share", WithTestUser2.OWNER, Permissions.ADMIN);
 
             long initialShareCount = shareRepository.count();
 
-            mockMvc
-                .perform(delete("/api/share/current?share=" + testShare.getUuid()).with(user_jwt))
-                .andExpect(status().isForbidden());
+            shareRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .delete();
 
             // Verify share was not deleted
             assertEquals(initialShareCount, shareRepository.count());
-            assertTrue(shareRepository.findById(testShare.getUuid()).isPresent());
+            assertTrue(shareRepository
+                           .findByIdOptional(testShare.getUuid())
+                           .isPresent());
         }
 
         @Test
-        void shouldReturn403WhenShareNotFound() throws Exception {
+        void shouldReturn403WhenShareNotFound() {
             long initialShareCount = shareRepository.count();
 
-            mockMvc
-                .perform(delete("/api/share/current?share=" + Testdata.BAD_UUID).with(user_jwt))
-                .andExpect(status().isForbidden());
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", Testdata.BAD_UUID)
+                .delete();
 
             // Verify no shares were deleted
             assertEquals(initialShareCount, shareRepository.count());
         }
 
         @Test
-        void shouldReturn401WhenNoAuthentication() throws Exception {
-            Share testShare = createShareWithOwner("Test Share", "sub: testuser", Permissions.ADMIN);
+        void shouldOnlyCleanupDataForDeletedShareOwner() {
+            QuarkusTransaction.begin();
 
-            mockMvc
-                .perform(delete("/api/share/current?share=" + testShare.getUuid()))
-                .andExpect(status().isUnauthorized());
-
-            // Verify share was not deleted
-            assertTrue(shareRepository.findById(testShare.getUuid()).isPresent());
-        }
-
-        @Test
-        void shouldOnlyCleanupDataForDeletedShareOwner() throws Exception {
             // Create two shares with different owners
-            Share testShare1 = createShareWithOwner("Test Share 1", "sub: testuser", Permissions.ADMIN);
-            Share testShare2 = createShareWithOwner("Test Share 2", "sub: otheruser", Permissions.ADMIN);
+            Share testShare1 = createShareWithOwner("Test Share 1", WithTestUser.OWNER, Permissions.ADMIN);
+            Share testShare2 = createShareWithOwner("Test Share 2", WithTestUser2.OWNER, Permissions.ADMIN);
 
             // Create data for both shares
             createTestDataForShare(testShare1);
@@ -430,15 +503,27 @@ class CurrentShareControllerTest {
             long initialListCount = shoppingListRepository.count();
             long initialTripCount = shoppingTripRepository.count();
 
-            // Delete first share
-            mockMvc
-                .perform(delete("/api/share/current?share=" + testShare1.getUuid()).with(user_jwt))
-                .andExpect(status().isOk());
+            shareRepository.flush();
+            productGroupRepository.flush();
+            shoppingListRepository.flush();
+            shoppingTripRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .given()
+                .queryParam("share", testShare1.getUuid())
+                .delete();
 
             // Verify only first share and its data were deleted
             assertEquals(initialShareCount - 1, shareRepository.count());
-            assertFalse(shareRepository.findById(testShare1.getUuid()).isPresent());
-            assertTrue(shareRepository.findById(testShare2.getUuid()).isPresent());
+            assertFalse(shareRepository
+                            .findByIdOptional(testShare1.getUuid())
+                            .isPresent());
+            assertTrue(shareRepository
+                           .findByIdOptional(testShare2.getUuid())
+                           .isPresent());
 
             // Verify cleanup only for first share's owner
             assertEquals(initialGroupCount - 1, productGroupRepository.count());
@@ -452,7 +537,7 @@ class CurrentShareControllerTest {
         Share share = new Share();
         share.setName(name);
         share.setLinks(new ArrayList<>()); // Initialize the links list
-        share = shareRepository.save(share);
+        shareRepository.persist(share);
 
         JoinLink ownerLink = new JoinLink();
         ownerLink.setShare(share);
@@ -461,10 +546,12 @@ class CurrentShareControllerTest {
         ownerLink.setPermissions(permissions);
         ownerLink.setActive(true);
         ownerLink.setSingleUse(false);
-        
+
         // Add the link to the share's links list
-        share.getLinks().add(ownerLink);
-        shareRepository.save(share);
+        share
+            .getLinks()
+            .add(ownerLink);
+        shareRepository.persist(share);
 
         return share;
     }
@@ -473,14 +560,16 @@ class CurrentShareControllerTest {
     private void createTestDataForShare(Share share) {
         // Use the same owner format as getOwner would return for SharePrincipal
         String shareOwner = String.format("share: %s", share.getUuid());
-        
+
         // Create a product group
-        Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+        Product product1 = productRepository
+            .findByIdOptional(Testdata.PRODUCT_1_UUID)
+            .orElseThrow();
         ProductGroup group = new ProductGroup();
         group.setName("Test Group");
         group.setOwner(shareOwner);
         group.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("2.0"))));
-        productGroupRepository.save(group);
+        productGroupRepository.persist(group);
 
         // Create a shopping list
         ShoppingList list = new ShoppingList();
@@ -489,15 +578,17 @@ class CurrentShareControllerTest {
         list.setRepeating(false);
         list.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
         list.setProductGroups(new HashMap<>());
-        shoppingListRepository.save(list);
+        shoppingListRepository.persist(list);
 
         // Create a shopping trip with required store
-        Store store = storeRepository.findById(Testdata.STORE_1_UUID).orElseThrow();
+        Store store = storeRepository
+            .findByIdOptional(Testdata.STORE_1_UUID)
+            .orElseThrow();
         ShoppingTrip trip = new ShoppingTrip();
         trip.setStore(store);
         trip.setOwner(shareOwner);
         trip.setTime(java.time.Instant.now());
         trip.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("3.0"))));
-        shoppingTripRepository.save(trip);
+        shoppingTripRepository.persist(trip);
     }
 }

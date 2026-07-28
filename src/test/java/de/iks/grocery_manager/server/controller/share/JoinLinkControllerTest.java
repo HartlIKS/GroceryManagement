@@ -1,228 +1,327 @@
 package de.iks.grocery_manager.server.controller.share;
 
+import de.iks.grocery_manager.server.Sql;
 import de.iks.grocery_manager.server.Testdata;
+import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.jpa.share.JoinLinkRepository;
 import de.iks.grocery_manager.server.jpa.share.ShareRepository;
 import de.iks.grocery_manager.server.model.share.JoinLink;
 import de.iks.grocery_manager.server.model.share.Permissions;
 import de.iks.grocery_manager.server.model.share.Share;
-import org.junit.jupiter.api.BeforeEach;
+import io.quarkus.narayana.jta.QuarkusTransaction;
+import io.quarkus.test.common.http.TestHTTPEndpoint;
+import io.quarkus.test.common.http.TestHTTPResource;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.util.*;
 
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureTestDatabase
-@Sql(Testdata.SCRIPT)
-@Transactional
+@QuarkusTest
+@TestHTTPEndpoint(JoinLinkController.class)
+@WithTestUser
+@Sql("/testdata.sql")
 class JoinLinkControllerTest {
 
-    @Autowired
-    private ShareRepository shareRepository;
+    @Inject
+    ShareRepository shareRepository;
 
-    @Autowired
-    private JoinLinkRepository joinLinkRepository;
+    @Inject
+    JoinLinkRepository joinLinkRepository;
 
-    private MockMvc mockMvc;
-
-    private final RequestPostProcessor user_jwt = jwt()
-        .jwt(j -> j.subject("testuser"));
-
-    @BeforeEach
-    void setup(WebApplicationContext ctx) {
-        mockMvc = MockMvcBuilders
-            .webAppContextSetup(ctx)
-            .apply(springSecurity())
-            .build();
-
-        // Clean up any existing shares and links
-        joinLinkRepository.deleteAll();
-        shareRepository.deleteAll();
-    }
+    @TestHTTPResource
+    String baseURI;
 
     @Nested
+    @TestHTTPEndpoint(JoinLinkController.class)
+    @WithTestUser
     class GetAllLinks {
         @Test
-        void shouldReturnAllLinksForUserWithAdminPermissions() throws Exception {
+        void shouldReturnAllLinksForUserWithAdminPermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share with user having ADMIN permissions and multiple links
-            Share testShare = createShareWithLinks("Test Share", "sub: testuser", Permissions.ADMIN, 3);
+            Share testShare = createShareWithLinks("Test Share", WithTestUser.OWNER, Permissions.ADMIN, 3);
 
-            mockMvc
-                .perform(get("/api/share/current/links?share=" + testShare.getUuid()).with(user_jwt))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(3));
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("size()", is(3))
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .get();
         }
 
         @Test
-        void shouldReturn403WhenUserHasWritePermissions() throws Exception {
+        void shouldReturn403WhenUserHasWritePermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share with user having WRITE permissions
-            Share testShare = createShareWithLinks("Write Share", "sub: testuser", Permissions.WRITE, 2);
+            Share testShare = createShareWithLinks("Write Share", WithTestUser.OWNER, Permissions.WRITE, 2);
 
-            mockMvc
-                .perform(get("/api/share/current/links?share=" + testShare.getUuid()).with(user_jwt))
-                .andExpect(status().isForbidden());
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .get();
         }
 
         @Test
-        void shouldReturn403WhenUserHasReadPermissions() throws Exception {
+        void shouldReturn403WhenUserHasReadPermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share with user having READ permissions
-            Share testShare = createShareWithLinks("Read Share", "sub: testuser", Permissions.READ, 1);
+            Share testShare = createShareWithLinks("Read Share", WithTestUser.OWNER, Permissions.READ, 1);
 
-            mockMvc
-                .perform(get("/api/share/current/links?share=" + testShare.getUuid()).with(user_jwt))
-                .andExpect(status().isForbidden());
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .get();
         }
 
         @Test
-        void shouldReturnEmptyArrayWhenShareHasOnlyAccessLink() throws Exception {
+        void shouldReturnEmptyArrayWhenShareHasOnlyAccessLink() {
+            QuarkusTransaction.begin();
+
             // Create a share with only the owner link (no additional links)
-            Share testShare = createShareWithLinks("Minimal Share", "sub: testuser", Permissions.ADMIN, 1);
+            Share testShare = createShareWithLinks("Minimal Share", WithTestUser.OWNER, Permissions.ADMIN, 1);
 
-            mockMvc
-                .perform(get("/api/share/current/links?share=" + testShare.getUuid()).with(user_jwt))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(1)); // Owner link should be returned
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("size()", is(1))
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .get();
         }
 
         @Test
-        void shouldReturn403WhenUserHasNoPermissions() throws Exception {
+        void shouldReturn403WhenUserHasNoPermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share where user has no permissions
-            Share testShare = createShareWithLinks("No Access Share", "sub: otheruser", Permissions.ADMIN, 1);
+            Share testShare = createShareWithLinks("No Access Share", WithTestUser2.OWNER, Permissions.ADMIN, 1);
 
-            mockMvc
-                .perform(get("/api/share/current/links?share=" + testShare.getUuid()).with(user_jwt))
-                .andExpect(status().isForbidden());
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .get();
         }
 
         @Test
-        void shouldReturn403WhenShareNotFound() throws Exception {
-            mockMvc
-                .perform(get("/api/share/current/links?share=" + Testdata.BAD_UUID).with(user_jwt))
-                .andExpect(status().isForbidden());
+        void shouldReturn403WhenShareNotFound() {
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", Testdata.BAD_UUID)
+                .when()
+                .get();
         }
 
         @Test
-        void shouldReturn401WhenNoAuthentication() throws Exception {
-            Share testShare = createShareWithLinks("Test Share", "sub: testuser", Permissions.ADMIN, 1);
-
-            mockMvc
-                .perform(get("/api/share/current/links?share=" + testShare.getUuid()))
-                .andExpect(status().isUnauthorized());
-        }
-
-        @Test
-        void shouldReturn403WhenNoShareParameterProvided() throws Exception {
-            mockMvc
-                .perform(get("/api/share/current/links").with(user_jwt))
-                .andExpect(status().isForbidden());
+        void shouldReturn403WhenNoShareParameterProvided() {
+            expect()
+                .statusCode(403)
+                .when()
+                .get();
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(JoinLinkController.class)
+    @WithTestUser
     class GetLinkById {
         @Test
-        void shouldReturnLinkWhenUserHasAdminPermissions() throws Exception {
+        void shouldReturnLinkWhenUserHasAdminPermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share with user having ADMIN permissions
-            Share testShare = createShareWithLinks("Test Share", "sub: testuser", Permissions.ADMIN, 2);
-            JoinLink expectedLink = testShare.getLinks().get(0);
+            Share testShare = createShareWithLinks("Test Share", WithTestUser.OWNER, Permissions.ADMIN, 2);
+            JoinLink expectedLink = testShare
+                .getLinks()
+                .get(0);
 
-            mockMvc
-                .perform(get("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), expectedLink.getUuid()).with(user_jwt))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").value(expectedLink.getUuid().toString()))
-                .andExpect(jsonPath("$.name").value(expectedLink.getName()))
-                .andExpect(jsonPath("$.permissions").value(expectedLink.getPermissions().toString()))
-                .andExpect(jsonPath("$.active").value(expectedLink.isActive()))
-                .andExpect(jsonPath("$.singleUse").value(expectedLink.isSingleUse()));
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body(
+                    "uuid",
+                    is(expectedLink
+                           .getUuid()
+                           .toString())
+                )
+                .body("name", is(expectedLink.getName()))
+                .body(
+                    "permissions",
+                    is(expectedLink
+                           .getPermissions()
+                           .name())
+                )
+                .body("active", is(expectedLink.isActive()))
+                .body("singleUse", is(expectedLink.isSingleUse()))
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .get("{uuid}", expectedLink.getUuid());
         }
 
         @Test
-        void shouldReturn403WhenUserHasWritePermissions() throws Exception {
+        void shouldReturn403WhenUserHasWritePermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share with user having WRITE permissions
-            Share testShare = createShareWithLinks("Write Share", "sub: testuser", Permissions.WRITE, 1);
-            JoinLink expectedLink = testShare.getLinks().get(0);
+            Share testShare = createShareWithLinks("Write Share", WithTestUser.OWNER, Permissions.WRITE, 1);
+            JoinLink expectedLink = testShare
+                .getLinks()
+                .get(0);
 
-            mockMvc
-                .perform(get("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), expectedLink.getUuid()).with(user_jwt))
-                .andExpect(status().isForbidden());
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .get("{uuid}", expectedLink.getUuid());
         }
 
         @Test
-        void shouldReturn403WhenUserWithReadPermissions() throws Exception {
+        void shouldReturn403WhenUserWithReadPermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share with user having READ permissions
-            Share testShare = createShareWithLinks("Read Share", "sub: testuser", Permissions.READ, 1);
-            JoinLink expectedLink = testShare.getLinks().get(0);
+            Share testShare = createShareWithLinks("Read Share", WithTestUser.OWNER, Permissions.READ, 1);
+            JoinLink expectedLink = testShare
+                .getLinks()
+                .get(0);
 
-            mockMvc
-                .perform(get("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), expectedLink.getUuid()).with(user_jwt))
-                .andExpect(status().isForbidden());
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .get("{uuid}", expectedLink.getUuid());
         }
 
         @Test
-        void shouldReturn403WhenLinkExistsButUserHasNoPermissions() throws Exception {
+        void shouldReturn403WhenLinkExistsButUserHasNoPermissions() {
+            QuarkusTransaction.begin();
+
             // Create a share where user has no permissions
-            Share testShare = createShareWithLinks("No Access Share", "sub: otheruser", Permissions.ADMIN, 1);
-            JoinLink link = testShare.getLinks().get(0);
+            Share testShare = createShareWithLinks("No Access Share", WithTestUser2.OWNER, Permissions.ADMIN, 1);
+            JoinLink link = testShare
+                .getLinks()
+                .get(0);
 
-            mockMvc
-                .perform(get("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), link.getUuid()).with(user_jwt))
-                .andExpect(status().isForbidden());
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .get("{uuid}", link.getUuid());
+
         }
 
         @Test
-        void shouldReturn404WhenLinkDoesNotExist() throws Exception {
-            Share testShare = createShareWithLinks("Test Share", "sub: testuser", Permissions.ADMIN, 1);
+        void shouldReturn404WhenLinkDoesNotExist() {
+            QuarkusTransaction.begin();
 
-            mockMvc
-                .perform(get("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), Testdata.BAD_UUID).with(user_jwt))
-                .andExpect(status().isNotFound());
+            Share testShare = createShareWithLinks("Test Share", WithTestUser.OWNER, Permissions.ADMIN, 1);
+
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(404)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .get("{uuid}", Testdata.BAD_UUID);
         }
 
         @Test
-        void shouldReturn403WhenShareNotFound() throws Exception {
-            mockMvc
-                .perform(get("/api/share/current/links/{uuid}?share=" + Testdata.BAD_UUID, UUID.randomUUID()).with(user_jwt))
-                .andExpect(status().isForbidden());
-        }
-
-        @Test
-        void shouldReturn401WhenNoAuthentication() throws Exception {
-            Share testShare = createShareWithLinks("Test Share", "sub: testuser", Permissions.ADMIN, 1);
-            JoinLink link = testShare.getLinks().get(0);
-
-            mockMvc
-                .perform(get("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), link.getUuid()))
-                .andExpect(status().isUnauthorized());
+        void shouldReturn403WhenShareNotFound() {
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", Testdata.BAD_UUID)
+                .when()
+                .get("{uuid}", Testdata.BAD_UUID);
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(JoinLinkController.class)
+    @WithTestUser
     class CreateLink {
         @Test
-        void shouldCreateLinkWhenUserHasAdminPermissions() throws Exception {
-            Share testShare = createShareWithLinks("Test Share", "sub: testuser", Permissions.ADMIN, 1);
+        void shouldCreateLinkWhenUserHasAdminPermissions() {
+            QuarkusTransaction.begin();
+
+            Share testShare = createShareWithLinks("Test Share", WithTestUser.OWNER, Permissions.ADMIN, 1);
+
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
 
             String createJson = """
                 {
@@ -233,38 +332,56 @@ class JoinLinkControllerTest {
                   "validTo": null
                 }""";
 
-            mockMvc
-                .perform(post("/api/share/current/links?share=" + testShare.getUuid())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(createJson))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").exists())
-                .andExpect(jsonPath("$.name").value("New Link"))
-                .andExpect(jsonPath("$.permissions").value("WRITE"))
-                .andExpect(jsonPath("$.active").value(true))
-                .andExpect(jsonPath("$.singleUse").value(false))
-                .andExpect(jsonPath("$.validTo").isEmpty())
-                .andExpect(jsonPath("$.numUsers").value(0));
+            expect()
+                .statusCode(201)
+                .header("location", matchesRegex(String.format("%s/%s", baseURI, Testdata.UUID_PATTERN.pattern())))
+                .contentType(ContentType.JSON)
+                .body("uuid", matchesRegex(Testdata.UUID_PATTERN))
+                .body("name", is("New Link"))
+                .body("permissions", is("WRITE"))
+                .body("active", is(true))
+                .body("singleUse", is(false))
+                .body("validTo", nullValue())
+                .body("numUsers", is(0))
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .body(createJson)
+                .contentType(ContentType.JSON)
+                .when()
+                .post();
 
             // Verify link was created in database
-            List<JoinLink> links = joinLinkRepository.findAll();
+            List<JoinLink> links = joinLinkRepository.listAll();
             assertEquals(2, links.size()); // Original link + new link
-            
-            JoinLink newLink = links.stream()
-                .filter(l -> l.getName().equals("New Link"))
+
+            JoinLink newLink = links
+                .stream()
+                .filter(l -> l
+                    .getName()
+                    .equals("New Link"))
                 .findFirst()
                 .orElseThrow();
-            assertEquals("WRITE", newLink.getPermissions().toString());
+            assertEquals(
+                "WRITE",
+                newLink
+                    .getPermissions()
+                    .toString()
+            );
             assertTrue(newLink.isActive());
             assertFalse(newLink.isSingleUse());
             assertNull(newLink.getValidTo());
         }
 
         @Test
-        void shouldReturn403WhenUserHasWritePermissions() throws Exception {
-            Share testShare = createShareWithLinks("Write Share", "sub: testuser", Permissions.WRITE, 1);
+        void shouldReturn403WhenUserHasWritePermissions() {
+            QuarkusTransaction.begin();
+
+            Share testShare = createShareWithLinks("Write Share", WithTestUser.OWNER, Permissions.WRITE, 1);
+
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
 
             String createJson = """
                 {
@@ -275,21 +392,30 @@ class JoinLinkControllerTest {
                   "validTo": null
                 }""";
 
-            mockMvc
-                .perform(post("/api/share/current/links?share=" + testShare.getUuid())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(createJson))
-                .andExpect(status().isForbidden());
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .body(createJson)
+                .contentType(ContentType.JSON)
+                .when()
+                .post();
 
             // Verify no new link was created
-            List<JoinLink> links = joinLinkRepository.findAll();
+            List<JoinLink> links = joinLinkRepository.listAll();
             assertEquals(1, links.size());
         }
 
         @Test
-        void shouldReturn403WhenUserHasReadPermissions() throws Exception {
-            Share testShare = createShareWithLinks("Read Share", "sub: testuser", Permissions.READ, 1);
+        void shouldReturn403WhenUserHasReadPermissions() {
+            QuarkusTransaction.begin();
+
+            Share testShare = createShareWithLinks("Read Share", WithTestUser.OWNER, Permissions.READ, 1);
+
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
 
             String createJson = """
                 {
@@ -300,21 +426,30 @@ class JoinLinkControllerTest {
                   "validTo": null
                 }""";
 
-            mockMvc
-                .perform(post("/api/share/current/links?share=" + testShare.getUuid())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(createJson))
-                .andExpect(status().isForbidden());
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .body(createJson)
+                .contentType(ContentType.JSON)
+                .when()
+                .post();
 
             // Verify no new link was created
-            List<JoinLink> links = joinLinkRepository.findAll();
+            List<JoinLink> links = joinLinkRepository.listAll();
             assertEquals(1, links.size());
         }
 
         @Test
-        void shouldReturn403WhenUserHasNoPermissions() throws Exception {
-            Share testShare = createShareWithLinks("No Access Share", "sub: otheruser", Permissions.ADMIN, 1);
+        void shouldReturn403WhenUserHasNoPermissions() {
+            QuarkusTransaction.begin();
+
+            Share testShare = createShareWithLinks("No Access Share", WithTestUser2.OWNER, Permissions.ADMIN, 1);
+
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
 
             String createJson = """
                 {
@@ -325,16 +460,18 @@ class JoinLinkControllerTest {
                   "validTo": null
                 }""";
 
-            mockMvc
-                .perform(post("/api/share/current/links?share=" + testShare.getUuid())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(createJson))
-                .andExpect(status().isForbidden());
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .body(createJson)
+                .contentType(ContentType.JSON)
+                .when()
+                .post();
         }
 
         @Test
-        void shouldReturn403WhenShareNotFound() throws Exception {
+        void shouldReturn403WhenShareNotFound() {
             String createJson = """
                 {
                   "name": "Should Not Create",
@@ -344,37 +481,26 @@ class JoinLinkControllerTest {
                   "validTo": null
                 }""";
 
-            mockMvc
-                .perform(post("/api/share/current/links?share=" + Testdata.BAD_UUID)
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(createJson))
-                .andExpect(status().isForbidden());
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", Testdata.BAD_UUID)
+                .body(createJson)
+                .contentType(ContentType.JSON)
+                .when()
+                .post();
         }
 
         @Test
-        void shouldReturn401WhenNoAuthentication() throws Exception {
-            Share testShare = createShareWithLinks("Test Share", "sub: testuser", Permissions.ADMIN, 1);
+        void shouldHandleNullFieldsInCreateRequest() {
+            QuarkusTransaction.begin();
 
-            String createJson = """
-                {
-                  "name": "Should Not Create",
-                  "permissions": "READ",
-                  "active": true,
-                  "singleUse": false,
-                  "validTo": null
-                }""";
+            Share testShare = createShareWithLinks("Test Share", WithTestUser.OWNER, Permissions.ADMIN, 1);
 
-            mockMvc
-                .perform(post("/api/share/current/links?share=" + testShare.getUuid())
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(createJson))
-                .andExpect(status().isUnauthorized());
-        }
+            shareRepository.flush();
+            joinLinkRepository.flush();
 
-        @Test
-        void shouldHandleNullFieldsInCreateRequest() throws Exception {
-            Share testShare = createShareWithLinks("Test Share", "sub: testuser", Permissions.ADMIN, 1);
+            QuarkusTransaction.commit();
 
             String createJson = """
                 {
@@ -385,23 +511,37 @@ class JoinLinkControllerTest {
                   "validTo": null
                 }""";
 
-            mockMvc
-                .perform(post("/api/share/current/links?share=" + testShare.getUuid())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(createJson))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Minimal Link"))
-                .andExpect(jsonPath("$.permissions").value("READ"));
+            expect()
+                .statusCode(201)
+                .contentType(ContentType.JSON)
+                .body("name", is("Minimal Link"))
+                .body("permissions", is("READ"))
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .body(createJson)
+                .contentType(ContentType.JSON)
+                .when()
+                .post();
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(JoinLinkController.class)
+    @WithTestUser
     class UpdateLink {
         @Test
-        void shouldUpdateLinkWhenUserHasAdminPermissions() throws Exception {
-            Share testShare = createShareWithLinks("Test Share", "sub: testuser", Permissions.ADMIN, 2);
-            JoinLink linkToUpdate = testShare.getLinks().get(0);
+        void shouldUpdateLinkWhenUserHasAdminPermissions() {
+            QuarkusTransaction.begin();
+
+            Share testShare = createShareWithLinks("Test Share", WithTestUser.OWNER, Permissions.ADMIN, 2);
+            JoinLink linkToUpdate = testShare
+                .getLinks()
+                .get(0);
+
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
 
             String updateJson = """
                 {
@@ -412,32 +552,55 @@ class JoinLinkControllerTest {
                   "validTo": "2025-12-31T23:59:59Z"
                 }""";
 
-            mockMvc
-                .perform(put("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), linkToUpdate.getUuid())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(updateJson))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").value(linkToUpdate.getUuid().toString()))
-                .andExpect(jsonPath("$.name").value("Updated Link"))
-                .andExpect(jsonPath("$.permissions").value("READ"))
-                .andExpect(jsonPath("$.active").value(false))
-                .andExpect(jsonPath("$.singleUse").value(true))
-                .andExpect(jsonPath("$.validTo").exists());
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body(
+                    "uuid",
+                    is(linkToUpdate
+                           .getUuid()
+                           .toString())
+                )
+                .body("name", is("Updated Link"))
+                .body("permissions", is("READ"))
+                .body("active", is(false))
+                .body("singleUse", is(true))
+                .body("validTo", is("2025-12-31T23:59:59Z"))
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .body(updateJson)
+                .contentType(ContentType.JSON)
+                .when()
+                .put("{uuid}", linkToUpdate.getUuid());
 
             // Verify update in database
-            JoinLink updatedLink = joinLinkRepository.findById(linkToUpdate.getUuid()).orElseThrow();
+            JoinLink updatedLink = joinLinkRepository
+                .findByIdOptional(linkToUpdate.getUuid())
+                .orElseThrow();
             assertEquals("Updated Link", updatedLink.getName());
-            assertEquals("READ", updatedLink.getPermissions().toString());
+            assertEquals(
+                "READ",
+                updatedLink
+                    .getPermissions()
+                    .toString()
+            );
             assertFalse(updatedLink.isActive());
             assertTrue(updatedLink.isSingleUse());
         }
 
         @Test
-        void shouldReturn403WhenUserHasWritePermissions() throws Exception {
-            Share testShare = createShareWithLinks("Write Share", "sub: testuser", Permissions.WRITE, 1);
-            JoinLink linkToUpdate = testShare.getLinks().get(0);
+        void shouldReturn403WhenUserHasWritePermissions() {
+            QuarkusTransaction.begin();
+
+            Share testShare = createShareWithLinks("Write Share", WithTestUser.OWNER, Permissions.WRITE, 1);
+            JoinLink linkToUpdate = testShare
+                .getLinks()
+                .get(0);
+
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
 
             String updateJson = """
                 {
@@ -448,48 +611,74 @@ class JoinLinkControllerTest {
                   "validTo": null
                 }""";
 
-            mockMvc
-                .perform(put("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), linkToUpdate.getUuid())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(updateJson))
-                .andExpect(status().isForbidden());
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .body(updateJson)
+                .contentType(ContentType.JSON)
+                .when()
+                .put("{uuid}", linkToUpdate.getUuid());
 
             // Verify link was not updated
-            JoinLink unchangedLink = joinLinkRepository.findById(linkToUpdate.getUuid()).orElseThrow();
+            JoinLink unchangedLink = joinLinkRepository
+                .findByIdOptional(linkToUpdate.getUuid())
+                .orElseThrow();
             assertNotEquals("Should Not Update", unchangedLink.getName());
         }
 
         @Test
-        void shouldReturn403WhenUserHasReadPermissions() throws Exception {
-            Share testShare = createShareWithLinks("Read Share", "sub: testuser", Permissions.READ, 1);
-            JoinLink linkToUpdate = testShare.getLinks().get(0);
+        void shouldReturn403WhenUserHasReadPermissions() {
+            QuarkusTransaction.begin();
+
+            Share testShare = createShareWithLinks("Read Share", WithTestUser.OWNER, Permissions.READ, 1);
+            JoinLink linkToUpdate = testShare
+                .getLinks()
+                .get(0);
+
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
 
             String updateJson = """
                 {
                   "name": "Should Not Update",
                   "permissions": "READ",
-                  "active": false,
-                  "singleUse": true,
+                  "active": true,
+                  "singleUse": false,
                   "validTo": null
                 }""";
 
-            mockMvc
-                .perform(put("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), linkToUpdate.getUuid())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(updateJson))
-                .andExpect(status().isForbidden());
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .body(updateJson)
+                .contentType(ContentType.JSON)
+                .when()
+                .put("{uuid}", linkToUpdate.getUuid());
 
             // Verify link was not updated
-            JoinLink unchangedLink = joinLinkRepository.findById(linkToUpdate.getUuid()).orElseThrow();
+            JoinLink unchangedLink = joinLinkRepository
+                .findByIdOptional(linkToUpdate.getUuid())
+                .orElseThrow();
             assertNotEquals("Should Not Update", unchangedLink.getName());
         }
 
         @Test
-        void shouldReturn403WhenLinkExistsButUserHasNoPermissions() throws Exception {
-            Share testShare = createShareWithLinks("No Access Share", "sub: otheruser", Permissions.ADMIN, 1);
-            JoinLink linkToUpdate = testShare.getLinks().get(0);
+        void shouldReturn403WhenLinkExistsButUserHasNoPermissions() {
+            QuarkusTransaction.begin();
+
+            Share testShare = createShareWithLinks("No Access Share", WithTestUser2.OWNER, Permissions.ADMIN, 1);
+            JoinLink linkToUpdate = testShare
+                .getLinks()
+                .get(0);
+
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
 
             String updateJson = """
                 {
@@ -500,17 +689,26 @@ class JoinLinkControllerTest {
                   "validTo": null
                 }""";
 
-            mockMvc
-                .perform(put("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), linkToUpdate.getUuid())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(updateJson))
-                .andExpect(status().isForbidden());
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .body(updateJson)
+                .contentType(ContentType.JSON)
+                .when()
+                .put("{uuid}", linkToUpdate.getUuid());
         }
 
         @Test
-        void shouldReturn404WhenLinkDoesNotExist() throws Exception {
-            Share testShare = createShareWithLinks("Test Share", "sub: testuser", Permissions.ADMIN, 1);
+        void shouldReturn404WhenLinkDoesNotExist() {
+            QuarkusTransaction.begin();
+
+            Share testShare = createShareWithLinks("Test Share", WithTestUser.OWNER, Permissions.ADMIN, 1);
+
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
 
             String updateJson = """
                 {
@@ -521,16 +719,18 @@ class JoinLinkControllerTest {
                   "validTo": null
                 }""";
 
-            mockMvc
-                .perform(put("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), Testdata.BAD_UUID)
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(updateJson))
-                .andExpect(status().isNotFound());
+            expect()
+                .statusCode(404)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .body(updateJson)
+                .contentType(ContentType.JSON)
+                .when()
+                .put("{uuid}", Testdata.BAD_UUID);
         }
 
         @Test
-        void shouldReturn403WhenShareNotFound() throws Exception {
+        void shouldReturn403WhenShareNotFound() {
             String updateJson = """
                 {
                   "name": "Should Not Update",
@@ -540,205 +740,303 @@ class JoinLinkControllerTest {
                   "validTo": null
                 }""";
 
-            mockMvc
-                .perform(put("/api/share/current/links/{uuid}?share=" + Testdata.BAD_UUID, UUID.randomUUID())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(updateJson))
-                .andExpect(status().isForbidden());
-        }
-
-        @Test
-        void shouldReturn401WhenNoAuthentication() throws Exception {
-            Share testShare = createShareWithLinks("Test Share", "sub: testuser", Permissions.ADMIN, 1);
-            JoinLink linkToUpdate = testShare.getLinks().get(0);
-
-            String updateJson = """
-                {
-                  "name": "Should Not Update",
-                  "permissions": "READ",
-                  "active": false,
-                  "singleUse": true,
-                  "validTo": null
-                }""";
-
-            mockMvc
-                .perform(put("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), linkToUpdate.getUuid())
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(updateJson))
-                .andExpect(status().isUnauthorized());
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", Testdata.BAD_UUID)
+                .body(updateJson)
+                .contentType(ContentType.JSON)
+                .when()
+                .put("{uuid}", Testdata.BAD_UUID);
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(JoinLinkController.class)
+    @WithTestUser
     class DeleteLink {
         @Test
-        void shouldDeleteLinkWhenUserHasAdminPermissions() throws Exception {
-            Share testShare = createShareWithLinks("Test Share", "sub: testuser", Permissions.ADMIN, 3);
+        void shouldDeleteLinkWhenUserHasAdminPermissions() {
+            QuarkusTransaction.begin();
+
+            Share testShare = createShareWithLinks("Test Share", WithTestUser.OWNER, Permissions.ADMIN, 3);
             // Make sure we have at least 2 admin links
-            JoinLink secondAdminLink = testShare.getLinks().get(1);
+            JoinLink secondAdminLink = testShare
+                .getLinks()
+                .get(1);
             secondAdminLink.setPermissions(Permissions.ADMIN);
-            joinLinkRepository.save(secondAdminLink);
-            
-            JoinLink linkToDelete = testShare.getLinks().get(0);
+            joinLinkRepository.persist(secondAdminLink);
+
+            JoinLink linkToDelete = testShare
+                .getLinks()
+                .get(0);
             long initialLinkCount = joinLinkRepository.count();
 
-            mockMvc
-                .perform(delete("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), linkToDelete.getUuid()).with(user_jwt))
-                .andExpect(status().isOk());
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .delete("{uuid}", linkToDelete.getUuid());
 
             // Verify link was deleted
             assertEquals(initialLinkCount - 1, joinLinkRepository.count());
-            assertFalse(joinLinkRepository.findById(linkToDelete.getUuid()).isPresent());
+            assertFalse(joinLinkRepository
+                            .findByIdOptional(linkToDelete.getUuid())
+                            .isPresent());
 
             // Verify other links still exist
-            assertEquals(2, joinLinkRepository.findAll().size());
+            assertEquals(
+                2,
+                joinLinkRepository
+                    .listAll()
+                    .size()
+            );
         }
 
         @Test
-        void shouldReturn403WhenUserHasWritePermissions() throws Exception {
-            Share testShare = createShareWithLinks("Write Share", "sub: testuser", Permissions.WRITE, 2);
-            JoinLink linkToDelete = testShare.getLinks().get(0);
+        void shouldReturn403WhenUserHasWritePermissions() {
+            QuarkusTransaction.begin();
+
+            Share testShare = createShareWithLinks("Write Share", WithTestUser.OWNER, Permissions.WRITE, 2);
+            JoinLink linkToDelete = testShare
+                .getLinks()
+                .get(0);
             long initialLinkCount = joinLinkRepository.count();
 
-            mockMvc
-                .perform(delete("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), linkToDelete.getUuid()).with(user_jwt))
-                .andExpect(status().isForbidden());
+            shareRepository.flush();
+            joinLinkRepository.flush();
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .delete("{uuid}", linkToDelete.getUuid());
 
             // Verify link was not deleted
             assertEquals(initialLinkCount, joinLinkRepository.count());
-            assertTrue(joinLinkRepository.findById(linkToDelete.getUuid()).isPresent());
+            assertTrue(joinLinkRepository
+                           .findByIdOptional(linkToDelete.getUuid())
+                           .isPresent());
         }
 
         @Test
-        void shouldReturn403WhenUserHasReadPermissions() throws Exception {
-            Share testShare = createShareWithLinks("Read Share", "sub: testuser", Permissions.READ, 2);
-            JoinLink linkToDelete = testShare.getLinks().get(0);
+        void shouldReturn403WhenUserHasReadPermissions() {
+            QuarkusTransaction.begin();
+
+            Share testShare = createShareWithLinks("Read Share", WithTestUser.OWNER, Permissions.READ, 2);
+            JoinLink linkToDelete = testShare
+                .getLinks()
+                .get(0);
             long initialLinkCount = joinLinkRepository.count();
 
-            mockMvc
-                .perform(delete("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), linkToDelete.getUuid()).with(user_jwt))
-                .andExpect(status().isForbidden());
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .delete("{uuid}", linkToDelete.getUuid());
 
             // Verify link was not deleted
             assertEquals(initialLinkCount, joinLinkRepository.count());
-            assertTrue(joinLinkRepository.findById(linkToDelete.getUuid()).isPresent());
+            assertTrue(joinLinkRepository
+                           .findByIdOptional(linkToDelete.getUuid())
+                           .isPresent());
         }
 
         @Test
-        void shouldReturn403WhenLinkExistsButUserHasNoPermissions() throws Exception {
-            Share testShare = createShareWithLinks("No Access Share", "sub: otheruser", Permissions.ADMIN, 2);
-            JoinLink linkToDelete = testShare.getLinks().get(0);
+        void shouldReturn403WhenLinkExistsButUserHasNoPermissions() {
+            QuarkusTransaction.begin();
+
+            Share testShare = createShareWithLinks("No Access Share", WithTestUser2.OWNER, Permissions.ADMIN, 2);
+            JoinLink linkToDelete = testShare
+                .getLinks()
+                .get(0);
             long initialLinkCount = joinLinkRepository.count();
 
-            mockMvc
-                .perform(delete("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), linkToDelete.getUuid()).with(user_jwt))
-                .andExpect(status().isForbidden());
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .delete("{uuid}", linkToDelete.getUuid());
 
             // Verify link was not deleted
             assertEquals(initialLinkCount, joinLinkRepository.count());
-            assertTrue(joinLinkRepository.findById(linkToDelete.getUuid()).isPresent());
+            assertTrue(joinLinkRepository
+                           .findByIdOptional(linkToDelete.getUuid())
+                           .isPresent());
         }
 
         @Test
-        void shouldReturn404WhenLinkDoesNotExist() throws Exception {
-            Share testShare = createShareWithLinks("Test Share", "sub: testuser", Permissions.ADMIN, 2);
+        void shouldReturn404WhenLinkDoesNotExist() {
+            QuarkusTransaction.begin();
+
+            Share testShare = createShareWithLinks("Test Share", WithTestUser.OWNER, Permissions.ADMIN, 2);
             long initialLinkCount = joinLinkRepository.count();
 
-            mockMvc
-                .perform(delete("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), Testdata.BAD_UUID).with(user_jwt))
-                .andExpect(status().isNotFound());
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(404)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .delete("{uuid}", Testdata.BAD_UUID);
 
             // Verify no links were deleted
             assertEquals(initialLinkCount, joinLinkRepository.count());
         }
 
         @Test
-        void shouldReturn403WhenShareNotFound() throws Exception {
+        void shouldReturn403WhenShareNotFound() {
             long initialLinkCount = joinLinkRepository.count();
 
-            mockMvc
-                .perform(delete("/api/share/current/links/{uuid}?share=" + Testdata.BAD_UUID, UUID.randomUUID()).with(user_jwt))
-                .andExpect(status().isForbidden());
+            expect()
+                .statusCode(403)
+                .given()
+                .queryParam("share", Testdata.BAD_UUID)
+                .when()
+                .delete("{uuid}", Testdata.BAD_UUID);
 
             // Verify no links were deleted
             assertEquals(initialLinkCount, joinLinkRepository.count());
         }
 
         @Test
-        void shouldReturn401WhenNoAuthentication() throws Exception {
-            Share testShare = createShareWithLinks("Test Share", "sub: testuser", Permissions.ADMIN, 2);
-            JoinLink linkToDelete = testShare.getLinks().get(0);
+        void shouldThrowExceptionWhenDeletingLastAdminLink() {
+            QuarkusTransaction.begin();
 
-            mockMvc
-                .perform(delete("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), linkToDelete.getUuid()))
-                .andExpect(status().isUnauthorized());
-
-            // Verify link was not deleted
-            assertTrue(joinLinkRepository.findById(linkToDelete.getUuid()).isPresent());
-        }
-
-        @Test
-        void shouldThrowExceptionWhenDeletingLastAdminLink() throws Exception {
             // Create a share with only one ADMIN link and one WRITE link
-            Share testShare = createShareWithLinks("Single Admin Share", "sub: testuser", Permissions.ADMIN, 2);
+            Share testShare = createShareWithLinks("Single Admin Share", WithTestUser.OWNER, Permissions.ADMIN, 2);
             // Make the second link WRITE permissions (not ADMIN)
-            JoinLink writeLink = testShare.getLinks().get(1);
+            JoinLink writeLink = testShare
+                .getLinks()
+                .get(1);
             writeLink.setPermissions(Permissions.WRITE);
-            joinLinkRepository.save(writeLink);
-            
-            // Now we have only one admin link (the first one)
-            JoinLink adminLink = testShare.getLinks().get(0);
+            joinLinkRepository.persist(writeLink);
 
-            mockMvc
-                .perform(delete("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), adminLink.getUuid()).with(user_jwt))
-                .andExpect(status().isBadRequest());
+            // Now we have only one admin link (the first one)
+            JoinLink adminLink = testShare
+                .getLinks()
+                .get(0);
+
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(400)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .delete("{uuid}", adminLink.getUuid());
 
             // Verify admin link was not deleted
-            assertTrue(joinLinkRepository.findById(adminLink.getUuid()).isPresent());
+            assertTrue(joinLinkRepository
+                           .findByIdOptional(adminLink.getUuid())
+                           .isPresent());
         }
 
         @Test
-        void shouldAllowDeletingNonAdminLinks() throws Exception {
+        void shouldAllowDeletingNonAdminLinks() {
+            QuarkusTransaction.begin();
+
             // Create a share with one ADMIN and one WRITE link
-            Share testShare = createShareWithLinks("Mixed Share", "sub: testuser", Permissions.ADMIN, 2);
+            Share testShare = createShareWithLinks("Mixed Share", WithTestUser.OWNER, Permissions.ADMIN, 2);
             // Make the second link WRITE permissions
-            JoinLink writeLink = testShare.getLinks().get(1);
+            JoinLink writeLink = testShare
+                .getLinks()
+                .get(1);
             writeLink.setPermissions(Permissions.WRITE);
-            joinLinkRepository.save(writeLink);
+            joinLinkRepository.persist(writeLink);
 
             long initialLinkCount = joinLinkRepository.count();
 
-            mockMvc
-                .perform(delete("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), writeLink.getUuid()).with(user_jwt))
-                .andExpect(status().isOk());
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .delete("{uuid}", writeLink.getUuid());
 
             // Verify WRITE link was deleted but ADMIN link remains
             assertEquals(initialLinkCount - 1, joinLinkRepository.count());
-            assertFalse(joinLinkRepository.findById(writeLink.getUuid()).isPresent());
-            assertTrue(joinLinkRepository.findById(testShare.getLinks().get(0).getUuid()).isPresent());
+            assertFalse(joinLinkRepository
+                            .findByIdOptional(writeLink.getUuid())
+                            .isPresent());
+            assertTrue(joinLinkRepository
+                           .findByIdOptional(testShare
+                                                 .getLinks()
+                                                 .get(0)
+                                                 .getUuid())
+                           .isPresent());
         }
 
         @Test
-        void shouldAllowDeletingAdminLinkWhenOtherAdminLinkExists() throws Exception {
+        void shouldAllowDeletingAdminLinkWhenOtherAdminLinkExists() {
+            QuarkusTransaction.begin();
+
             // Create a share with two ADMIN links
-            Share testShare = createShareWithLinks("Multi Admin Share", "sub: testuser", Permissions.ADMIN, 2);
-            JoinLink adminLinkToDelete = testShare.getLinks().get(0);
+            Share testShare = createShareWithLinks("Multi Admin Share", WithTestUser.OWNER, Permissions.ADMIN, 2);
+            JoinLink adminLinkToDelete = testShare
+                .getLinks()
+                .get(0);
             // Ensure both links are ADMIN
-            JoinLink secondAdminLink = testShare.getLinks().get(1);
+            JoinLink secondAdminLink = testShare
+                .getLinks()
+                .get(1);
             secondAdminLink.setPermissions(Permissions.ADMIN);
-            joinLinkRepository.save(secondAdminLink);
+            joinLinkRepository.persist(secondAdminLink);
 
             long initialLinkCount = joinLinkRepository.count();
 
-            mockMvc
-                .perform(delete("/api/share/current/links/{uuid}?share=" + testShare.getUuid(), adminLinkToDelete.getUuid()).with(user_jwt))
-                .andExpect(status().isOk());
+            shareRepository.flush();
+            joinLinkRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .given()
+                .queryParam("share", testShare.getUuid())
+                .when()
+                .delete("{uuid}", adminLinkToDelete.getUuid());
 
             // Verify one ADMIN link was deleted but other remains
             assertEquals(initialLinkCount - 1, joinLinkRepository.count());
-            assertFalse(joinLinkRepository.findById(adminLinkToDelete.getUuid()).isPresent());
-            assertTrue(joinLinkRepository.findById(secondAdminLink.getUuid()).isPresent());
+            assertFalse(joinLinkRepository
+                            .findByIdOptional(adminLinkToDelete.getUuid())
+                            .isPresent());
+            assertTrue(joinLinkRepository
+                           .findByIdOptional(secondAdminLink.getUuid())
+                           .isPresent());
         }
     }
 
@@ -747,7 +1045,7 @@ class JoinLinkControllerTest {
         Share share = new Share();
         share.setName(name);
         share.setLinks(new ArrayList<>());
-        share = shareRepository.save(share);
+        shareRepository.persist(share);
 
         // Create owner link
         JoinLink ownerLink = new JoinLink();
@@ -757,11 +1055,13 @@ class JoinLinkControllerTest {
         ownerLink.setPermissions(permissions);
         ownerLink.setActive(true);
         ownerLink.setSingleUse(false);
-        ownerLink = joinLinkRepository.save(ownerLink);
-        share.getLinks().add(ownerLink);
+        joinLinkRepository.persist(ownerLink);
+        share
+            .getLinks()
+            .add(ownerLink);
 
         // Create additional links
-        for (int i = 1; i < linkCount; i++) {
+        for(int i = 1; i < linkCount; i++) {
             JoinLink link = new JoinLink();
             link.setShare(share);
             link.setName("Link " + i + " for " + name);
@@ -769,10 +1069,14 @@ class JoinLinkControllerTest {
             link.setPermissions(Permissions.READ);
             link.setActive(true);
             link.setSingleUse(false);
-            link = joinLinkRepository.save(link);
-            share.getLinks().add(link);
+            joinLinkRepository.persist(link);
+            share
+                .getLinks()
+                .add(link);
         }
 
-        return shareRepository.save(share);
+        shareRepository.persist(share);
+
+        return share;
     }
 }

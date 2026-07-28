@@ -1,306 +1,418 @@
 package de.iks.grocery_manager.server.controller.mdi;
 
+import de.iks.grocery_manager.server.Sql;
 import de.iks.grocery_manager.server.Testdata;
-import de.iks.grocery_manager.server.config.AuthorityConfiguration;
+import de.iks.grocery_manager.server.controller.masterdata.WithAdminUser;
 import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
 import de.iks.grocery_manager.server.jpa.mdi.ExternalAPIRepository;
 import de.iks.grocery_manager.server.model.mdi.ExternalAPI;
-import org.junit.jupiter.api.BeforeEach;
+import io.quarkus.narayana.jta.QuarkusTransaction;
+import io.quarkus.test.common.http.TestHTTPEndpoint;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.util.HashMap;
 
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureTestDatabase
-@Sql(Testdata.SCRIPT)
-@Transactional
+@QuarkusTest
+@TestHTTPEndpoint(ProductMappingTableController.class)
+@WithAdminUser
+@Sql("/testdata.sql")
 class ProductMappingTableControllerTest {
-    private MockMvc mockMvc;
+    @Inject
+    ExternalAPIRepository externalAPIRepository;
 
-    @Autowired
-    private ExternalAPIRepository externalAPIRepository;
-
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private AuthorityConfiguration authorityConfiguration;
-
-    private RequestPostProcessor admin_jwt;
-
-    private ExternalAPI api;
-
-    @BeforeEach
-    void setup(WebApplicationContext ctx) {
-        admin_jwt = jwt()
-            .authorities(new SimpleGrantedAuthority(authorityConfiguration.getMasterdataAuthority()));
-        mockMvc = MockMvcBuilders
-            .webAppContextSetup(ctx)
-            .apply(springSecurity())
-            .build();
-
-        // Create ExternalAPI
-        api = new ExternalAPI();
-        api.setName("Test API");
-        api.setProductMappings(new HashMap<>());
-        api.setStoreMappings(new HashMap<>());
-        api = externalAPIRepository.save(api);
-    }
+    @Inject
+    ProductRepository productRepository;
 
     @Nested
+    @TestHTTPEndpoint(ProductMappingTableController.class)
+    @WithAdminUser
     class TranslateInbound {
         @Test
-        void shouldReturnLocalIdWhenMappingExists() throws Exception {
+        void shouldReturnLocalIdWhenMappingExists() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
             // Set up mapping
-            api.getProductMappings().put(
-                productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow(),
-                "remote_product_1"
-            );
-            api = externalAPIRepository.save(api);
+            api
+                .getProductMappings()
+                .put(
+                    productRepository
+                        .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                        .orElseThrow(),
+                    "remote_product_1"
+                );
+            externalAPIRepository.persistAndFlush(api);
 
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{uuid}/mapping/product/in/{remoteId}", api.getUuid(), "remote_product_1")
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").value(Testdata.PRODUCT_1_UUID.toString()));
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body(is(String.format("\"%s\"", Testdata.PRODUCT_1_UUID)))
+                .when()
+                .get("in/{remoteId}", api.getUuid(), "remote_product_1");
         }
 
         @Test
-        void shouldReturn404WhenMappingDoesNotExist() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{uuid}/mapping/product/in/{remoteId}", api.getUuid(), "nonexistent_remote_id")
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isNoContent());
+        void shouldReturn204WhenMappingDoesNotExist() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(204)
+                .when()
+                .get("in/{remoteId}", api.getUuid(), "nonexistent_remote_id");
         }
 
         @Test
-        void shouldReturn404WhenApiNotFound() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{uuid}/mapping/product/in/{remoteId}", Testdata.BAD_UUID, "remote_id")
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isNotFound());
+        void shouldReturn404WhenApiNotFound() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
+            // Set up mapping
+            api
+                .getProductMappings()
+                .put(
+                    productRepository
+                        .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                        .orElseThrow(),
+                    "remote_product_1"
+                );
+            externalAPIRepository.persistAndFlush(api);
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(404)
+                .when()
+                .get("in/{remoteId}", Testdata.BAD_UUID, "remote_product_1");
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(ProductMappingTableController.class)
+    @WithAdminUser
     class SetInboundTranslation {
         @Test
-        void shouldSetMappingWhenValid() throws Exception {
+        void shouldSetMappingWhenValid() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
+            QuarkusTransaction.commit();
+
             String localIdJson = "\"" + Testdata.PRODUCT_1_UUID + "\"";
 
-            mockMvc
-                .perform(
-                    put("/api/masterdata/interface/{uuid}/mapping/product/in/{remoteId}", api.getUuid(), "remote_product_1")
-                        .content(localIdJson)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").value(Testdata.PRODUCT_1_UUID.toString()));
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body(is(String.format("\"%s\"", Testdata.PRODUCT_1_UUID)))
+                .given()
+                .body(localIdJson)
+                .contentType(ContentType.JSON)
+                .put("in/{remoteId}", api.getUuid(), "remote_product_1");
+
+            api = externalAPIRepository.findByIdOptional(api.getUuid()).orElseThrow();
 
             // Verify mapping was set
-            api = externalAPIRepository.findById(api.getUuid()).orElseThrow();
-            assertEquals("remote_product_1", api.getProductMappings().get(
-                productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow()
-            ));
+            assertEquals(
+                "remote_product_1",
+                api
+                    .getProductMappings()
+                    .get(
+                        productRepository
+                            .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                            .orElseThrow()
+                    )
+            );
         }
 
         @Test
-        void shouldReturn404WhenLocalProductNotFound() throws Exception {
+        void shouldReturn404WhenLocalProductNotFound() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
+            QuarkusTransaction.commit();
+
             String localIdJson = "\"" + Testdata.BAD_UUID + "\"";
 
-            mockMvc
-                .perform(
-                    put("/api/masterdata/interface/{uuid}/mapping/product/in/{remoteId}", api.getUuid(), "remote_product_1")
-                        .content(localIdJson)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isNotFound());
+            expect()
+                .statusCode(404)
+                .given()
+                .body(localIdJson)
+                .contentType(ContentType.JSON)
+                .put("in/{remoteId}", api.getUuid(), "remote_product_1");
         }
 
         @Test
-        void shouldReturn404WhenApiNotFound() throws Exception {
+        void shouldReturn404WhenApiNotFound() {
             String localIdJson = "\"" + Testdata.PRODUCT_1_UUID + "\"";
 
-            mockMvc
-                .perform(
-                    put("/api/masterdata/interface/{uuid}/mapping/product/in/{remoteId}", Testdata.BAD_UUID, "remote_product_1")
-                        .content(localIdJson)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isNotFound());
+            expect()
+                .statusCode(404)
+                .given()
+                .body(localIdJson)
+                .contentType(ContentType.JSON)
+                .put("in/{remoteId}", Testdata.BAD_UUID, "nonexistent_remote_id");
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(ProductMappingTableController.class)
+    @WithAdminUser
     class TranslateOutbound {
         @Test
-        void shouldReturnRemoteIdWhenMappingExists() throws Exception {
+        void shouldReturnRemoteIdWhenMappingExists() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
             // Set up mapping
-            api.getProductMappings().put(
-                productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow(),
-                "remote_product_1"
-            );
-            api = externalAPIRepository.save(api);
+            api
+                .getProductMappings()
+                .put(
+                    productRepository
+                        .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                        .orElseThrow(),
+                    "remote_product_1"
+                );
+            externalAPIRepository.persistAndFlush(api);
 
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{uuid}/mapping/product/out/{localId}", api.getUuid(), Testdata.PRODUCT_1_UUID)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").value("remote_product_1"));
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body(is("\"remote_product_1\""))
+                .when()
+                .get("out/{localId}", api.getUuid(), Testdata.PRODUCT_1_UUID);
         }
 
         @Test
-        void shouldReturn404WhenMappingDoesNotExist() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{uuid}/mapping/product/out/{localId}", api.getUuid(), Testdata.PRODUCT_1_UUID)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isNoContent());
+        void shouldReturn204WhenMappingDoesNotExist() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(204)
+                .when()
+                .get("out/{localId}", api.getUuid(), Testdata.PRODUCT_1_UUID);
         }
 
         @Test
-        void shouldReturn404WhenApiNotFound() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{uuid}/mapping/product/out/{localId}", Testdata.BAD_UUID, Testdata.PRODUCT_1_UUID)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isNotFound());
+        void shouldReturn404WhenApiNotFound() {
+            expect()
+                .statusCode(404)
+                .when()
+                .get("out/{localId}", Testdata.BAD_UUID, Testdata.PRODUCT_1_UUID);
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(ProductMappingTableController.class)
+    @WithAdminUser
     class SetOutboundTranslation {
         @Test
-        void shouldSetMappingWhenValid() throws Exception {
+        void shouldSetMappingWhenValid() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
+            QuarkusTransaction.commit();
+
             String remoteIdJson = "\"remote_product_1\"";
 
-            mockMvc
-                .perform(
-                    put("/api/masterdata/interface/{uuid}/mapping/product/out/{localId}", api.getUuid(), Testdata.PRODUCT_1_UUID)
-                        .content(remoteIdJson)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").value("remote_product_1"));
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body(is(remoteIdJson))
+                .given()
+                .body(remoteIdJson)
+                .contentType(ContentType.JSON)
+                .put("out/{localId}", api.getUuid(), Testdata.PRODUCT_1_UUID);
+
+
+            api = externalAPIRepository.findByIdOptional(api.getUuid()).orElseThrow();
 
             // Verify mapping was set
-            api = externalAPIRepository.findById(api.getUuid()).orElseThrow();
-            assertEquals("remote_product_1", api.getProductMappings().get(
-                productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow()
-            ));
+            assertEquals(
+                "remote_product_1",
+                api
+                    .getProductMappings()
+                    .get(
+                        productRepository
+                            .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                            .orElseThrow()
+                    )
+            );
         }
 
         @Test
-        void shouldReturn404WhenLocalProductNotFound() throws Exception {
+        void shouldReturn404WhenLocalProductNotFound() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
+            QuarkusTransaction.commit();
+
             String remoteIdJson = "\"remote_product_1\"";
 
-            mockMvc
-                .perform(
-                    put("/api/masterdata/interface/{uuid}/mapping/product/out/{localId}", api.getUuid(), Testdata.BAD_UUID)
-                        .content(remoteIdJson)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isNotFound());
+            expect()
+                .statusCode(404)
+                .given()
+                .body(remoteIdJson)
+                .contentType(ContentType.JSON)
+                .put("out/{localId}", api.getUuid(), Testdata.BAD_UUID);
         }
 
         @Test
-        void shouldReturn404WhenApiNotFound() throws Exception {
+        void shouldReturn404WhenApiNotFound() {
             String remoteIdJson = "\"remote_product_1\"";
 
-            mockMvc
-                .perform(
-                    put("/api/masterdata/interface/{uuid}/mapping/product/out/{localId}", Testdata.BAD_UUID, Testdata.PRODUCT_1_UUID)
-                        .content(remoteIdJson)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isNotFound());
+            expect()
+                .statusCode(404)
+                .given()
+                .body(remoteIdJson)
+                .contentType(ContentType.JSON)
+                .put("out/{localId}", Testdata.BAD_UUID, Testdata.PRODUCT_1_UUID);
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(ProductMappingTableController.class)
+    @WithAdminUser
     class GetMappings {
         @Test
-        void shouldReturnMappingsWhenMappingsExist() throws Exception {
+        void shouldReturnMappingsWhenMappingsExist() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
             // Set up mappings
-            api.getProductMappings().put(
-                productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow(),
-                "remote_product_1"
-            );
-            api.getProductMappings().put(
-                productRepository.findById(Testdata.PRODUCT_2_UUID).orElseThrow(),
-                "remote_product_2"
-            );
-            api = externalAPIRepository.save(api);
+            api
+                .getProductMappings()
+                .put(
+                    productRepository
+                        .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                        .orElseThrow(),
+                    "remote_product_1"
+                );
+            api
+                .getProductMappings()
+                .put(
+                    productRepository
+                        .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                        .orElseThrow(),
+                    "remote_product_2"
+                );
+            externalAPIRepository.persistAndFlush(api);
 
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{uuid}/mapping/product", api.getUuid())
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$." + Testdata.PRODUCT_1_UUID).value("remote_product_1"))
-                .andExpect(jsonPath("$." + Testdata.PRODUCT_2_UUID).value("remote_product_2"));
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("size()", is(2))
+                .body("%s", withArgs(Testdata.PRODUCT_1_UUID), is("remote_product_1"))
+                .body("%s", withArgs(Testdata.PRODUCT_2_UUID), is("remote_product_2"))
+                .when()
+                .get("", api.getUuid());
         }
 
         @Test
-        void shouldReturnEmptyMapWhenNoMappingsExist() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{uuid}/mapping/product", api.getUuid())
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isEmpty());
+        void shouldReturnEmptyMapWhenNoMappingsExist() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body(is("{}"))
+                .when()
+                .get("", api.getUuid());
         }
 
         @Test
-        void shouldReturn404WhenApiNotFound() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{uuid}/mapping/product", Testdata.BAD_UUID)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isNotFound());
+        void shouldReturn404WhenApiNotFound() {
+            expect()
+                .statusCode(404)
+                .when()
+                .get("", Testdata.BAD_UUID);
         }
     }
 }

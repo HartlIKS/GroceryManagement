@@ -1,65 +1,119 @@
 package de.iks.grocery_manager.server.controller.mdi;
 
+import de.iks.grocery_manager.server.Sql;
 import de.iks.grocery_manager.server.Testdata;
-import de.iks.grocery_manager.server.config.AuthorityConfiguration;
+import de.iks.grocery_manager.server.WithTestUser;
+import de.iks.grocery_manager.server.controller.masterdata.WithAdminUser;
 import de.iks.grocery_manager.server.jpa.mdi.ExternalAPIRepository;
 import de.iks.grocery_manager.server.jpa.mdi.ProductEndpointRepository;
 import de.iks.grocery_manager.server.model.mdi.ExternalAPI;
 import de.iks.grocery_manager.server.model.mdi.ProductEndpoint;
 import de.iks.grocery_manager.server.model.mdi.ResponseType;
-import org.junit.jupiter.api.BeforeEach;
+import io.quarkus.narayana.jta.QuarkusTransaction;
+import io.quarkus.test.common.http.TestHTTPEndpoint;
+import io.quarkus.test.common.http.TestHTTPResource;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
+import static de.iks.grocery_manager.server.UUIDMatcher.*;
+import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureTestDatabase
-@Sql(Testdata.SCRIPT)
-@Transactional
+@QuarkusTest
+@TestHTTPEndpoint(ProductEndpointController.class)
+@WithAdminUser
+@Sql("/testdata.sql")
 class ProductEndpointControllerTest {
-    private static final String PRODUCT_ENDPOINT_1_CREATE_JSON = """
-        {
-          "name": "Product Endpoint 1",
-          "baseUrl": "https://api.example.com",
-          "pageSize": {
-            "header": "Page-Size",
-            "queryParameter": "pageSize"
-          },
-          "page": {
-            "header": "Page",
-            "queryParameter": "page"
-          },
-          "itemCount": {
-            "header": "Item-Count",
-            "queryParameter": "itemCount"
-          },
-          "basePath": "/products",
-          "productIdPath": "$.id",
-          "productNamePath": "$.name",
-          "productImagePath": "$.image",
-          "productEANPath": "$.ean",
-          "responseType": "JSON"
-        }""";
-    private static final String PRODUCT_ENDPOINT_1_UPDATE_JSON = """
+
+    @Inject
+    ProductEndpointRepository productEndpointRepository;
+
+    @Inject
+    ExternalAPIRepository externalAPIRepository;
+
+    @TestHTTPResource
+    String baseURI;
+
+    String baseURI(ExternalAPI externalAPI) {
+        return baseURI.replace(
+            "{parentUuid}",
+            externalAPI
+                .getUuid()
+                .toString()
+        );
+    }
+
+    @Nested
+    @TestHTTPEndpoint(ProductEndpointController.class)
+    @WithAdminUser
+    class GetProductEndpoint {
+        @Test
+        void shouldReturnProductEndpointWhenFound() {
+            QuarkusTransaction.begin();
+
+            // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
+            ProductEndpoint endpoint = new ProductEndpoint();
+            endpoint.setApi(parentApi);
+            endpoint.setName("Test Product Endpoint");
+            endpoint.setBaseUrl("https://api.example.com");
+            endpoint.setBasePath("/products");
+            endpoint.setProductIdPath("$.id");
+            endpoint.setResponseType(ResponseType.JSON);
+            productEndpointRepository.persist(endpoint);
+
+            productEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("uuid", isUuidOf(endpoint))
+                .body("name", is("Test Product Endpoint"))
+                .when()
+                .get("{uuid}", parentApi.getUuid(), endpoint.getUuid());
+        }
+
+        @Test
+        void shouldReturn404WhenProductEndpointNotFound() {
+            QuarkusTransaction.begin();
+
+            // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
+            externalAPIRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(404)
+                .when()
+                .get("{uuid}", parentApi.getUuid(), Testdata.BAD_UUID);
+        }
+    }
+
+    @Nested
+    @TestHTTPEndpoint(ProductEndpointController.class)
+    @WithAdminUser
+    class UpdateProductEndpoint {
+        private static final String PRODUCT_ENDPOINT_1_UPDATE_JSON = """
         {
           "name": "Product Endpoint 1 Updated",
           "baseUrl": "https://api.example.com",
@@ -83,47 +137,17 @@ class ProductEndpointControllerTest {
           "responseType": "JSON"
         }""";
 
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ProductEndpointRepository productEndpointRepository;
-
-    @Autowired
-    private ExternalAPIRepository externalAPIRepository;
-
-    @Autowired
-    private AuthorityConfiguration authorityConfiguration;
-
-    private RequestPostProcessor admin_jwt;
-    private final RequestPostProcessor user_jwt = jwt();
-
-    private ExternalAPI parentApi;
-
-    @BeforeEach
-    void setup(WebApplicationContext ctx) {
-        admin_jwt = jwt()
-            .authorities(new SimpleGrantedAuthority(authorityConfiguration.getMasterdataAuthority()));
-        mockMvc = MockMvcBuilders
-            .webAppContextSetup(ctx)
-            .apply(springSecurity())
-            .build();
-        
-        externalAPIRepository.deleteAll();
-        productEndpointRepository.deleteAll();
-
-        // Create parent ExternalAPI
-        parentApi = new ExternalAPI();
-        parentApi.setName("Test API");
-        parentApi.setProductMappings(new HashMap<>());
-        parentApi.setStoreMappings(new HashMap<>());
-        parentApi = externalAPIRepository.save(parentApi);
-    }
-
-    @Nested
-    class GetProductEndpoint {
         @Test
-        void shouldReturnProductEndpointWhenFound() throws Exception {
+        void shouldUpdateProductEndpointWhenAuthorizedAndFound() {
+            QuarkusTransaction.begin();
+
             // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             ProductEndpoint endpoint = new ProductEndpoint();
             endpoint.setApi(parentApi);
             endpoint.setName("Test Product Endpoint");
@@ -131,84 +155,78 @@ class ProductEndpointControllerTest {
             endpoint.setBasePath("/products");
             endpoint.setProductIdPath("$.id");
             endpoint.setResponseType(ResponseType.JSON);
-            endpoint = productEndpointRepository.save(endpoint);
-
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{parentUuid}/endpoint/product/{uuid}", parentApi.getUuid(), endpoint.getUuid())
-                        .with(user_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").value(endpoint.getUuid().toString()))
-                .andExpect(jsonPath("$.name").value("Test Product Endpoint"));
-        }
-
-        @Test
-        void shouldReturn404WhenProductEndpointNotFound() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{parentUuid}/endpoint/product/{uuid}", parentApi.getUuid(), Testdata.BAD_UUID)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isNotFound());
-        }
-    }
-
-    @Nested
-    class UpdateProductEndpoint {
-        @Test
-        void shouldUpdateProductEndpointWhenAuthorizedAndFound() throws Exception {
-            // Create test data
-            ProductEndpoint endpoint = new ProductEndpoint();
-            endpoint.setApi(parentApi);
-            endpoint.setName("Test Product Endpoint");
-            endpoint.setBaseUrl("https://api.example.com");
-            endpoint.setBasePath("/products");
-            endpoint.setProductIdPath("$.id");
-            endpoint.setResponseType(ResponseType.JSON);
-            endpoint = productEndpointRepository.save(endpoint);
+            productEndpointRepository.persist(endpoint);
 
             long initialCount = productEndpointRepository.count();
 
-            mockMvc
-                .perform(
-                    put("/api/masterdata/interface/{parentUuid}/endpoint/product/{uuid}", parentApi.getUuid(), endpoint.getUuid())
-                        .content(PRODUCT_ENDPOINT_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").value(endpoint.getUuid().toString()))
-                .andExpect(jsonPath("$.name").value("Product Endpoint 1 Updated"));
+            productEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("uuid", isUuidOf(endpoint))
+                .body("name", is("Product Endpoint 1 Updated"))
+                .given()
+                .body(PRODUCT_ENDPOINT_1_UPDATE_JSON)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", parentApi.getUuid(), endpoint.getUuid());
 
             // Verify update was applied
-            assertTrue(productEndpointRepository.findById(endpoint.getUuid()).isPresent());
-            assertEquals("Product Endpoint 1 Updated", productEndpointRepository.findById(endpoint.getUuid()).get().getName());
+            assertTrue(productEndpointRepository
+                           .findByIdOptional(endpoint.getUuid())
+                           .isPresent());
+            assertEquals(
+                "Product Endpoint 1 Updated",
+                productEndpointRepository
+                    .findByIdOptional(endpoint.getUuid())
+                    .get()
+                    .getName()
+            );
             assertEquals(initialCount, productEndpointRepository.count());
         }
 
         @Test
-        void shouldReturn404WhenUpdatingNonExistentProductEndpoint() throws Exception {
+        void shouldReturn404WhenUpdatingNonExistentProductEndpoint() {
+            QuarkusTransaction.begin();
+
+            // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             long initialCount = productEndpointRepository.count();
 
-            mockMvc
-                .perform(
-                    put("/api/masterdata/interface/{parentUuid}/endpoint/product/{uuid}", parentApi.getUuid(), Testdata.BAD_UUID)
-                        .content(PRODUCT_ENDPOINT_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isNotFound());
+            externalAPIRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(404)
+                .given()
+                .body(PRODUCT_ENDPOINT_1_UPDATE_JSON)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", parentApi.getUuid(), Testdata.BAD_UUID);
 
             // Verify no changes
             assertEquals(initialCount, productEndpointRepository.count());
         }
 
         @Test
-        void shouldReturn403WhenUpdatingProductEndpointWithoutAuthorization() throws Exception {
+        @WithTestUser
+        void shouldReturn403WhenUpdatingProductEndpointWithoutAuthorization() {
+            QuarkusTransaction.begin();
+
             // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             ProductEndpoint endpoint = new ProductEndpoint();
             endpoint.setApi(parentApi);
             endpoint.setName("Test Product Endpoint");
@@ -216,59 +234,123 @@ class ProductEndpointControllerTest {
             endpoint.setBasePath("/products");
             endpoint.setProductIdPath("$.id");
             endpoint.setResponseType(ResponseType.JSON);
-            endpoint = productEndpointRepository.save(endpoint);
+            productEndpointRepository.persist(endpoint);
 
             long initialCount = productEndpointRepository.count();
 
-            mockMvc
-                .perform(
-                    put("/api/masterdata/interface/{parentUuid}/endpoint/product/{uuid}", parentApi.getUuid(), endpoint.getUuid())
-                        .content(PRODUCT_ENDPOINT_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isForbidden());
+            productEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .body(PRODUCT_ENDPOINT_1_UPDATE_JSON)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", parentApi.getUuid(), endpoint.getUuid());
 
             // Verify no changes when unauthorized
             assertEquals(initialCount, productEndpointRepository.count());
-            assertEquals("Test Product Endpoint", productEndpointRepository.findById(endpoint.getUuid()).get().getName());
+            assertEquals(
+                "Test Product Endpoint",
+                productEndpointRepository
+                    .findByIdOptional(endpoint.getUuid())
+                    .orElseThrow()
+                    .getName()
+            );
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(ProductEndpointController.class)
+    @WithAdminUser
     class CreateProductEndpoint {
+        private static final String PRODUCT_ENDPOINT_1_CREATE_JSON = """
+        {
+          "name": "Product Endpoint 1",
+          "baseUrl": "https://api.example.com",
+          "pageSize": {
+            "header": "Page-Size",
+            "queryParameter": "pageSize"
+          },
+          "page": {
+            "header": "Page",
+            "queryParameter": "page"
+          },
+          "itemCount": {
+            "header": "Item-Count",
+            "queryParameter": "itemCount"
+          },
+          "basePath": "/products",
+          "productIdPath": "$.id",
+          "productNamePath": "$.name",
+          "productImagePath": "$.image",
+          "productEANPath": "$.ean",
+          "responseType": "JSON"
+        }""";
+
         @Test
-        void shouldCreateProductEndpointWhenAuthorized() throws Exception {
+        void shouldCreateProductEndpointWhenAuthorized() {
+            QuarkusTransaction.begin();
+
+            // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             long initialCount = productEndpointRepository.count();
 
-            mockMvc
-                .perform(
-                    post("/api/masterdata/interface/{parentUuid}/endpoint/product", parentApi.getUuid())
-                        .content(PRODUCT_ENDPOINT_1_CREATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
+            externalAPIRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(201)
+                .header(
+                    "location",
+                    matchesRegex(String.format(
+                        "%s/%s",
+                        Pattern.quote(baseURI(parentApi)),
+                        Testdata.UUID_PATTERN.pattern()
+                    ))
                 )
-                .andExpect(status().isCreated())
-                .andExpect(header().string("location", matchesRegex("http://localhost/api/masterdata/interface/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}/endpoint/product/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.name").value("Product Endpoint 1"));
+                .contentType(ContentType.JSON)
+                .body("name", is("Product Endpoint 1"))
+                .given()
+                .body(PRODUCT_ENDPOINT_1_CREATE_JSON)
+                .contentType(ContentType.JSON)
+                .post("", parentApi.getUuid());
 
             // Verify creation
             assertEquals(initialCount + 1, productEndpointRepository.count());
         }
 
         @Test
-        void shouldReturn403WhenCreatingProductEndpointWithoutAuthorization() throws Exception {
+        @WithTestUser
+        void shouldReturn403WhenCreatingProductEndpointWithoutAuthorization() {
+            QuarkusTransaction.begin();
+
+            // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             long initialCount = productEndpointRepository.count();
 
-            mockMvc
-                .perform(
-                    post("/api/masterdata/interface/{parentUuid}/endpoint/product", parentApi.getUuid())
-                        .content(PRODUCT_ENDPOINT_1_CREATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isForbidden());
+            externalAPIRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .body(PRODUCT_ENDPOINT_1_CREATE_JSON)
+                .contentType(ContentType.JSON)
+                .post("", parentApi.getUuid());
 
             // Verify no changes when unauthorized
             assertEquals(initialCount, productEndpointRepository.count());
@@ -276,10 +358,20 @@ class ProductEndpointControllerTest {
     }
 
     @Nested
+    @TestHTTPEndpoint(ProductEndpointController.class)
+    @WithAdminUser
     class DeleteProductEndpoint {
         @Test
-        void shouldDeleteProductEndpointWhenAuthorized() throws Exception {
+        void shouldDeleteProductEndpointWhenAuthorized() {
+            QuarkusTransaction.begin();
+
             // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             ProductEndpoint endpoint = new ProductEndpoint();
             endpoint.setApi(parentApi);
             endpoint.setName("Test Product Endpoint");
@@ -287,25 +379,38 @@ class ProductEndpointControllerTest {
             endpoint.setBasePath("/products");
             endpoint.setProductIdPath("$.id");
             endpoint.setResponseType(ResponseType.JSON);
-            endpoint = productEndpointRepository.save(endpoint);
+            productEndpointRepository.persist(endpoint);
 
             long initialCount = productEndpointRepository.count();
 
-            mockMvc
-                .perform(
-                    delete("/api/masterdata/interface/{parentUuid}/endpoint/product/{uuid}", parentApi.getUuid(), endpoint.getUuid())
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isOk());
+            productEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .when()
+                .delete("{uuid}", parentApi.getUuid(), endpoint.getUuid());
 
             // Verify deletion
-            assertFalse(productEndpointRepository.findById(endpoint.getUuid()).isPresent());
+            assertFalse(productEndpointRepository
+                            .findByIdOptional(endpoint.getUuid())
+                            .isPresent());
             assertEquals(initialCount - 1, productEndpointRepository.count());
         }
 
         @Test
-        void shouldReturn403WhenDeletingProductEndpointWithoutAuthorization() throws Exception {
+        @WithTestUser
+        void shouldReturn403WhenDeletingProductEndpointWithoutAuthorization() {
+            QuarkusTransaction.begin();
+
             // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             ProductEndpoint endpoint = new ProductEndpoint();
             endpoint.setApi(parentApi);
             endpoint.setName("Test Product Endpoint");
@@ -313,28 +418,42 @@ class ProductEndpointControllerTest {
             endpoint.setBasePath("/products");
             endpoint.setProductIdPath("$.id");
             endpoint.setResponseType(ResponseType.JSON);
-            endpoint = productEndpointRepository.save(endpoint);
+            productEndpointRepository.persist(endpoint);
 
             long initialCount = productEndpointRepository.count();
 
-            mockMvc
-                .perform(
-                    delete("/api/masterdata/interface/{parentUuid}/endpoint/product/{uuid}", parentApi.getUuid(), endpoint.getUuid())
-                        .with(user_jwt)
-                )
-                .andExpect(status().isForbidden());
+            productEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .when()
+                .delete("{uuid}", parentApi.getUuid(), endpoint.getUuid());
 
             // Verify no changes when unauthorized
             assertEquals(initialCount, productEndpointRepository.count());
-            assertTrue(productEndpointRepository.findById(endpoint.getUuid()).isPresent());
+            assertTrue(productEndpointRepository
+                           .findByIdOptional(endpoint.getUuid())
+                           .isPresent());
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(ProductEndpointController.class)
+    @WithAdminUser
     class SearchProductEndpoints {
         @Test
-        void shouldReturnAllProductEndpointsWhenSearching() throws Exception {
+        void shouldReturnAllProductEndpointsWhenSearching() {
+            QuarkusTransaction.begin();
+
             // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             ProductEndpoint endpoint1 = new ProductEndpoint();
             endpoint1.setApi(parentApi);
             endpoint1.setName("Product Endpoint 1");
@@ -342,7 +461,7 @@ class ProductEndpointControllerTest {
             endpoint1.setBasePath("/products");
             endpoint1.setProductIdPath("$.id");
             endpoint1.setResponseType(ResponseType.JSON);
-            endpoint1 = productEndpointRepository.save(endpoint1);
+            productEndpointRepository.persist(endpoint1);
 
             ProductEndpoint endpoint2 = new ProductEndpoint();
             endpoint2.setApi(parentApi);
@@ -351,27 +470,37 @@ class ProductEndpointControllerTest {
             endpoint2.setBasePath("/products");
             endpoint2.setProductIdPath("$.id");
             endpoint2.setResponseType(ResponseType.JSON);
-            endpoint2 = productEndpointRepository.save(endpoint2);
+            productEndpointRepository.persist(endpoint2);
 
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{parentUuid}/endpoint/product", parentApi.getUuid())
-                        .with(user_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.page.number").value(0))
-                .andExpect(jsonPath("$.page.size").value(10))
-                .andExpect(jsonPath("$.page.totalElements").value(2))
-                .andExpect(jsonPath("$.page.totalPages").value(1))
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[?(@.name == 'Product Endpoint 1')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'Product Endpoint 2')]").exists());
+            productEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("page.number", is(0))
+                .body("page.size", is(10))
+                .body("page.totalElements", is(2))
+                .body("page.totalPages", is(1))
+                .body("content.size()", is(2))
+                .body("content.find { it.uuid == '%s' }.name", withArgs(endpoint1.getUuid()), is("Product Endpoint 1"))
+                .body("content.find { it.uuid == '%s' }.name", withArgs(endpoint2.getUuid()), is("Product Endpoint 2"))
+                .given()
+                .get("", parentApi.getUuid());
         }
 
         @Test
-        void shouldReturnFilteredProductEndpointsWhenSearchingByName() throws Exception {
+        void shouldReturnFilteredProductEndpointsWhenSearchingByName() {
+            QuarkusTransaction.begin();
+
             // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             ProductEndpoint endpoint1 = new ProductEndpoint();
             endpoint1.setApi(parentApi);
             endpoint1.setName("Test Product Endpoint");
@@ -379,7 +508,7 @@ class ProductEndpointControllerTest {
             endpoint1.setBasePath("/products");
             endpoint1.setProductIdPath("$.id");
             endpoint1.setResponseType(ResponseType.JSON);
-            endpoint1 = productEndpointRepository.save(endpoint1);
+            productEndpointRepository.persist(endpoint1);
 
             ProductEndpoint endpoint2 = new ProductEndpoint();
             endpoint2.setApi(parentApi);
@@ -388,20 +517,24 @@ class ProductEndpointControllerTest {
             endpoint2.setBasePath("/products");
             endpoint2.setProductIdPath("$.id");
             endpoint2.setResponseType(ResponseType.JSON);
-            endpoint2 = productEndpointRepository.save(endpoint2);
+            productEndpointRepository.persist(endpoint2);
 
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{parentUuid}/endpoint/product", parentApi.getUuid())
-                        .queryParam("name", "Test")
-                        .with(user_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.page.totalElements").value(1))
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[?(@.name == 'Test Product Endpoint')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'Other Endpoint')]").doesNotExist());
+            productEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("page.number", is(0))
+                .body("page.size", is(10))
+                .body("page.totalElements", is(1))
+                .body("page.totalPages", is(1))
+                .body("content.size()", is(1))
+                .body("content.find { it.uuid = '%s' }.name", withArgs(endpoint1.getUuid()), is("Test Product Endpoint"))
+                .given()
+                .queryParam("name", "Test")
+                .get("", parentApi.getUuid());
         }
     }
 }

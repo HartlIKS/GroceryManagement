@@ -1,312 +1,295 @@
 package de.iks.grocery_manager.server.controller.masterdata;
 
+import de.iks.grocery_manager.server.Sql;
 import de.iks.grocery_manager.server.Testdata;
-import de.iks.grocery_manager.server.config.AuthorityConfiguration;
+import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;
-import org.junit.jupiter.api.BeforeEach;
+import io.quarkus.test.common.http.TestHTTPEndpoint;
+import io.quarkus.test.common.http.TestHTTPResource;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
+import java.util.regex.Pattern;
+
+import static de.iks.grocery_manager.server.UUIDMatcher.*;
+import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureTestDatabase
-@Sql(Testdata.SCRIPT)
+@QuarkusTest
+@TestHTTPEndpoint(StoreController.class)
+@Sql("/testdata.sql")
 class StoreControllerTest {
-    public static final String STORE_1_JSON = String.format("""
-        {
-          "uuid": "%s",
-          "name": "Store 1",
-          "address": {
-            "country": "DE",
-            "city": "Düsseldorf"
-          },
-          "currency": "EUR"
-        }""", Testdata.STORE_1_UUID);
-    public static final String STORE_1_UPDATE_JSON = """
-        {
-          "name": "Store 1b",
-          "address": {
-            "city": "Hilden"
-          }
-        }""";
-    public static final String STORE_3_CREATE_JSON = """
-        {
-          "name": "Store 3",
-          "address": {
-            "country": "DE",
-            "city": "Munich"
-          },
-          "currency": "EUR"
-        }""";
-    public static final String STORE_3_JSON = """
-        {
-          "name": "Store 3",
-          "address": {
-            "country": "DE",
-            "city": "Munich"
-          },
-          "currency": "EUR"
-        }""";
-    private MockMvc mockMvc;
-    
-    @Autowired
-    private StoreRepository storeRepository;
+    @Inject
+    StoreRepository storeRepository;
 
-    @Autowired
-    private AuthorityConfiguration authorityConfiguration;
-
-    private RequestPostProcessor admin_jwt;
-    private final RequestPostProcessor user_jwt = jwt();
-
-    @BeforeEach
-    void setup(WebApplicationContext ctx) {
-        admin_jwt = jwt()
-            .authorities(new SimpleGrantedAuthority(authorityConfiguration.getMasterdataAuthority()));
-        mockMvc = MockMvcBuilders
-            .webAppContextSetup(ctx)
-            .apply(springSecurity())
-            .build();
-    }
+    @TestHTTPResource
+    String baseURI;
 
     @Nested
+    @TestHTTPEndpoint(StoreController.class)
+    @WithTestUser
     class GetStore {
         @Test
-        void shouldReturnStoreWhenFound() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(STORE_1_JSON));
+        void shouldReturnStoreWhenFound() {
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("uuid", isUuid(Testdata.STORE_1_UUID))
+                .body("name", is("Store 1"))
+                .body("address.country", is("DE"))
+                .body("address.city", is("Düsseldorf"))
+                .body("currency", is("EUR"))
+                .when()
+                .get("{uuid}", Testdata.STORE_1_UUID);
         }
 
         @Test
-        void shouldReturn404WhenStoreNotFound() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/masterdata/store/{uuid}", Testdata.BAD_UUID)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isNotFound());
+        void shouldReturn404WhenStoreNotFound() {
+            expect()
+                .statusCode(404)
+                .when()
+                .get("{uuid}", Testdata.BAD_UUID);
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(StoreController.class)
     class UpdateStore {
+        public static final String STORE_1_UPDATE_JSON = """
+            {
+              "name": "Store 1b",
+              "address": {
+                "city": "Hilden"
+              }
+            }""";
+
         @Test
-        void shouldUpdateStoreWhenAuthorizedAndFound() throws Exception {
+        @WithAdminUser
+        void shouldUpdateStoreWhenAuthorizedAndFound() {
             long initialCount = storeRepository.count();
-            
-            mockMvc
-                .perform(
-                    put("/api/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
-                        .content(STORE_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(String.format("""
-                    {
-                      "uuid": "%s",
-                      "name": "Store 1b",
-                      "address": {
-                        "country": "DE",
-                        "city": "Hilden"
-                      },
-                      "currency": "EUR"
-                    }""", Testdata.STORE_1_UUID)));
-            
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("uuid", isUuid(Testdata.STORE_1_UUID))
+                .body("name", is("Store 1b"))
+                .body("address.country", is("DE"))
+                .body("address.city", is("Hilden"))
+                .body("currency", is("EUR"))
+                .given()
+                .contentType(ContentType.JSON)
+                .body(STORE_1_UPDATE_JSON)
+                .put("{uuid}", Testdata.STORE_1_UUID);
+
             // Verify update was applied and other store unaffected
-            assertTrue(storeRepository.findById(Testdata.STORE_1_UUID).isPresent());
-            assertTrue(storeRepository.findById(Testdata.STORE_2_UUID).isPresent());
+            assertTrue(storeRepository
+                           .findByIdOptional(Testdata.STORE_1_UUID)
+                           .isPresent());
+            assertTrue(storeRepository
+                           .findByIdOptional(Testdata.STORE_2_UUID)
+                           .isPresent());
             assertEquals(initialCount, storeRepository.count());
         }
 
         @Test
-        void shouldReturn404WhenUpdatingNonExistentStore() throws Exception {
+        @WithAdminUser
+        void shouldReturn404WhenUpdatingNonExistentStore() {
             long initialCount = storeRepository.count();
-            
-            mockMvc
-                .perform(
-                    put("/api/masterdata/store/{uuid}", Testdata.BAD_UUID)
-                        .content(STORE_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isNotFound());
-            
+
+            expect()
+                .statusCode(404)
+                .given()
+                .contentType(ContentType.JSON)
+                .body(STORE_1_UPDATE_JSON)
+                .put("{uuid}", Testdata.BAD_UUID);
+
             // Verify no changes to existing stores
-            assertTrue(storeRepository.findById(Testdata.STORE_1_UUID).isPresent());
-            assertTrue(storeRepository.findById(Testdata.STORE_2_UUID).isPresent());
+            assertTrue(storeRepository
+                           .findByIdOptional(Testdata.STORE_1_UUID)
+                           .isPresent());
+            assertTrue(storeRepository
+                           .findByIdOptional(Testdata.STORE_2_UUID)
+                           .isPresent());
             assertEquals(initialCount, storeRepository.count());
         }
 
         @Test
-        void shouldReturn403WhenUpdatingStoreWithoutAuthorization() throws Exception {
+        @WithTestUser
+        void shouldReturn403WhenUpdatingStoreWithoutAuthorization() {
             long initialCount = storeRepository.count();
-            
-            mockMvc
-                .perform(
-                    put("/api/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
-                        .content(STORE_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isForbidden());
-            
+
+            expect()
+                .statusCode(403)
+                .given()
+                .contentType(ContentType.JSON)
+                .body(STORE_1_UPDATE_JSON)
+                .put("{uuid}", Testdata.STORE_1_UUID);
+
             // Verify no changes when unauthorized
-            assertTrue(storeRepository.findById(Testdata.STORE_1_UUID).isPresent());
-            assertTrue(storeRepository.findById(Testdata.STORE_2_UUID).isPresent());
+            assertTrue(storeRepository
+                           .findByIdOptional(Testdata.STORE_1_UUID)
+                           .isPresent());
+            assertTrue(storeRepository
+                           .findByIdOptional(Testdata.STORE_2_UUID)
+                           .isPresent());
             assertEquals(initialCount, storeRepository.count());
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(StoreController.class)
     class CreateStore {
+        public static final String STORE_3_CREATE_JSON = """
+            {
+              "name": "Store 3",
+              "address": {
+                "country": "DE",
+                "city": "Munich"
+              },
+              "currency": "EUR"
+            }""";
+
         @Test
-        void shouldCreateStoreWhenAuthorized() throws Exception {
+        @WithAdminUser
+        void shouldCreateStoreWhenAuthorized() {
             long initialCount = storeRepository.count();
-            
-            mockMvc
-                .perform(
-                    post("/api/masterdata/store")
-                        .content(STORE_3_CREATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
+
+            expect()
+                .statusCode(201)
+                .header(
+                    "location", matchesRegex(
+                        String.format("%s/%s", Pattern.quote(baseURI), Testdata.UUID_PATTERN.pattern())
+                    )
                 )
-                .andExpect(status().isCreated())
-                .andExpect(header().string("location", matchesRegex("http://localhost/api/masterdata/store/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(STORE_3_JSON));
-            
+                .contentType(ContentType.JSON)
+                .body("uuid", matchesRegex(Testdata.UUID_PATTERN))
+                .body("name", is("Store 3"))
+                .body("address.country", is("DE"))
+                .body("address.city", is("Munich"))
+                .body("currency", is("EUR"))
+                .given()
+                .contentType(ContentType.JSON)
+                .body(STORE_3_CREATE_JSON)
+                .post();
+
             // Verify creation - count should increase by 1
             assertEquals(initialCount + 1, storeRepository.count());
             // Verify existing stores unaffected
-            assertTrue(storeRepository.findById(Testdata.STORE_1_UUID).isPresent());
-            assertTrue(storeRepository.findById(Testdata.STORE_2_UUID).isPresent());
+            assertTrue(storeRepository
+                           .findByIdOptional(Testdata.STORE_1_UUID)
+                           .isPresent());
+            assertTrue(storeRepository
+                           .findByIdOptional(Testdata.STORE_2_UUID)
+                           .isPresent());
         }
 
         @Test
-        void shouldReturn403WhenCreatingStoreWithoutAuthorization() throws Exception {
+        @WithTestUser
+        void shouldReturn403WhenCreatingStoreWithoutAuthorization() {
             long initialCount = storeRepository.count();
-            
-            mockMvc
-                .perform(
-                    post("/api/masterdata/store")
-                        .content(STORE_3_CREATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isForbidden());
-            
+
+            expect()
+                .statusCode(403)
+                .given()
+                .contentType(ContentType.JSON)
+                .body(STORE_3_CREATE_JSON)
+                .post();
+
             // Verify no changes when unauthorized
             assertEquals(initialCount, storeRepository.count());
-            assertTrue(storeRepository.findById(Testdata.STORE_1_UUID).isPresent());
-            assertTrue(storeRepository.findById(Testdata.STORE_2_UUID).isPresent());
+            assertTrue(storeRepository
+                           .findByIdOptional(Testdata.STORE_1_UUID)
+                           .isPresent());
+            assertTrue(storeRepository
+                           .findByIdOptional(Testdata.STORE_2_UUID)
+                           .isPresent());
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(StoreController.class)
     class DeleteStore {
         @Test
-        void shouldDeleteStoreWhenAuthorized() throws Exception {
+        @WithAdminUser
+        void shouldDeleteStoreWhenAuthorized() {
             long initialCount = storeRepository.count();
-            
-            mockMvc
-                .perform(
-                    delete("/api/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isOk());
-            
+
+            expect()
+                .statusCode(200)
+                .when()
+                .delete("{uuid}", Testdata.STORE_1_UUID);
+
             // Verify deletion
-            assertFalse(storeRepository.findById(Testdata.STORE_1_UUID).isPresent());
+            assertFalse(storeRepository
+                            .findByIdOptional(Testdata.STORE_1_UUID)
+                            .isPresent());
             assertEquals(initialCount - 1, storeRepository.count());
             // Verify other store unaffected
-            assertTrue(storeRepository.findById(Testdata.STORE_2_UUID).isPresent());
+            assertTrue(storeRepository
+                           .findByIdOptional(Testdata.STORE_2_UUID)
+                           .isPresent());
         }
 
         @Test
-        void shouldReturn403WhenDeletingStoreWithoutAuthorization() throws Exception {
+        @WithTestUser
+        void shouldReturn403WhenDeletingStoreWithoutAuthorization() {
             long initialCount = storeRepository.count();
-            
-            mockMvc
-                .perform(
-                    delete("/api/masterdata/store/{uuid}", Testdata.STORE_1_UUID)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isForbidden());
-            
+
+            expect()
+                .statusCode(403)
+                .when()
+                .delete("{uuid}", Testdata.STORE_1_UUID);
+
             // Verify no changes when unauthorized
             assertEquals(initialCount, storeRepository.count());
-            assertTrue(storeRepository.findById(Testdata.STORE_1_UUID).isPresent());
-            assertTrue(storeRepository.findById(Testdata.STORE_2_UUID).isPresent());
+            assertTrue(storeRepository
+                           .findByIdOptional(Testdata.STORE_1_UUID)
+                           .isPresent());
+            assertTrue(storeRepository
+                           .findByIdOptional(Testdata.STORE_2_UUID)
+                           .isPresent());
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(StoreController.class)
+    @WithTestUser
     class SearchStores {
         @Test
-        void shouldReturnStoresWhenSearchingByName() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/masterdata/store")
-                        .queryParam("name", "Store")
-                        .with(user_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(String.format("""
-                    {
-                      "page": {
-                        "number": 0,
-                        "size": 10,
-                        "totalElements": 4,
-                        "totalPages": 1
-                      },
-                      "content": [
-                        %s,
-                        {
-                          "uuid": "%s",
-                          "name": "Store 2",
-                          "address": {
-                            "country": "DE",
-                            "city": "Hilden"
-                          },
-                          "currency": "USD"
-                        },
-                        %s,
-                        {
-                          "uuid": "%s",
-                          "name": "Store 4",
-                          "address": {
-                            "country": "DE",
-                            "city": "Berlin"
-                          },
-                          "currency": "USD"
-                        }
-                      ]
-                    }""", STORE_1_JSON, Testdata.STORE_2_UUID, STORE_3_JSON, Testdata.STORE_4_UUID
-                )));
+        void shouldReturnStoresWhenSearchingByName() {
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("page.number", is(0))
+                .body("page.size", is(10))
+                .body("page.totalElements", is(4))
+                .body("page.totalPages", is(1))
+                .body("content[0].uuid", isUuid(Testdata.STORE_1_UUID))
+                .body("content[0].name", is("Store 1"))
+                .body("content[0].address.country", is("DE"))
+                .body("content[0].address.city", is("Düsseldorf"))
+                .body("content[0].currency", is("EUR"))
+                .body("content[1].uuid", isUuid(Testdata.STORE_2_UUID))
+                .body("content[1].name", is("Store 2"))
+                .body("content[1].address.country", is("DE"))
+                .body("content[1].address.city", is("Hilden"))
+                .body("content[1].currency", is("USD"))
+                .body("content[2].uuid", isUuid(Testdata.STORE_3_UUID))
+                .body("content[2].name", is("Store 3"))
+                .body("content[2].address.country", is("DE"))
+                .body("content[2].address.city", is("Munich"))
+                .body("content[2].currency", is("EUR"))
+                .body("content[3].uuid", isUuid(Testdata.STORE_4_UUID))
+                .body("content[3].name", is("Store 4"))
+                .body("content[3].address.country", is("DE"))
+                .body("content[3].address.city", is("Berlin"))
+                .body("content[3].currency", is("USD"))
+                .when()
+                .get();
         }
     }
 }

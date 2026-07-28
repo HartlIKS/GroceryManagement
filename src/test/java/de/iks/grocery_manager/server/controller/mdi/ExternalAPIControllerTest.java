@@ -1,208 +1,222 @@
 package de.iks.grocery_manager.server.controller.mdi;
 
+import de.iks.grocery_manager.server.Sql;
 import de.iks.grocery_manager.server.Testdata;
-import de.iks.grocery_manager.server.config.AuthorityConfiguration;
+import de.iks.grocery_manager.server.WithTestUser;
+import de.iks.grocery_manager.server.controller.masterdata.WithAdminUser;
 import de.iks.grocery_manager.server.jpa.mdi.ExternalAPIRepository;
-import org.junit.jupiter.api.BeforeEach;
+import io.quarkus.narayana.jta.QuarkusTransaction;
+import io.quarkus.test.common.http.TestHTTPEndpoint;
+import io.quarkus.test.common.http.TestHTTPResource;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.WebApplicationContext;
 
-import static org.hamcrest.Matchers.matchesRegex;
+import java.util.regex.Pattern;
+
+import static de.iks.grocery_manager.server.UUIDMatcher.*;
+import static io.restassured.RestAssured.expect;
+import static io.restassured.RestAssured.withArgs;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureTestDatabase
-@Sql(Testdata.SCRIPT)
-@Transactional
+@QuarkusTest
+@TestHTTPEndpoint(ExternalAPIController.class)
+@WithAdminUser
+@Sql("/testdata.sql")
 class ExternalAPIControllerTest {
-    private static final String EXTERNAL_API_1_CREATE_JSON = """
-        {
-          "name": "External API 1"
-        }""";
-    private static final String EXTERNAL_API_1_UPDATE_JSON = """
+
+    @Inject
+    ExternalAPIRepository externalAPIRepository;
+
+    @TestHTTPResource
+    String baseURI;
+
+    @Nested
+    @TestHTTPEndpoint(ExternalAPIController.class)
+    @WithAdminUser
+    class GetExternalAPI {
+        @Test
+        void shouldReturnExternalAPIWhenFound() {
+            QuarkusTransaction.begin();
+
+            // Create test data
+            de.iks.grocery_manager.server.model.mdi.ExternalAPI api =
+                new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new java.util.HashMap<>());
+            api.setStoreMappings(new java.util.HashMap<>());
+            externalAPIRepository.persist(api);
+
+            externalAPIRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("uuid", isUuidOf(api))
+                .body("name", is("Test API"))
+                .when()
+                .get("{uuid}", api.getUuid());
+        }
+
+        @Test
+        void shouldReturn404WhenExternalAPINotFound() {
+            expect()
+                .statusCode(404)
+                .when()
+                .get("{uuid}", Testdata.BAD_UUID);
+        }
+    }
+
+    @Nested
+    @TestHTTPEndpoint(ExternalAPIController.class)
+    @WithAdminUser
+    class UpdateExternalAPI {
+        private static final String EXTERNAL_API_1_UPDATE_JSON = """
         {
           "name": "External API 1 Updated"
         }""";
 
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ExternalAPIRepository externalAPIRepository;
-
-    @Autowired
-    private AuthorityConfiguration authorityConfiguration;
-
-    private RequestPostProcessor admin_jwt;
-    private final RequestPostProcessor user_jwt = jwt();
-
-    @BeforeEach
-    void setup(WebApplicationContext ctx) {
-        admin_jwt = jwt()
-            .authorities(new SimpleGrantedAuthority(authorityConfiguration.getMasterdataAuthority()));
-        mockMvc = MockMvcBuilders
-            .webAppContextSetup(ctx)
-            .apply(springSecurity())
-            .build();
-        
-        externalAPIRepository.deleteAll();
-    }
-
-    @Nested
-    class GetExternalAPI {
         @Test
-        void shouldReturnExternalAPIWhenFound() throws Exception {
+        void shouldUpdateExternalAPIWhenAuthorizedAndFound() {
+            QuarkusTransaction.begin();
+
             // Create test data
-            de.iks.grocery_manager.server.model.mdi.ExternalAPI api = new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
+            de.iks.grocery_manager.server.model.mdi.ExternalAPI api =
+                new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
             api.setName("Test API");
             api.setProductMappings(new java.util.HashMap<>());
             api.setStoreMappings(new java.util.HashMap<>());
-            api = externalAPIRepository.save(api);
-
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{uuid}", api.getUuid())
-                        .with(user_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").value(api.getUuid().toString()))
-                .andExpect(jsonPath("$.name").value("Test API"));
-        }
-
-        @Test
-        void shouldReturn404WhenExternalAPINotFound() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{uuid}", Testdata.BAD_UUID)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isNotFound());
-        }
-    }
-
-    @Nested
-    class UpdateExternalAPI {
-        @Test
-        void shouldUpdateExternalAPIWhenAuthorizedAndFound() throws Exception {
-            // Create test data
-            de.iks.grocery_manager.server.model.mdi.ExternalAPI api = new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
-            api.setName("Test API");
-            api.setProductMappings(new java.util.HashMap<>());
-            api.setStoreMappings(new java.util.HashMap<>());
-            api = externalAPIRepository.save(api);
+            externalAPIRepository.persist(api);
 
             long initialCount = externalAPIRepository.count();
 
-            mockMvc
-                .perform(
-                    put("/api/masterdata/interface/{uuid}", api.getUuid())
-                        .content(EXTERNAL_API_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").value(api.getUuid().toString()))
-                .andExpect(jsonPath("$.name").value("External API 1 Updated"));
+            externalAPIRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("uuid", isUuidOf(api))
+                .body("name", is("External API 1 Updated"))
+                .given()
+                .body(EXTERNAL_API_1_UPDATE_JSON)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", api.getUuid());
 
             // Verify update was applied
-            assertTrue(externalAPIRepository.findById(api.getUuid()).isPresent());
-            assertEquals("External API 1 Updated", externalAPIRepository.findById(api.getUuid()).get().getName());
+            assertTrue(externalAPIRepository
+                           .findByIdOptional(api.getUuid())
+                           .isPresent());
+            assertEquals(
+                "External API 1 Updated",
+                externalAPIRepository
+                    .findByIdOptional(api.getUuid())
+                    .get()
+                    .getName()
+            );
             assertEquals(initialCount, externalAPIRepository.count());
         }
 
         @Test
-        void shouldReturn404WhenUpdatingNonExistentExternalAPI() throws Exception {
+        void shouldReturn404WhenUpdatingNonExistentExternalAPI() {
             long initialCount = externalAPIRepository.count();
 
-            mockMvc
-                .perform(
-                    put("/api/masterdata/interface/{uuid}", Testdata.BAD_UUID)
-                        .content(EXTERNAL_API_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isNotFound());
+            expect()
+                .statusCode(404)
+                .given()
+                .body(EXTERNAL_API_1_UPDATE_JSON)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", Testdata.BAD_UUID);
 
             // Verify no changes
             assertEquals(initialCount, externalAPIRepository.count());
         }
 
         @Test
-        void shouldReturn403WhenUpdatingExternalAPIWithoutAuthorization() throws Exception {
+        @WithTestUser
+        void shouldReturn403WhenUpdatingExternalAPIWithoutAuthorization() {
+            QuarkusTransaction.begin();
+
             // Create test data
-            de.iks.grocery_manager.server.model.mdi.ExternalAPI api = new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
+            de.iks.grocery_manager.server.model.mdi.ExternalAPI api =
+                new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
             api.setName("Test API");
             api.setProductMappings(new java.util.HashMap<>());
             api.setStoreMappings(new java.util.HashMap<>());
-            api = externalAPIRepository.save(api);
+            externalAPIRepository.persist(api);
 
             long initialCount = externalAPIRepository.count();
 
-            mockMvc
-                .perform(
-                    put("/api/masterdata/interface/{uuid}", api.getUuid())
-                        .content(EXTERNAL_API_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isForbidden());
+            externalAPIRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .body(EXTERNAL_API_1_UPDATE_JSON)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", api.getUuid());
 
             // Verify no changes when unauthorized
             assertEquals(initialCount, externalAPIRepository.count());
-            assertEquals("Test API", externalAPIRepository.findById(api.getUuid()).get().getName());
+            assertEquals(
+                "Test API",
+                externalAPIRepository
+                    .findByIdOptional(api.getUuid())
+                    .orElseThrow()
+                    .getName()
+            );
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(ExternalAPIController.class)
+    @WithAdminUser
     class CreateExternalAPI {
+        private static final String EXTERNAL_API_1_CREATE_JSON = """
+        {
+          "name": "External API 1"
+        }""";
+
         @Test
-        void shouldCreateExternalAPIWhenAuthorized() throws Exception {
+        void shouldCreateExternalAPIWhenAuthorized() {
             long initialCount = externalAPIRepository.count();
 
-            mockMvc
-                .perform(
-                    post("/api/masterdata/interface")
-                        .content(EXTERNAL_API_1_CREATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
+            expect()
+                .statusCode(201)
+                .header(
+                    "location",
+                    matchesRegex(String.format("%s/%s", Pattern.quote(baseURI), Testdata.UUID_PATTERN.pattern()))
                 )
-                .andExpect(status().isCreated())
-                .andExpect(header().string("location", matchesRegex("http://localhost/api/masterdata/interface/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.name").value("External API 1"));
+                .contentType(ContentType.JSON)
+                .body("name", is("External API 1"))
+                .given()
+                .body(EXTERNAL_API_1_CREATE_JSON)
+                .contentType(ContentType.JSON)
+                .post();
 
             // Verify creation
             assertEquals(initialCount + 1, externalAPIRepository.count());
         }
 
         @Test
-        void shouldReturn403WhenCreatingExternalAPIWithoutAuthorization() throws Exception {
+        @WithTestUser
+        void shouldReturn403WhenCreatingExternalAPIWithoutAuthorization() {
             long initialCount = externalAPIRepository.count();
 
-            mockMvc
-                .perform(
-                    post("/api/masterdata/interface")
-                        .content(EXTERNAL_API_1_CREATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isForbidden());
+            expect()
+                .statusCode(403)
+                .given()
+                .body(EXTERNAL_API_1_CREATE_JSON)
+                .contentType(ContentType.JSON)
+                .post();
 
             // Verify no changes when unauthorized
             assertEquals(initialCount, externalAPIRepository.count());
@@ -210,114 +224,147 @@ class ExternalAPIControllerTest {
     }
 
     @Nested
+    @TestHTTPEndpoint(ExternalAPIController.class)
+    @WithAdminUser
     class DeleteExternalAPI {
         @Test
-        void shouldDeleteExternalAPIWhenAuthorized() throws Exception {
+        void shouldDeleteExternalAPIWhenAuthorized() {
+            QuarkusTransaction.begin();
+
             // Create test data
-            de.iks.grocery_manager.server.model.mdi.ExternalAPI api = new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
+            de.iks.grocery_manager.server.model.mdi.ExternalAPI api =
+                new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
             api.setName("Test API");
             api.setProductMappings(new java.util.HashMap<>());
             api.setStoreMappings(new java.util.HashMap<>());
-            api = externalAPIRepository.save(api);
+            externalAPIRepository.persist(api);
 
             long initialCount = externalAPIRepository.count();
 
-            mockMvc
-                .perform(
-                    delete("/api/masterdata/interface/{uuid}", api.getUuid())
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isOk());
+            externalAPIRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .when()
+                .delete("{uuid}", api.getUuid());
 
             // Verify deletion
-            assertFalse(externalAPIRepository.findById(api.getUuid()).isPresent());
+            assertFalse(externalAPIRepository
+                            .findByIdOptional(api.getUuid())
+                            .isPresent());
             assertEquals(initialCount - 1, externalAPIRepository.count());
         }
 
         @Test
-        void shouldReturn403WhenDeletingExternalAPIWithoutAuthorization() throws Exception {
+        @WithTestUser
+        void shouldReturn403WhenDeletingExternalAPIWithoutAuthorization() {
+            QuarkusTransaction.begin();
+
             // Create test data
-            de.iks.grocery_manager.server.model.mdi.ExternalAPI api = new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
+            de.iks.grocery_manager.server.model.mdi.ExternalAPI api =
+                new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
             api.setName("Test API");
             api.setProductMappings(new java.util.HashMap<>());
             api.setStoreMappings(new java.util.HashMap<>());
-            api = externalAPIRepository.save(api);
+            externalAPIRepository.persist(api);
 
             long initialCount = externalAPIRepository.count();
 
-            mockMvc
-                .perform(
-                    delete("/api/masterdata/interface/{uuid}", api.getUuid())
-                        .with(user_jwt)
-                )
-                .andExpect(status().isForbidden());
+            externalAPIRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .when()
+                .delete("{uuid}", api.getUuid());
 
             // Verify no changes when unauthorized
             assertEquals(initialCount, externalAPIRepository.count());
-            assertTrue(externalAPIRepository.findById(api.getUuid()).isPresent());
+            assertTrue(externalAPIRepository
+                           .findByIdOptional(api.getUuid())
+                           .isPresent());
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(ExternalAPIController.class)
+    @WithAdminUser
     class SearchExternalAPIs {
         @Test
-        void shouldReturnAllExternalAPIsWhenSearching() throws Exception {
+        void shouldReturnAllExternalAPIsWhenSearching() {
+            QuarkusTransaction.begin();
+
             // Create test data
-            de.iks.grocery_manager.server.model.mdi.ExternalAPI api1 = new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
+            de.iks.grocery_manager.server.model.mdi.ExternalAPI api1 =
+                new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
             api1.setName("API 1");
             api1.setProductMappings(new java.util.HashMap<>());
             api1.setStoreMappings(new java.util.HashMap<>());
-            api1 = externalAPIRepository.save(api1);
+            externalAPIRepository.persist(api1);
 
-            de.iks.grocery_manager.server.model.mdi.ExternalAPI api2 = new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
+            de.iks.grocery_manager.server.model.mdi.ExternalAPI api2 =
+                new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
             api2.setName("API 2");
             api2.setProductMappings(new java.util.HashMap<>());
             api2.setStoreMappings(new java.util.HashMap<>());
-            api2 = externalAPIRepository.save(api2);
+            externalAPIRepository.persist(api2);
 
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface")
-                        .with(user_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.page.number").value(0))
-                .andExpect(jsonPath("$.page.size").value(10))
-                .andExpect(jsonPath("$.page.totalElements").value(2))
-                .andExpect(jsonPath("$.page.totalPages").value(1))
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[?(@.name == 'API 1')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'API 2')]").exists());
+            externalAPIRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("page.number", is(0))
+                .body("page.size", is(10))
+                .body("page.totalElements", is(2))
+                .body("page.totalPages", is(1))
+                .body("content.size()", is(2))
+                .body("content.find { it.uuid == '%s' }", withArgs(api1.getUuid()), notNullValue())
+                .body("content.find { it.uuid == '%s' }", withArgs(api2.getUuid()), notNullValue())
+                .when()
+                .get();
         }
 
         @Test
-        void shouldReturnFilteredExternalAPIsWhenSearchingByName() throws Exception {
+        void shouldReturnFilteredExternalAPIsWhenSearchingByName() {
+            QuarkusTransaction.begin();
+
             // Create test data
-            de.iks.grocery_manager.server.model.mdi.ExternalAPI api1 = new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
+            de.iks.grocery_manager.server.model.mdi.ExternalAPI api1 =
+                new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
             api1.setName("Test API 1");
             api1.setProductMappings(new java.util.HashMap<>());
             api1.setStoreMappings(new java.util.HashMap<>());
-            api1 = externalAPIRepository.save(api1);
+            externalAPIRepository.persist(api1);
 
-            de.iks.grocery_manager.server.model.mdi.ExternalAPI api2 = new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
+            de.iks.grocery_manager.server.model.mdi.ExternalAPI api2 =
+                new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
             api2.setName("Other API");
             api2.setProductMappings(new java.util.HashMap<>());
             api2.setStoreMappings(new java.util.HashMap<>());
-            api2 = externalAPIRepository.save(api2);
+            externalAPIRepository.persist(api2);
 
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface")
-                        .queryParam("name", "Test")
-                        .with(user_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.page.totalElements").value(1))
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[?(@.name == 'Test API 1')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'Other API')]").doesNotExist());
+            externalAPIRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("page.number", is(0))
+                .body("page.size", is(10))
+                .body("page.totalElements", is(1))
+                .body("page.totalPages", is(1))
+                .body("content.size()", is(1))
+                .body("content[0].uuid", isUuidOf(api1))
+                .given()
+                .queryParam("name", "Test")
+                .get();
         }
     }
 }

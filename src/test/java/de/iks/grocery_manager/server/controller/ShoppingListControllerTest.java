@@ -1,135 +1,150 @@
 package de.iks.grocery_manager.server.controller;
 
+import de.iks.grocery_manager.server.Sql;
 import de.iks.grocery_manager.server.Testdata;
+import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.jpa.ShoppingListRepository;
 import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
 import de.iks.grocery_manager.server.model.ShoppingList;
 import de.iks.grocery_manager.server.model.masterdata.Product;
-import org.junit.jupiter.api.BeforeEach;
+import io.quarkus.narayana.jta.QuarkusTransaction;
+import io.quarkus.test.common.http.TestHTTPEndpoint;
+import io.quarkus.test.common.http.TestHTTPResource;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
+import static de.iks.grocery_manager.server.UUIDMatcher.*;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureTestDatabase
-@Sql(Testdata.SCRIPT)
-@Transactional
+@QuarkusTest
+@TestHTTPEndpoint(ShoppingListController.class)
+@WithTestUser
+@Sql("/testdata.sql")
 class ShoppingListControllerTest {
 
-    @Autowired
-    private ShoppingListRepository shoppingListRepository;
+    @Inject
+    ShoppingListRepository shoppingListRepository;
 
-    @Autowired
-    private ProductRepository productRepository;
+    @Inject
+    ProductRepository productRepository;
 
-    private MockMvc mockMvc;
-
-    private final RequestPostProcessor user_jwt = jwt()
-        .jwt(j -> j.subject("testuser"));
-
-    @BeforeEach
-    void setup(WebApplicationContext ctx) {
-        mockMvc = MockMvcBuilders
-            .webAppContextSetup(ctx)
-            .apply(springSecurity())
-            .build();
-
-        // Clean up any existing shopping lists
-        shoppingListRepository.deleteAll();
-    }
+    @TestHTTPResource
+    String baseURI;
 
     @Nested
+    @TestHTTPEndpoint(ShoppingListController.class)
+    @WithTestUser
     class GetShoppingList {
         @Test
-        void shouldReturnShoppingListWhenFound() throws Exception {
+        void shouldReturnShoppingListWhenFound() {
+            QuarkusTransaction.begin();
             // Create fresh test data
-            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
-            Product product2 = productRepository.findById(Testdata.PRODUCT_2_UUID).orElseThrow();
-            
+            Product product1 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                .orElseThrow();
+            Product product2 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                .orElseThrow();
+
             ShoppingList testList = new ShoppingList();
             testList.setName("Test List 1");
-            testList.setOwner("sub: testuser");
+            testList.setOwner(WithTestUser.OWNER);
             testList.setRepeating(false);
             testList.setProducts(new HashMap<>(Map.of(
                 product1, new BigDecimal("2.5"),
                 product2, new BigDecimal("1.0")
             )));
             testList.setProductGroups(new HashMap<>());
-            testList = shoppingListRepository.save(testList);
-            
-            mockMvc
-                .perform(get("/api/shoppingLists/{uuid}", testList.getUuid()).with(user_jwt))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").value(testList.getUuid().toString()))
-                .andExpect(jsonPath("$.name").value("Test List 1"))
-                .andExpect(jsonPath("$.repeating").value(false))
-                .andExpect(jsonPath("$.products").isMap())
-                .andExpect(jsonPath("$.products." + Testdata.PRODUCT_1_UUID).value(2.5))
-                .andExpect(jsonPath("$.products." + Testdata.PRODUCT_2_UUID).value(1.0))
-                .andExpect(jsonPath("$.productGroups").isMap())
-                .andExpect(jsonPath("$.productGroups").isEmpty());
+            shoppingListRepository.persist(testList);
+
+            shoppingListRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("uuid", isUuidOf(testList))
+                .body("name", is("Test List 1"))
+                .body("repeating", is(false))
+                .body("products.size()", is(2))
+                .body("products.%s", withArgs(Testdata.PRODUCT_1_UUID), is(2.5f))
+                .body("products.%s", withArgs(Testdata.PRODUCT_2_UUID), is(1f))
+                .body("productGroups.size()", is(0))
+                .when()
+                .get("{uuid}", testList.getUuid());
         }
 
         @Test
-        void shouldReturn404WhenShoppingListNotFound() throws Exception {
-            mockMvc
-                .perform(get("/api/shoppingLists/{uuid}", Testdata.BAD_UUID).with(user_jwt))
-                .andExpect(status().isNotFound());
+        void shouldReturn404WhenShoppingListNotFound() {
+            expect()
+                .statusCode(404)
+                .when()
+                .get("{uuid}", Testdata.BAD_UUID);
         }
 
         @Test
-        void shouldReturn404WhenAccessingShoppingListOfDifferentUser() throws Exception {
+        void shouldReturn404WhenAccessingShoppingListOfDifferentUser() {
+            QuarkusTransaction.begin();
+
             // Create list for different user
-            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            Product product1 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                .orElseThrow();
             ShoppingList otherUserList = new ShoppingList();
             otherUserList.setName("Other User List");
             otherUserList.setOwner("sub: otheruser");
             otherUserList.setRepeating(false);
             otherUserList.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
             otherUserList.setProductGroups(new HashMap<>());
-            otherUserList = shoppingListRepository.save(otherUserList);
+            shoppingListRepository.persist(otherUserList);
 
-            mockMvc
-                .perform(get("/api/shoppingLists/{uuid}", otherUserList.getUuid()).with(user_jwt))
-                .andExpect(status().isNotFound());
+            shoppingListRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(404)
+                .when()
+                .get("{uuid}", otherUserList.getUuid());
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(ShoppingListController.class)
+    @WithTestUser
     class CreateShoppingList {
         @Test
-        void shouldCreateShoppingListWhenAuthorized() throws Exception {
+        void shouldCreateShoppingListWhenAuthorized() {
+            QuarkusTransaction.begin();
+
             long initialCount = shoppingListRepository.count();
-            
+
             // Create canary list first
-            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            Product product1 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                .orElseThrow();
             ShoppingList canaryList = new ShoppingList();
             canaryList.setName("Canary List");
-            canaryList.setOwner("sub: testuser");
+            canaryList.setOwner(WithTestUser.OWNER);
             canaryList.setRepeating(true);
             canaryList.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
             canaryList.setProductGroups(new HashMap<>());
-            canaryList = shoppingListRepository.save(canaryList);
+            shoppingListRepository.persist(canaryList);
+
+            shoppingListRepository.flush();
+
+            QuarkusTransaction.commit();
 
             String createJson = String.format(
                 """
@@ -144,71 +159,87 @@ class ShoppingListControllerTest {
                     }""", Testdata.PRODUCT_1_UUID, Testdata.PRODUCT_3_UUID
             );
 
-            mockMvc
-                .perform(post("/api/shoppingLists")
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(createJson))
-                .andExpect(status().isCreated())
-                .andExpect(header().exists("location"))
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.name").value("New List"))
-                .andExpect(jsonPath("$.repeating").value(false))
-                .andExpect(jsonPath("$.products").isMap())
-                .andExpect(jsonPath("$.products." + Testdata.PRODUCT_1_UUID).value(1.5))
-                .andExpect(jsonPath("$.products." + Testdata.PRODUCT_3_UUID).value(2.0))
-                .andExpect(jsonPath("$.productGroups").isMap())
-                .andExpect(jsonPath("$.productGroups").isEmpty());
+            expect()
+                .statusCode(201)
+                .contentType(ContentType.JSON)
+                .header(
+                    "location",
+                    matchesRegex(String.format("%s/%s", Pattern.quote(baseURI), Testdata.UUID_PATTERN.pattern()))
+                )
+                .body("name", is("New List"))
+                .body("repeating", is(false))
+                .body("products.size()", is(2))
+                .body("products.%s", withArgs(Testdata.PRODUCT_1_UUID), is(1.5f))
+                .body("products.%s", withArgs(Testdata.PRODUCT_3_UUID), is(2f))
+                .body("productGroups.size()", is(0))
+                .given()
+                .body(createJson)
+                .contentType(ContentType.JSON)
+                .when()
+                .post();
 
             // Verify creation
             assertEquals(initialCount + 2, shoppingListRepository.count());
 
             // Verify canary list unaffected
             assertTrue(shoppingListRepository
-                           .findById(canaryList.getUuid())
+                           .findByIdOptional(canaryList.getUuid())
                            .isPresent());
             ShoppingList unchangedCanary = shoppingListRepository
-                .findById(canaryList.getUuid())
+                .findByIdOptional(canaryList.getUuid())
                 .get();
             assertEquals("Canary List", unchangedCanary.getName());
             assertTrue(unchangedCanary.isRepeating());
-            assertEquals(1,
-                         unchangedCanary
-                             .getProducts()
-                             .size()
+            assertEquals(
+                1,
+                unchangedCanary
+                    .getProducts()
+                    .size()
             );
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(ShoppingListController.class)
+    @WithTestUser
     class UpdateShoppingList {
         @Test
-        void shouldUpdateShoppingListWhenAuthorized() throws Exception {
+        void shouldUpdateShoppingListWhenAuthorized() {
+            QuarkusTransaction.begin();
+
             long initialCount = shoppingListRepository.count();
-            
+
             // Create test list
-            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
-            Product product2 = productRepository.findById(Testdata.PRODUCT_2_UUID).orElseThrow();
+            Product product1 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                .orElseThrow();
+            Product product2 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                .orElseThrow();
 
             ShoppingList testList = new ShoppingList();
             testList.setName("Test List 1");
-            testList.setOwner("sub: testuser");
+            testList.setOwner(WithTestUser.OWNER);
             testList.setRepeating(false);
             testList.setProducts(new HashMap<>(Map.of(
                 product1, new BigDecimal("2.5"),
                 product2, new BigDecimal("1.0")
             )));
             testList.setProductGroups(new HashMap<>());
-            testList = shoppingListRepository.save(testList);
-            
+            shoppingListRepository.persist(testList);
+
             // Create canary list
             ShoppingList canaryList = new ShoppingList();
             canaryList.setName("Canary List");
-            canaryList.setOwner("sub: testuser");
+            canaryList.setOwner(WithTestUser.OWNER);
             canaryList.setRepeating(true);
             canaryList.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
             canaryList.setProductGroups(new HashMap<>());
-            canaryList = shoppingListRepository.save(canaryList);
+            shoppingListRepository.persist(canaryList);
+
+            shoppingListRepository.flush();
+
+            QuarkusTransaction.commit();
 
             String updateJson = String.format(
                 """
@@ -223,55 +254,63 @@ class ShoppingListControllerTest {
                     }""", Testdata.PRODUCT_3_UUID, Testdata.PRODUCT_4_UUID
             );
 
-            mockMvc
-                .perform(put("/api/shoppingLists/{uuid}", testList.getUuid())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(updateJson))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").value(testList.getUuid().toString()))
-                .andExpect(jsonPath("$.name").value("Updated List 1"))
-                .andExpect(jsonPath("$.repeating").value(true))
-                .andExpect(jsonPath("$.products").isMap())
-                .andExpect(jsonPath("$.products." + Testdata.PRODUCT_3_UUID).value(4.0))
-                .andExpect(jsonPath("$.products." + Testdata.PRODUCT_4_UUID).value(2.5))
-                .andExpect(jsonPath("$.productGroups").isMap())
-                .andExpect(jsonPath("$.productGroups").isEmpty());
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("uuid", isUuidOf(testList))
+                .body("name", is("Updated List 1"))
+                .body("repeating", is(true))
+                .body("products.size()", is(2))
+                .body("products.%s", withArgs(Testdata.PRODUCT_3_UUID), is(4f))
+                .body("products.%s", withArgs(Testdata.PRODUCT_4_UUID), is(2.5f))
+                .body("productGroups.size()", is(0))
+                .given()
+                .body(updateJson)
+                .contentType(ContentType.JSON)
+                .when()
+                .put("{uuid}", testList.getUuid());
 
             // Verify update and other lists unaffected
             assertEquals(initialCount + 2, shoppingListRepository.count());
             assertTrue(shoppingListRepository
-                           .findById(canaryList.getUuid())
+                           .findByIdOptional(canaryList.getUuid())
                            .isPresent());
 
             ShoppingList unchangedCanary = shoppingListRepository
-                .findById(canaryList.getUuid())
+                .findByIdOptional(canaryList.getUuid())
                 .get();
             assertEquals("Canary List", unchangedCanary.getName());
             assertTrue(unchangedCanary.isRepeating());
         }
-        
+
         @Test
-        void shouldReturn404WhenUpdatingAnotherUsersShoppingList() throws Exception {
+        void shouldReturn404WhenUpdatingAnotherUsersShoppingList() {
+            QuarkusTransaction.begin();
+
             // Create list for different user
-            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            Product product1 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                .orElseThrow();
             ShoppingList otherUserList = new ShoppingList();
             otherUserList.setName("Other User List");
             otherUserList.setOwner("sub: otheruser");
             otherUserList.setRepeating(false);
             otherUserList.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
             otherUserList.setProductGroups(new HashMap<>());
-            otherUserList = shoppingListRepository.save(otherUserList);
-            
+            shoppingListRepository.persist(otherUserList);
+
             // Create canary list
             ShoppingList canaryList = new ShoppingList();
             canaryList.setName("Canary List");
-            canaryList.setOwner("sub: testuser");
+            canaryList.setOwner(WithTestUser.OWNER);
             canaryList.setRepeating(true);
             canaryList.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
             canaryList.setProductGroups(new HashMap<>());
-            canaryList = shoppingListRepository.save(canaryList);
+            shoppingListRepository.persist(canaryList);
+
+            shoppingListRepository.flush();
+
+            QuarkusTransaction.commit();
 
             String updateJson = """
                 {
@@ -281,26 +320,27 @@ class ShoppingListControllerTest {
                   "productGroups": {}
                 }""";
 
-            mockMvc
-                .perform(put("/api/shoppingLists/{uuid}", otherUserList.getUuid())
-                             .with(user_jwt)
-                             .contentType(MediaType.APPLICATION_JSON)
-                             .content(updateJson))
-                .andExpect(status().isNotFound());
+            expect()
+                .statusCode(404)
+                .given()
+                .body(updateJson)
+                .contentType(ContentType.JSON)
+                .when()
+                .put("{uuid}", otherUserList.getUuid());
 
             // Verify other user's list unchanged
             ShoppingList unchangedOtherList = shoppingListRepository
-                .findById(otherUserList.getUuid())
+                .findByIdOptional(otherUserList.getUuid())
                 .orElseThrow();
             assertEquals("Other User List", unchangedOtherList.getName());
             assertFalse(unchangedOtherList.isRepeating());
-            
+
             // Verify canary list unaffected
             assertTrue(shoppingListRepository
-                           .findById(canaryList.getUuid())
+                           .findByIdOptional(canaryList.getUuid())
                            .isPresent());
             ShoppingList unchangedCanary = shoppingListRepository
-                .findById(canaryList.getUuid())
+                .findByIdOptional(canaryList.getUuid())
                 .get();
             assertEquals("Canary List", unchangedCanary.getName());
             assertTrue(unchangedCanary.isRepeating());
@@ -308,178 +348,222 @@ class ShoppingListControllerTest {
     }
 
     @Nested
+    @TestHTTPEndpoint(ShoppingListController.class)
+    @WithTestUser
     class DeleteShoppingList {
         @Test
-        void shouldDeleteShoppingListWhenAuthorized() throws Exception {
+        void shouldDeleteShoppingListWhenAuthorized() {
+            QuarkusTransaction.begin();
+
             // Create test list
-            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
-            Product product2 = productRepository.findById(Testdata.PRODUCT_2_UUID).orElseThrow();
-            
+            Product product1 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                .orElseThrow();
+            Product product2 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                .orElseThrow();
+
             ShoppingList testList = new ShoppingList();
             testList.setName("Test List 1");
-            testList.setOwner("sub: testuser");
+            testList.setOwner(WithTestUser.OWNER);
             testList.setRepeating(false);
             testList.setProducts(new HashMap<>(Map.of(
                 product1, new BigDecimal("2.5"),
                 product2, new BigDecimal("1.0")
             )));
             testList.setProductGroups(new HashMap<>());
-            testList = shoppingListRepository.save(testList);
-            
+            shoppingListRepository.persist(testList);
+
             // Create canary list
             ShoppingList canaryList = new ShoppingList();
             canaryList.setName("Canary List");
-            canaryList.setOwner("sub: testuser");
+            canaryList.setOwner(WithTestUser.OWNER);
             canaryList.setRepeating(true);
             canaryList.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
             canaryList.setProductGroups(new HashMap<>());
-            canaryList = shoppingListRepository.save(canaryList);
-            
+            shoppingListRepository.persist(canaryList);
+
             long initialCount = shoppingListRepository.count();
 
-            mockMvc
-                .perform(delete("/api/shoppingLists/{uuid}", testList.getUuid()).with(user_jwt))
-                .andExpect(status().isOk());
+            shoppingListRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .when()
+                .delete("{uuid}", testList.getUuid());
 
             // Verify deletion
             assertEquals(initialCount - 1, shoppingListRepository.count());
             assertFalse(shoppingListRepository
-                            .findById(testList.getUuid())
+                            .findByIdOptional(testList.getUuid())
                             .isPresent());
 
             // Verify canary list unaffected
             assertTrue(shoppingListRepository
-                           .findById(canaryList.getUuid())
+                           .findByIdOptional(canaryList.getUuid())
                            .isPresent());
         }
-        
+
         @Test
-        void shouldReturn404WhenDeletingAnotherUsersShoppingList() throws Exception {
+        void shouldReturn404WhenDeletingAnotherUsersShoppingList() {
+            QuarkusTransaction.begin();
+
             // Create list for different user
-            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            Product product1 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                .orElseThrow();
             ShoppingList otherUserList = new ShoppingList();
             otherUserList.setName("Other User List");
             otherUserList.setOwner("sub: otheruser");
             otherUserList.setRepeating(false);
             otherUserList.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
             otherUserList.setProductGroups(new HashMap<>());
-            otherUserList = shoppingListRepository.save(otherUserList);
-            
+            shoppingListRepository.persist(otherUserList);
+
             // Create canary list
             ShoppingList canaryList = new ShoppingList();
             canaryList.setName("Canary List");
-            canaryList.setOwner("sub: testuser");
+            canaryList.setOwner(WithTestUser.OWNER);
             canaryList.setRepeating(true);
             canaryList.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
             canaryList.setProductGroups(new HashMap<>());
-            canaryList = shoppingListRepository.save(canaryList);
-            
+            shoppingListRepository.persist(canaryList);
+
             long initialCount = shoppingListRepository.count();
 
-            mockMvc
-                .perform(delete("/api/shoppingLists/{uuid}", otherUserList.getUuid()).with(user_jwt))
-                .andExpect(status().isOk());
+            shoppingListRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .when()
+                .delete("{uuid}", otherUserList.getUuid());
 
             // Verify other user's list still exists and unchanged
             assertTrue(shoppingListRepository
-                           .findById(otherUserList.getUuid())
+                           .findByIdOptional(otherUserList.getUuid())
                            .isPresent());
             ShoppingList unchangedOtherList = shoppingListRepository
-                .findById(otherUserList.getUuid())
+                .findByIdOptional(otherUserList.getUuid())
                 .orElseThrow();
             assertEquals("Other User List", unchangedOtherList.getName());
             assertFalse(unchangedOtherList.isRepeating());
-            
+
             // Verify canary list unaffected
             assertTrue(shoppingListRepository
-                           .findById(canaryList.getUuid())
+                           .findByIdOptional(canaryList.getUuid())
                            .isPresent());
             assertEquals(initialCount, shoppingListRepository.count());
         }
 
         @Test
-        void shouldDeleteNonRepeatingListWhenIfNonRepeatingIsTrue() throws Exception {
+        void shouldDeleteNonRepeatingListWhenIfNonRepeatingIsTrue() {
+            QuarkusTransaction.begin();
+
             // Create non-repeating test list
-            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            Product product1 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                .orElseThrow();
             ShoppingList nonRepeatingList = new ShoppingList();
             nonRepeatingList.setName("Non-Repeating List");
-            nonRepeatingList.setOwner("sub: testuser");
+            nonRepeatingList.setOwner(WithTestUser.OWNER);
             nonRepeatingList.setRepeating(false);
             nonRepeatingList.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
             nonRepeatingList.setProductGroups(new HashMap<>());
-            nonRepeatingList = shoppingListRepository.save(nonRepeatingList);
-            
+            shoppingListRepository.persist(nonRepeatingList);
+
             // Create repeating canary list
             ShoppingList canaryList = new ShoppingList();
             canaryList.setName("Repeating Canary List");
-            canaryList.setOwner("sub: testuser");
+            canaryList.setOwner(WithTestUser.OWNER);
             canaryList.setRepeating(true);
             canaryList.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("2.0"))));
             canaryList.setProductGroups(new HashMap<>());
-            canaryList = shoppingListRepository.save(canaryList);
-            
+            shoppingListRepository.persist(canaryList);
+
             long initialCount = shoppingListRepository.count();
 
-            mockMvc
-                .perform(delete("/api/shoppingLists/{uuid}?ifNonRepeating=true", nonRepeatingList.getUuid()).with(user_jwt))
-                .andExpect(status().isOk());
+            shoppingListRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .given()
+                .queryParam("ifNonRepeating", true)
+                .when()
+                .delete("{uuid}", nonRepeatingList.getUuid());
 
             // Verify deletion of non-repeating list
             assertEquals(initialCount - 1, shoppingListRepository.count());
             assertFalse(shoppingListRepository
-                            .findById(nonRepeatingList.getUuid())
+                            .findByIdOptional(nonRepeatingList.getUuid())
                             .isPresent());
 
             // Verify repeating canary list unaffected
             assertTrue(shoppingListRepository
-                           .findById(canaryList.getUuid())
+                           .findByIdOptional(canaryList.getUuid())
                            .isPresent());
             ShoppingList unchangedCanary = shoppingListRepository
-                .findById(canaryList.getUuid())
+                .findByIdOptional(canaryList.getUuid())
                 .get();
             assertEquals("Repeating Canary List", unchangedCanary.getName());
             assertTrue(unchangedCanary.isRepeating());
         }
 
         @Test
-        void shouldNotDeleteRepeatingListWhenIfNonRepeatingIsTrue() throws Exception {
+        void shouldNotDeleteRepeatingListWhenIfNonRepeatingIsTrue() {
+            QuarkusTransaction.begin();
+
             // Create repeating test list
-            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
+            Product product1 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                .orElseThrow();
             ShoppingList repeatingList = new ShoppingList();
             repeatingList.setName("Repeating List");
-            repeatingList.setOwner("sub: testuser");
+            repeatingList.setOwner(WithTestUser.OWNER);
             repeatingList.setRepeating(true);
             repeatingList.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
             repeatingList.setProductGroups(new HashMap<>());
-            repeatingList = shoppingListRepository.save(repeatingList);
-            
+            shoppingListRepository.persist(repeatingList);
+
             // Create non-repeating canary list
             ShoppingList canaryList = new ShoppingList();
             canaryList.setName("Non-Repeating Canary List");
-            canaryList.setOwner("sub: testuser");
+            canaryList.setOwner(WithTestUser.OWNER);
             canaryList.setRepeating(false);
             canaryList.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("2.0"))));
             canaryList.setProductGroups(new HashMap<>());
-            canaryList = shoppingListRepository.save(canaryList);
-            
+            shoppingListRepository.persist(canaryList);
+
             long initialCount = shoppingListRepository.count();
 
-            mockMvc
-                .perform(delete("/api/shoppingLists/{uuid}?ifNonRepeating=true", repeatingList.getUuid()).with(user_jwt))
-                .andExpect(status().isOk());
+            shoppingListRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .given()
+                .queryParam("ifNonRepeating", true)
+                .when()
+                .delete("{uuid}", repeatingList.getUuid());
 
             // Verify repeating list was NOT deleted
             assertEquals(initialCount, shoppingListRepository.count());
             assertTrue(shoppingListRepository
-                           .findById(repeatingList.getUuid())
+                           .findByIdOptional(repeatingList.getUuid())
                            .isPresent());
 
             // Verify canary list unaffected
             assertTrue(shoppingListRepository
-                           .findById(canaryList.getUuid())
+                           .findByIdOptional(canaryList.getUuid())
                            .isPresent());
             ShoppingList unchangedCanary = shoppingListRepository
-                .findById(canaryList.getUuid())
+                .findByIdOptional(canaryList.getUuid())
                 .get();
             assertEquals("Non-Repeating Canary List", unchangedCanary.getName());
             assertFalse(unchangedCanary.isRepeating());
@@ -487,157 +571,207 @@ class ShoppingListControllerTest {
     }
 
     @Nested
+    @TestHTTPEndpoint(ShoppingListController.class)
+    @WithTestUser
     class SearchShoppingLists {
         @Test
-        void shouldReturnAllShoppingListsWhenSearchingWithEmptyName() throws Exception {
+        void shouldReturnAllShoppingListsWhenSearchingWithEmptyName() {
+            QuarkusTransaction.begin();
+
             // Create test lists
-            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
-            Product product2 = productRepository.findById(Testdata.PRODUCT_2_UUID).orElseThrow();
-            Product product3 = productRepository.findById(Testdata.PRODUCT_3_UUID).orElseThrow();
+            Product product1 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                .orElseThrow();
+            Product product2 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                .orElseThrow();
+            Product product3 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_3_UUID)
+                .orElseThrow();
 
             ShoppingList testList1 = new ShoppingList();
             testList1.setName("Test List 1");
-            testList1.setOwner("sub: testuser");
+            testList1.setOwner(WithTestUser.OWNER);
             testList1.setRepeating(false);
             testList1.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("2.5"))));
             testList1.setProductGroups(new HashMap<>());
-            shoppingListRepository.save(testList1);
-            
+            shoppingListRepository.persist(testList1);
+
             ShoppingList testList2 = new ShoppingList();
             testList2.setName("Test List 2");
-            testList2.setOwner("sub: testuser");
+            testList2.setOwner(WithTestUser.OWNER);
             testList2.setRepeating(true);
             testList2.setProducts(new HashMap<>(Map.of(product2, new BigDecimal("1.0"))));
             testList2.setProductGroups(new HashMap<>());
-            shoppingListRepository.save(testList2);
-            
+            shoppingListRepository.persist(testList2);
+
             ShoppingList canaryList = new ShoppingList();
             canaryList.setName("Canary List");
-            canaryList.setOwner("sub: testuser");
+            canaryList.setOwner(WithTestUser.OWNER);
             canaryList.setRepeating(false);
             canaryList.setProducts(new HashMap<>(Map.of(product3, new BigDecimal("1.5"))));
             canaryList.setProductGroups(new HashMap<>());
-            shoppingListRepository.save(canaryList);
-            
-            mockMvc
-                .perform(get("/api/shoppingLists").with(user_jwt))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.page.number").value(0))
-                .andExpect(jsonPath("$.page.size").value(10))
-                .andExpect(jsonPath("$.page.totalElements").value(3))
-                .andExpect(jsonPath("$.page.totalPages").value(1))
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[?(@.name == 'Test List 1')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'Test List 2')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'Canary List')]").exists());
-            
+            shoppingListRepository.persist(canaryList);
+
+            shoppingListRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("page.number", is(0))
+                .body("page.size", is(10))
+                .body("page.totalElements", is(3))
+                .body("page.totalPages", is(1))
+                .body("content.find { it.name == 'Test List 1' }.uuid", isUuidOf(testList1))
+                .body("content.find { it.name == 'Test List 2' }.uuid", isUuidOf(testList2))
+                .body("content.find { it.name == 'Canary List' }.uuid", isUuidOf(canaryList))
+                .when()
+                .get();
+
             // Verify canary list unaffected
             assertTrue(shoppingListRepository
-                           .findById(canaryList.getUuid())
+                           .findByIdOptional(canaryList.getUuid())
                            .isPresent());
             ShoppingList unchangedCanary = shoppingListRepository
-                .findById(canaryList.getUuid())
+                .findByIdOptional(canaryList.getUuid())
                 .get();
             assertEquals("Canary List", unchangedCanary.getName());
             assertFalse(unchangedCanary.isRepeating());
-            assertEquals(1, unchangedCanary.getProducts().size());
+            assertEquals(
+                1,
+                unchangedCanary
+                    .getProducts()
+                    .size()
+            );
         }
 
         @Test
-        void shouldReturnFilteredShoppingListsWhenSearchingWithName() throws Exception {
+        void shouldReturnFilteredShoppingListsWhenSearchingWithName() {
+            QuarkusTransaction.begin();
+
             // Create test lists
-            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
-            Product product2 = productRepository.findById(Testdata.PRODUCT_2_UUID).orElseThrow();
-            Product product3 = productRepository.findById(Testdata.PRODUCT_3_UUID).orElseThrow();
-            
+            Product product1 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                .orElseThrow();
+            Product product2 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                .orElseThrow();
+            Product product3 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_3_UUID)
+                .orElseThrow();
+
             ShoppingList testList1 = new ShoppingList();
             testList1.setName("Test List 1");
-            testList1.setOwner("sub: testuser");
+            testList1.setOwner(WithTestUser.OWNER);
             testList1.setRepeating(false);
             testList1.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("2.5"))));
             testList1.setProductGroups(new HashMap<>());
-            shoppingListRepository.save(testList1);
-            
+            shoppingListRepository.persist(testList1);
+
             ShoppingList testList2 = new ShoppingList();
             testList2.setName("Test List 2");
-            testList2.setOwner("sub: testuser");
+            testList2.setOwner(WithTestUser.OWNER);
             testList2.setRepeating(true);
             testList2.setProducts(new HashMap<>(Map.of(product2, new BigDecimal("1.0"))));
             testList2.setProductGroups(new HashMap<>());
-            shoppingListRepository.save(testList2);
-            
+            shoppingListRepository.persist(testList2);
+
             ShoppingList canaryList = new ShoppingList();
             canaryList.setName("Canary List");
-            canaryList.setOwner("sub: testuser");
+            canaryList.setOwner(WithTestUser.OWNER);
             canaryList.setRepeating(false);
             canaryList.setProducts(new HashMap<>(Map.of(product3, new BigDecimal("1.5"))));
             canaryList.setProductGroups(new HashMap<>());
-            shoppingListRepository.save(canaryList);
-            
-            mockMvc
-                .perform(get("/api/shoppingLists?name=Test").with(user_jwt))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.page.totalElements").value(2))
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[?(@.name == 'Test List 1')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'Test List 2')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'Canary List')]").doesNotExist());
-            
+            shoppingListRepository.persist(canaryList);
+
+            shoppingListRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("page.number", is(0))
+                .body("page.size", is(10))
+                .body("page.totalElements", is(2))
+                .body("page.totalPages", is(1))
+                .body("content.find { it.name == 'Test List 1' }.uuid", isUuidOf(testList1))
+                .body("content.find { it.name == 'Test List 2' }.uuid", isUuidOf(testList2))
+                .body("content.find { it.name == 'Canary List' }", nullValue())
+                .given()
+                .queryParam("name", "Test")
+                .when()
+                .get();
+
             // Verify canary list unaffected
             assertTrue(shoppingListRepository
-                           .findById(canaryList.getUuid())
+                           .findByIdOptional(canaryList.getUuid())
                            .isPresent());
             ShoppingList unchangedCanary = shoppingListRepository
-                .findById(canaryList.getUuid())
+                .findByIdOptional(canaryList.getUuid())
                 .get();
             assertEquals("Canary List", unchangedCanary.getName());
             assertFalse(unchangedCanary.isRepeating());
-            assertEquals(1, unchangedCanary.getProducts().size());
+            assertEquals(
+                1,
+                unchangedCanary
+                    .getProducts()
+                    .size()
+            );
         }
 
         @Test
-        void shouldReturnEmptyResultWhenSearchingWithNonExistentName() throws Exception {
-            mockMvc
-                .perform(get("/api/shoppingLists?name=NonExistent").with(user_jwt))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.page.totalElements").value(0))
-                .andExpect(jsonPath("$.content").isEmpty());
+        void shouldReturnEmptyResultWhenSearchingWithNonExistentName() {
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("page.totalElements", is(0))
+                .body("content.size()", is(0))
+                .given()
+                .queryParam("name", "NonExistent")
+                .when()
+                .get();
         }
 
         @Test
-        void shouldReturnOnlyUserOwnsShoppingLists() throws Exception {
+        void shouldReturnOnlyUserOwnsShoppingLists() {
+            QuarkusTransaction.begin();
+
             // Create test lists for current user
-            Product product1 = productRepository.findById(Testdata.PRODUCT_1_UUID).orElseThrow();
-            Product product2 = productRepository.findById(Testdata.PRODUCT_2_UUID).orElseThrow();
-            
+            Product product1 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                .orElseThrow();
+            Product product2 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                .orElseThrow();
+
             ShoppingList testList1 = new ShoppingList();
             testList1.setName("Test List 1");
-            testList1.setOwner("sub: testuser");
+            testList1.setOwner(WithTestUser.OWNER);
             testList1.setRepeating(false);
             testList1.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("2.5"))));
             testList1.setProductGroups(new HashMap<>());
-            shoppingListRepository.save(testList1);
-            
+            shoppingListRepository.persist(testList1);
+
             ShoppingList testList2 = new ShoppingList();
             testList2.setName("Test List 2");
-            testList2.setOwner("sub: testuser");
+            testList2.setOwner(WithTestUser.OWNER);
             testList2.setRepeating(true);
             testList2.setProducts(new HashMap<>(Map.of(product2, new BigDecimal("1.0"))));
             testList2.setProductGroups(new HashMap<>());
-            shoppingListRepository.save(testList2);
-            
+            shoppingListRepository.persist(testList2);
+
             // Create canary list
             ShoppingList canaryList = new ShoppingList();
             canaryList.setName("Canary List");
-            canaryList.setOwner("sub: testuser");
+            canaryList.setOwner(WithTestUser.OWNER);
             canaryList.setRepeating(false);
             canaryList.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
             canaryList.setProductGroups(new HashMap<>());
-            shoppingListRepository.save(canaryList);
-            
+            shoppingListRepository.persist(canaryList);
+
             // Create list for different user
             ShoppingList otherUserList = new ShoppingList();
             otherUserList.setName("Other User Test List");
@@ -645,28 +779,40 @@ class ShoppingListControllerTest {
             otherUserList.setRepeating(false);
             otherUserList.setProducts(new HashMap<>());
             otherUserList.setProductGroups(new HashMap<>());
-            shoppingListRepository.save(otherUserList);
+            shoppingListRepository.persist(otherUserList);
 
-            mockMvc
-                .perform(get("/api/shoppingLists?name=Test").with(user_jwt))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.page.totalElements").value(2))
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[?(@.name == 'Test List 1')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'Test List 2')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'Other User Test List')]").doesNotExist());
-            
+            shoppingListRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("page.totalElements", is(2))
+                .body("content.size()", is(2))
+                .body("content.find { it.name == 'Test List 1' }.uuid", isUuidOf(testList1))
+                .body("content.find { it.name == 'Test List 2' }.uuid", isUuidOf(testList2))
+                .body("content.find { it.name == 'Other User Test List' }", nullValue())
+                .given()
+                .queryParam("name", "Test")
+                .when()
+                .get();
+
             // Verify canary list unaffected
             assertTrue(shoppingListRepository
-                           .findById(canaryList.getUuid())
+                           .findByIdOptional(canaryList.getUuid())
                            .isPresent());
             ShoppingList unchangedCanary = shoppingListRepository
-                .findById(canaryList.getUuid())
+                .findByIdOptional(canaryList.getUuid())
                 .get();
             assertEquals("Canary List", unchangedCanary.getName());
             assertFalse(unchangedCanary.isRepeating());
-            assertEquals(1, unchangedCanary.getProducts().size());
+            assertEquals(
+                1,
+                unchangedCanary
+                    .getProducts()
+                    .size()
+            );
         }
     }
 }

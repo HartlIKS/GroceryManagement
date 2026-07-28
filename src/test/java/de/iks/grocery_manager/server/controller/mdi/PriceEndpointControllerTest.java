@@ -1,7 +1,9 @@
 package de.iks.grocery_manager.server.controller.mdi;
 
+import de.iks.grocery_manager.server.Sql;
 import de.iks.grocery_manager.server.Testdata;
-import de.iks.grocery_manager.server.config.AuthorityConfiguration;
+import de.iks.grocery_manager.server.WithTestUser;
+import de.iks.grocery_manager.server.controller.masterdata.WithAdminUser;
 import de.iks.grocery_manager.server.jpa.mdi.ExternalAPIRepository;
 import de.iks.grocery_manager.server.jpa.mdi.PriceEndpointRepository;
 import de.iks.grocery_manager.server.model.mdi.ExternalAPI;
@@ -10,144 +12,62 @@ import de.iks.grocery_manager.server.model.mdi.ResponseType;
 import de.iks.grocery_manager.server.model.mdi.handling.Parameter;
 import de.iks.grocery_manager.server.model.mdi.handling.ProductHandlingType;
 import de.iks.grocery_manager.server.model.mdi.handling.StoreHandlingType;
-import org.junit.jupiter.api.BeforeEach;
+import io.quarkus.narayana.jta.QuarkusTransaction;
+import io.quarkus.test.common.http.TestHTTPEndpoint;
+import io.quarkus.test.common.http.TestHTTPResource;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
-import static org.hamcrest.Matchers.matchesRegex;
+import static de.iks.grocery_manager.server.UUIDMatcher.isUuidOf;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureTestDatabase
-@Sql(Testdata.SCRIPT)
-@Transactional
+@QuarkusTest
+@TestHTTPEndpoint(PriceEndpointController.class)
+@WithAdminUser
+@Sql("/testdata.sql")
 class PriceEndpointControllerTest {
-    private static final String PRICE_ENDPOINT_1_CREATE_JSON = """
-        {
-          "name": "Price Endpoint 1",
-          "baseUrl": "https://api.example.com",
-          "pageSize": {
-            "header": "Page-Size",
-            "queryParameter": "pageSize"
-          },
-          "page": {
-            "header": "Page",
-            "queryParameter": "page"
-          },
-          "itemCount": {
-            "header": "Item-Count",
-            "queryParameter": "itemCount"
-          },
-          "basePath": "/prices",
-          "productHandling": {
-            "type": "parameter",
-            "parameter": {
-              "header": "Product-Header",
-              "queryParameter": "productId"
-            }
-          },
-          "storeHandling": {
-            "type": "parameter",
-            "parameter": {
-              "header": "Store-Header",
-              "queryParameter": "storeId"
-            }
-          },
-          "pricePath": "$.price",
-          "timeFormat": "yyyy-MM-dd",
-          "validFromPath": "$.validFrom",
-          "validUntilPath": "$.validUntil",
-          "responseType": "JSON"
-        }""";
-    private static final String PRICE_ENDPOINT_1_UPDATE_JSON = """
-        {
-          "name": "Price Endpoint 1 Updated",
-          "baseUrl": "https://api.example.com",
-          "pageSize": {
-            "header": "Page-Size",
-            "queryParameter": "pageSize"
-          },
-          "page": {
-            "header": "Page",
-            "queryParameter": "page"
-          },
-          "itemCount": {
-            "header": "Item-Count",
-            "queryParameter": "itemCount"
-          },
-          "basePath": "/prices",
-          "productHandling": {
-            "type": "path",
-            "path": "/product"
-          },
-          "storeHandling": {
-            "type": "oneForAll"
-          },
-          "pricePath": "$.price",
-          "timeFormat": "yyyy-MM-dd",
-          "validFromPath": "$.validFrom",
-          "validUntilPath": "$.validUntil",
-          "responseType": "JSON"
-        }""";
 
-    private MockMvc mockMvc;
+    @Inject
+    PriceEndpointRepository priceEndpointRepository;
 
-    @Autowired
-    private PriceEndpointRepository priceEndpointRepository;
+    @Inject
+    ExternalAPIRepository externalAPIRepository;
 
-    @Autowired
-    private ExternalAPIRepository externalAPIRepository;
+    @TestHTTPResource
+    String baseURI;
 
-    @Autowired
-    private AuthorityConfiguration authorityConfiguration;
-
-    private RequestPostProcessor admin_jwt;
-    private final RequestPostProcessor user_jwt = jwt();
-
-    private ExternalAPI parentApi;
-
-    @BeforeEach
-    void setup(WebApplicationContext ctx) {
-        admin_jwt = jwt()
-            .authorities(new SimpleGrantedAuthority(authorityConfiguration.getMasterdataAuthority()));
-        mockMvc = MockMvcBuilders
-            .webAppContextSetup(ctx)
-            .apply(springSecurity())
-            .build();
-
-        externalAPIRepository.deleteAll();
-        priceEndpointRepository.deleteAll();
-
-        // Create parent ExternalAPI
-        parentApi = new ExternalAPI();
-        parentApi.setName("Test API");
-        parentApi.setProductMappings(new HashMap<>());
-        parentApi.setStoreMappings(new HashMap<>());
-        parentApi = externalAPIRepository.save(parentApi);
+    String baseURI(ExternalAPI externalAPI) {
+        return baseURI.replace(
+            "{parentUuid}",
+            externalAPI
+                .getUuid()
+                .toString()
+        );
     }
 
     @Nested
+    @TestHTTPEndpoint(PriceEndpointController.class)
+    @WithAdminUser
     class GetPriceEndpoint {
         @Test
-        void shouldReturnPriceEndpointWhenFound() throws Exception {
+        void shouldReturnPriceEndpointWhenFound() {
+            QuarkusTransaction.begin();
+
             // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             PriceEndpoint endpoint = new PriceEndpoint();
             endpoint.setApi(parentApi);
             endpoint.setName("Test Price Endpoint");
@@ -168,35 +88,89 @@ class PriceEndpointControllerTest {
             storeParam.setQueryParameter("storeId");
             endpoint.setStoreParameters(storeParam);
             endpoint.setResponseType(ResponseType.JSON);
-            endpoint = priceEndpointRepository.save(endpoint);
+            priceEndpointRepository.persist(endpoint);
 
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{parentUuid}/endpoint/price/{uuid}", parentApi.getUuid(), endpoint.getUuid())
-                        .with(user_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").value(endpoint.getUuid().toString()))
-                .andExpect(jsonPath("$.name").value("Test Price Endpoint"));
+            priceEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("uuid", isUuidOf(endpoint))
+                .body("name", is("Test Price Endpoint"))
+                .when()
+                .get("{uuid}", parentApi.getUuid(), endpoint.getUuid());
         }
 
         @Test
-        void shouldReturn404WhenPriceEndpointNotFound() throws Exception {
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{parentUuid}/endpoint/price/{uuid}", parentApi.getUuid(), Testdata.BAD_UUID)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isNotFound());
+        void shouldReturn404WhenPriceEndpointNotFound() {
+            QuarkusTransaction.begin();
+
+            // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
+            externalAPIRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(404)
+                .when()
+                .get("{uuid}", parentApi.getUuid(), Testdata.BAD_UUID);
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(PriceEndpointController.class)
+    @WithAdminUser
     class UpdatePriceEndpoint {
+        private static final String PRICE_ENDPOINT_1_UPDATE_JSON = """
+            {
+              "name": "Price Endpoint 1 Updated",
+              "baseUrl": "https://api.example.com",
+              "pageSize": {
+                "header": "Page-Size",
+                "queryParameter": "pageSize"
+              },
+              "page": {
+                "header": "Page",
+                "queryParameter": "page"
+              },
+              "itemCount": {
+                "header": "Item-Count",
+                "queryParameter": "itemCount"
+              },
+              "basePath": "/prices",
+              "productHandling": {
+                "type": "path",
+                "path": "/product"
+              },
+              "storeHandling": {
+                "type": "oneForAll"
+              },
+              "pricePath": "$.price",
+              "timeFormat": "yyyy-MM-dd",
+              "validFromPath": "$.validFrom",
+              "validUntilPath": "$.validUntil",
+              "responseType": "JSON"
+            }""";
+
         @Test
-        void shouldUpdatePriceEndpointWhenAuthorizedAndFound() throws Exception {
+        void shouldUpdatePriceEndpointWhenAuthorizedAndFound() {
+            QuarkusTransaction.begin();
+
             // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             PriceEndpoint endpoint = new PriceEndpoint();
             endpoint.setApi(parentApi);
             endpoint.setName("Test Price Endpoint");
@@ -217,48 +191,78 @@ class PriceEndpointControllerTest {
             storeParam.setQueryParameter("storeId");
             endpoint.setStoreParameters(storeParam);
             endpoint.setResponseType(ResponseType.JSON);
-            endpoint = priceEndpointRepository.save(endpoint);
+            priceEndpointRepository.persist(endpoint);
 
             long initialCount = priceEndpointRepository.count();
 
-            mockMvc
-                .perform(
-                    put("/api/masterdata/interface/{parentUuid}/endpoint/price/{uuid}", parentApi.getUuid(), endpoint.getUuid())
-                        .content(PRICE_ENDPOINT_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.uuid").value(endpoint.getUuid().toString()))
-                .andExpect(jsonPath("$.name").value("Price Endpoint 1 Updated"));
+            priceEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("uuid", isUuidOf(endpoint))
+                .body("name", is("Price Endpoint 1 Updated"))
+                .given()
+                .body(PRICE_ENDPOINT_1_UPDATE_JSON)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", parentApi.getUuid(), endpoint.getUuid());
 
             // Verify update was applied
-            assertTrue(priceEndpointRepository.findById(endpoint.getUuid()).isPresent());
-            assertEquals("Price Endpoint 1 Updated", priceEndpointRepository.findById(endpoint.getUuid()).get().getName());
+            assertTrue(priceEndpointRepository
+                           .findByIdOptional(endpoint.getUuid())
+                           .isPresent());
+            assertEquals(
+                "Price Endpoint 1 Updated",
+                priceEndpointRepository
+                    .findByIdOptional(endpoint.getUuid())
+                    .get()
+                    .getName()
+            );
             assertEquals(initialCount, priceEndpointRepository.count());
         }
 
         @Test
-        void shouldReturn404WhenUpdatingNonExistentPriceEndpoint() throws Exception {
+        void shouldReturn404WhenUpdatingNonExistentPriceEndpoint() {
+            QuarkusTransaction.begin();
+
+            // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             long initialCount = priceEndpointRepository.count();
 
-            mockMvc
-                .perform(
-                    put("/api/masterdata/interface/{parentUuid}/endpoint/price/{uuid}", parentApi.getUuid(), Testdata.BAD_UUID)
-                        .content(PRICE_ENDPOINT_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isNotFound());
+            externalAPIRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(404)
+                .given()
+                .body(PRICE_ENDPOINT_1_UPDATE_JSON)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", parentApi.getUuid(), Testdata.BAD_UUID);
 
             // Verify no changes
             assertEquals(initialCount, priceEndpointRepository.count());
         }
 
         @Test
-        void shouldReturn403WhenUpdatingPriceEndpointWithoutAuthorization() throws Exception {
+        @WithTestUser
+        void shouldReturn403WhenUpdatingPriceEndpointWithoutAuthorization() {
+            QuarkusTransaction.begin();
+
             // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             PriceEndpoint endpoint = new PriceEndpoint();
             endpoint.setApi(parentApi);
             endpoint.setName("Test Price Endpoint");
@@ -279,59 +283,137 @@ class PriceEndpointControllerTest {
             storeParam.setQueryParameter("storeId");
             endpoint.setStoreParameters(storeParam);
             endpoint.setResponseType(ResponseType.JSON);
-            endpoint = priceEndpointRepository.save(endpoint);
+            priceEndpointRepository.persist(endpoint);
 
             long initialCount = priceEndpointRepository.count();
 
-            mockMvc
-                .perform(
-                    put("/api/masterdata/interface/{parentUuid}/endpoint/price/{uuid}", parentApi.getUuid(), endpoint.getUuid())
-                        .content(PRICE_ENDPOINT_1_UPDATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isForbidden());
+            priceEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .body(PRICE_ENDPOINT_1_UPDATE_JSON)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", parentApi.getUuid(), endpoint.getUuid());
 
             // Verify no changes when unauthorized
             assertEquals(initialCount, priceEndpointRepository.count());
-            assertEquals("Test Price Endpoint", priceEndpointRepository.findById(endpoint.getUuid()).get().getName());
+            assertEquals(
+                "Test Price Endpoint",
+                priceEndpointRepository
+                    .findByIdOptional(endpoint.getUuid())
+                    .orElseThrow()
+                    .getName()
+            );
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(PriceEndpointController.class)
+    @WithAdminUser
     class CreatePriceEndpoint {
+        private static final String PRICE_ENDPOINT_1_CREATE_JSON = """
+            {
+              "name": "Price Endpoint 1",
+              "baseUrl": "https://api.example.com",
+              "pageSize": {
+                "header": "Page-Size",
+                "queryParameter": "pageSize"
+              },
+              "page": {
+                "header": "Page",
+                "queryParameter": "page"
+              },
+              "itemCount": {
+                "header": "Item-Count",
+                "queryParameter": "itemCount"
+              },
+              "basePath": "/prices",
+              "productHandling": {
+                "type": "parameter",
+                "parameter": {
+                  "header": "Product-Header",
+                  "queryParameter": "productId"
+                }
+              },
+              "storeHandling": {
+                "type": "parameter",
+                "parameter": {
+                  "header": "Store-Header",
+                  "queryParameter": "storeId"
+                }
+              },
+              "pricePath": "$.price",
+              "timeFormat": "yyyy-MM-dd",
+              "validFromPath": "$.validFrom",
+              "validUntilPath": "$.validUntil",
+              "responseType": "JSON"
+            }""";
+
         @Test
-        void shouldCreatePriceEndpointWhenAuthorized() throws Exception {
+        void shouldCreatePriceEndpointWhenAuthorized() {
+            QuarkusTransaction.begin();
+
+            // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             long initialCount = priceEndpointRepository.count();
 
-            mockMvc
-                .perform(
-                    post("/api/masterdata/interface/{parentUuid}/endpoint/price", parentApi.getUuid())
-                        .content(PRICE_ENDPOINT_1_CREATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(admin_jwt)
+            externalAPIRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(201)
+                .header(
+                    "location",
+                    matchesRegex(String.format(
+                        "%s/%s",
+                        Pattern.quote(baseURI(parentApi)),
+                        Testdata.UUID_PATTERN.pattern()
+                    ))
                 )
-                .andExpect(status().isCreated())
-                .andExpect(header().string("location", matchesRegex("http://localhost/api/masterdata/interface/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}/endpoint/price/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")))
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.name").value("Price Endpoint 1"));
+                .contentType(ContentType.JSON)
+                .body("name", is("Price Endpoint 1"))
+                .given()
+                .body(PRICE_ENDPOINT_1_CREATE_JSON)
+                .contentType(ContentType.JSON)
+                .post("", parentApi.getUuid());
 
             // Verify creation
             assertEquals(initialCount + 1, priceEndpointRepository.count());
         }
 
         @Test
-        void shouldReturn403WhenCreatingPriceEndpointWithoutAuthorization() throws Exception {
+        @WithTestUser
+        void shouldReturn403WhenCreatingPriceEndpointWithoutAuthorization() {
+            QuarkusTransaction.begin();
+
+            // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             long initialCount = priceEndpointRepository.count();
 
-            mockMvc
-                .perform(
-                    post("/api/masterdata/interface/{parentUuid}/endpoint/price", parentApi.getUuid())
-                        .content(PRICE_ENDPOINT_1_CREATE_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user_jwt)
-                )
-                .andExpect(status().isForbidden());
+            externalAPIRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .given()
+                .body(PRICE_ENDPOINT_1_CREATE_JSON)
+                .contentType(ContentType.JSON)
+                .post("", parentApi.getUuid());
 
             // Verify no changes when unauthorized
             assertEquals(initialCount, priceEndpointRepository.count());
@@ -339,10 +421,20 @@ class PriceEndpointControllerTest {
     }
 
     @Nested
+    @TestHTTPEndpoint(PriceEndpointController.class)
+    @WithAdminUser
     class DeletePriceEndpoint {
         @Test
-        void shouldDeletePriceEndpointWhenAuthorized() throws Exception {
+        void shouldDeletePriceEndpointWhenAuthorized() {
+            QuarkusTransaction.begin();
+
             // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             PriceEndpoint endpoint = new PriceEndpoint();
             endpoint.setApi(parentApi);
             endpoint.setName("Test Price Endpoint");
@@ -363,25 +455,38 @@ class PriceEndpointControllerTest {
             storeParam.setQueryParameter("storeId");
             endpoint.setStoreParameters(storeParam);
             endpoint.setResponseType(ResponseType.JSON);
-            endpoint = priceEndpointRepository.save(endpoint);
+            priceEndpointRepository.persist(endpoint);
 
             long initialCount = priceEndpointRepository.count();
 
-            mockMvc
-                .perform(
-                    delete("/api/masterdata/interface/{parentUuid}/endpoint/price/{uuid}", parentApi.getUuid(), endpoint.getUuid())
-                        .with(admin_jwt)
-                )
-                .andExpect(status().isOk());
+            priceEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .when()
+                .delete("{uuid}", parentApi.getUuid(), endpoint.getUuid());
 
             // Verify deletion
-            assertFalse(priceEndpointRepository.findById(endpoint.getUuid()).isPresent());
+            assertFalse(priceEndpointRepository
+                            .findByIdOptional(endpoint.getUuid())
+                            .isPresent());
             assertEquals(initialCount - 1, priceEndpointRepository.count());
         }
 
         @Test
-        void shouldReturn403WhenDeletingPriceEndpointWithoutAuthorization() throws Exception {
+        @WithTestUser
+        void shouldReturn403WhenDeletingPriceEndpointWithoutAuthorization() {
+            QuarkusTransaction.begin();
+
             // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             PriceEndpoint endpoint = new PriceEndpoint();
             endpoint.setApi(parentApi);
             endpoint.setName("Test Price Endpoint");
@@ -402,28 +507,42 @@ class PriceEndpointControllerTest {
             storeParam.setQueryParameter("storeId");
             endpoint.setStoreParameters(storeParam);
             endpoint.setResponseType(ResponseType.JSON);
-            endpoint = priceEndpointRepository.save(endpoint);
+            priceEndpointRepository.persist(endpoint);
 
             long initialCount = priceEndpointRepository.count();
 
-            mockMvc
-                .perform(
-                    delete("/api/masterdata/interface/{parentUuid}/endpoint/price/{uuid}", parentApi.getUuid(), endpoint.getUuid())
-                        .with(user_jwt)
-                )
-                .andExpect(status().isForbidden());
+            priceEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(403)
+                .when()
+                .delete("{uuid}", parentApi.getUuid(), endpoint.getUuid());
 
             // Verify no changes when unauthorized
             assertEquals(initialCount, priceEndpointRepository.count());
-            assertTrue(priceEndpointRepository.findById(endpoint.getUuid()).isPresent());
+            assertTrue(priceEndpointRepository
+                           .findByIdOptional(endpoint.getUuid())
+                           .isPresent());
         }
     }
 
     @Nested
+    @TestHTTPEndpoint(PriceEndpointController.class)
+    @WithAdminUser
     class SearchPriceEndpoints {
         @Test
-        void shouldReturnAllPriceEndpointsWhenSearching() throws Exception {
+        void shouldReturnAllPriceEndpointsWhenSearching() {
+            QuarkusTransaction.begin();
+
             // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             PriceEndpoint endpoint1 = new PriceEndpoint();
             endpoint1.setApi(parentApi);
             endpoint1.setName("Price Endpoint 1");
@@ -444,7 +563,7 @@ class PriceEndpointControllerTest {
             storeParam1.setQueryParameter("storeId");
             endpoint1.setStoreParameters(storeParam1);
             endpoint1.setResponseType(ResponseType.JSON);
-            endpoint1 = priceEndpointRepository.save(endpoint1);
+            priceEndpointRepository.persist(endpoint1);
 
             PriceEndpoint endpoint2 = new PriceEndpoint();
             endpoint2.setApi(parentApi);
@@ -466,27 +585,37 @@ class PriceEndpointControllerTest {
             storeParam2.setQueryParameter("storeId");
             endpoint2.setStoreParameters(storeParam2);
             endpoint2.setResponseType(ResponseType.JSON);
-            endpoint2 = priceEndpointRepository.save(endpoint2);
+            priceEndpointRepository.persist(endpoint2);
 
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{parentUuid}/endpoint/price", parentApi.getUuid())
-                        .with(user_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.page.number").value(0))
-                .andExpect(jsonPath("$.page.size").value(10))
-                .andExpect(jsonPath("$.page.totalElements").value(2))
-                .andExpect(jsonPath("$.page.totalPages").value(1))
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[?(@.name == 'Price Endpoint 1')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'Price Endpoint 2')]").exists());
+            priceEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("page.number", is(0))
+                .body("page.size", is(10))
+                .body("page.totalPages", is(1))
+                .body("page.totalElements", is(2))
+                .body("content.size()", is(2))
+                .body("content.find { it.uuid == '%s' }", withArgs(endpoint1.getUuid()), notNullValue())
+                .body("content.find { it.uuid == '%s' }", withArgs(endpoint2.getUuid()), notNullValue())
+                .when()
+                .get("", parentApi.getUuid());
         }
 
         @Test
-        void shouldReturnFilteredPriceEndpointsWhenSearchingByName() throws Exception {
+        void shouldReturnFilteredPriceEndpointsWhenSearchingByName() {
+            QuarkusTransaction.begin();
+
             // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
             PriceEndpoint endpoint1 = new PriceEndpoint();
             endpoint1.setApi(parentApi);
             endpoint1.setName("Test Price Endpoint");
@@ -507,7 +636,7 @@ class PriceEndpointControllerTest {
             storeParam1.setQueryParameter("storeId");
             endpoint1.setStoreParameters(storeParam1);
             endpoint1.setResponseType(ResponseType.JSON);
-            endpoint1 = priceEndpointRepository.save(endpoint1);
+            priceEndpointRepository.persist(endpoint1);
 
             PriceEndpoint endpoint2 = new PriceEndpoint();
             endpoint2.setApi(parentApi);
@@ -529,20 +658,25 @@ class PriceEndpointControllerTest {
             storeParam2.setQueryParameter("storeId");
             endpoint2.setStoreParameters(storeParam2);
             endpoint2.setResponseType(ResponseType.JSON);
-            endpoint2 = priceEndpointRepository.save(endpoint2);
+            priceEndpointRepository.persist(endpoint2);
 
-            mockMvc
-                .perform(
-                    get("/api/masterdata/interface/{parentUuid}/endpoint/price", parentApi.getUuid())
-                        .queryParam("name", "Test")
-                        .with(user_jwt)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.page.totalElements").value(1))
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[?(@.name == 'Test Price Endpoint')]").exists())
-                .andExpect(jsonPath("$.content[?(@.name == 'Other Endpoint')]").doesNotExist());
+            priceEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("page.number", is(0))
+                .body("page.size", is(10))
+                .body("page.totalPages", is(1))
+                .body("page.totalElements", is(1))
+                .body("content.size()", is(1))
+                .body("content.find { it.uuid == '%s' }", withArgs(endpoint1.getUuid()), notNullValue())
+                .body("content.find { it.uuid == '%s' }", withArgs(endpoint2.getUuid()), nullValue())
+                .given()
+                .queryParam("name", "Test")
+                .get("", parentApi.getUuid());
         }
     }
 }

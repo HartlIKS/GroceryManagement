@@ -1,11 +1,10 @@
 package de.iks.grocery_manager.server;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-@AutoConfigureTestDatabase
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
+
+@QuarkusTest
 class GroceryManagementApplicationTests {
 
     @Test
