@@ -1,6 +1,3 @@
-spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: "b"
+quarkus:
+  http:
+    test-port: 8080

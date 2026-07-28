@@ -1,22 +1,19 @@
 package de.iks.grocery_manager.server.config;
 
-import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import io.smallrye.config.ConfigMapping;
 
+import java.util.Optional;
 import java.util.stream.Stream;
 
-@Data
-@Configuration
-@ConfigurationProperties("spring.security.oauth2.resourceserver.scope")
-public class AuthorityConfiguration {
-    private String masterdata;
+@ConfigMapping(prefix = "spring.security.oauth2.resourceserver.scope")
+public interface AuthorityConfiguration {
+    Optional<String> masterdata();
 
-    public String getMasterdataAuthority() {
-        return "SCOPE_"+masterdata;
+    default String getMasterdataAuthority() {
+        return "SCOPE_"+masterdata().orElse("MASTERDATA");
     }
 
-    public Stream<String> streamAllScopes() {
-        return Stream.of(masterdata);
+    default Stream<String> streamAllScopes() {
+        return masterdata().stream();
     }
 }

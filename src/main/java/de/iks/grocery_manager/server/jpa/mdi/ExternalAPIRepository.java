@@ -1,25 +1,49 @@
 package de.iks.grocery_manager.server.jpa.mdi;
 
-import de.iks.grocery_manager.server.mapping.CrudRepositoryMapper;
+import de.iks.grocery_manager.server.jpa.BaseRepository;
 import de.iks.grocery_manager.server.model.mdi.ExternalAPI;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import io.quarkus.hibernate.orm.panache.common.ProjectedFieldName;
+import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.enterprise.context.ApplicationScoped;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface ExternalAPIRepository extends JpaRepository<ExternalAPI, UUID>, CrudRepositoryMapper.ExternalAPIs {
-    @Query("SELECT key(m).uuid FROM ExternalAPI as api JOIN api.productMappings as m WHERE api.uuid = :table and value(m) = :remoteId")
-    Optional<UUID> translateInboundProducts(UUID table, String remoteId);
-    @Query("SELECT value(m) FROM ExternalAPI as api JOIN api.productMappings as m WHERE api.uuid = :table and key(m).uuid = :localId")
-    Optional<String> translateOutboundProducts(UUID table, UUID localId);
+@ApplicationScoped
+public class ExternalAPIRepository implements BaseRepository<ExternalAPI> {
+    @RegisterForReflection
+    private record Key(
+        @ProjectedFieldName("key(m).uuid") UUID uuid
+    ) {}
+    @RegisterForReflection
+    private record Value(
+        @ProjectedFieldName("value(m)") String value
+    ) {}
 
-    @Query("SELECT key(m).uuid FROM ExternalAPI as api JOIN api.storeMappings as m WHERE api.uuid = :table and value(m) = :remoteId")
-    Optional<UUID> translateInboundStores(UUID table, String remoteId);
-    @Query("SELECT value(m) FROM ExternalAPI as api JOIN api.storeMappings as m WHERE api.uuid = :table and key(m).uuid = :localId")
-    Optional<String> translateOutboundStores(UUID table, UUID localId);
+    public Optional<UUID> translateInboundProducts(UUID table, String remoteId) {
+        return find(
+            "FROM ExternalAPI as api JOIN api.productMappings as m WHERE api.uuid = :table and value(m) = :remoteId",
+            Map.of("table", table, "remoteId", remoteId)
+        ).project(Key.class).firstResultOptional().map(Key::uuid);
+    }
+    public Optional<String> translateOutboundProducts(UUID table, UUID localId) {
+        return find(
+            "FROM ExternalAPI as api JOIN api.productMappings as m WHERE api.uuid = :table and key(m).uuid = :localId",
+            Map.of("table", table, "localId", localId)
+        ).project(Value.class).firstResultOptional().map(Value::value);
+    }
 
-    Page<ExternalAPI> findAllByNameContaining(String name, Pageable pageable);
+    public Optional<UUID> translateInboundStores(UUID table, String remoteId) {
+        return find(
+            "FROM ExternalAPI as api JOIN api.storeMappings as m WHERE api.uuid = :table and value(m) = :remoteId",
+            Map.of("table", table, "remoteId", remoteId)
+        ).project(Key.class).firstResultOptional().map(Key::uuid);
+    }
+    public Optional<String> translateOutboundStores(UUID table, UUID localId) {
+        return find(
+            "FROM ExternalAPI as api JOIN api.storeMappings as m WHERE api.uuid = :table and key(m).uuid = :localId",
+            Map.of("table", table, "localId", localId)
+        ).project(Value.class).firstResultOptional().map(Value::value);
+    }
 }

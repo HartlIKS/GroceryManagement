@@ -1,64 +1,65 @@
 package de.iks.grocery_manager.server.controller;
 
 import de.iks.grocery_manager.server.dto.CreateShoppingListDTO;
-import de.iks.grocery_manager.server.mapping.DTOMapper;
-import de.iks.grocery_manager.server.mapping.EntityMapper.Owned;
+import de.iks.grocery_manager.server.dto.PageDTO;
 import de.iks.grocery_manager.server.dto.ShoppingListDTO;
 import de.iks.grocery_manager.server.jpa.ShoppingListRepository;
+import de.iks.grocery_manager.server.mapping.DTOMapper;
+import de.iks.grocery_manager.server.mapping.EntityMapper.Owned;
 import de.iks.grocery_manager.server.model.ShoppingList;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.UriInfo;
+import org.jboss.resteasy.reactive.RestResponse;
 
+import java.util.List;
 import java.util.UUID;
 
-import static de.iks.grocery_manager.server.util.OwnerUtils.getOwner;
-
-@RestController
-@RequestMapping(
-    path = "/api/shoppingLists",
-    produces = MediaType.APPLICATION_JSON_VALUE
-)
+@Path("/api/shoppingLists")
 @Transactional
-public class ShoppingListController extends OwnerTrackingCRUDController.Standard<ShoppingList, ShoppingListDTO, CreateShoppingListDTO, ShoppingListRepository> {
+public class ShoppingListController
+    extends OwnerTrackingCRUDController.Standard<ShoppingList, ShoppingListDTO, CreateShoppingListDTO,
+    ShoppingListRepository> {
     private final DTOMapper dtoMapper;
+    private final UriInfo uriInfo;
+
     public ShoppingListController(
         ShoppingListRepository repository,
-        DTOMapper dtoMapper
+        DTOMapper dtoMapper,
+        UriInfo uriInfo
     ) {
-        super(repository, new Owned<>(dtoMapper::map, dtoMapper::create, dtoMapper::update), "api", "shoppingLists", "{uuid}");
+        super(repository, new Owned<>(dtoMapper::map, dtoMapper::create, dtoMapper::update));
         this.dtoMapper = dtoMapper;
+        this.uriInfo = uriInfo;
     }
 
-    @DeleteMapping(
-        path = "/{uuid}",
-        params = "ifNonRepeating"
-    )
+    @Override
     public void delete(
-        @PathVariable UUID uuid,
-        @RequestParam boolean ifNonRepeating,
-        @AuthenticationPrincipal Object principal
+        UUID uuid
     ) {
-        if(ifNonRepeating) repository.deleteByUuidAndOwnerAndRepeatingIsFalse(uuid, getOwner(principal));
-        else repository.deleteByUuidAndOwner(uuid, getOwner(principal));
+        if(uriInfo.getQueryParameters().getOrDefault("ifNonRepeating", List.of()).stream().anyMatch(Boolean::parseBoolean)) {
+            repository.deleteByUuidAndOwnerAndNotRepeating(uuid, userInfo.getOwner());
+        } else {
+            repository.deleteByUuidAndOwner(uuid, userInfo.getOwner());
+        }
     }
 
-    @GetMapping
-    @Transactional(readOnly = true)
-    public ResponseEntity<Page<ShoppingListDTO>> search(
-        @RequestParam(defaultValue = "") String name,
-        @PageableDefault Pageable pageable,
-        @AuthenticationPrincipal Object principal
+    @GET
+    public RestResponse<PageDTO<ShoppingListDTO>> search(
+        @QueryParam("name") @DefaultValue("") String name,
+        @QueryParam("page") @DefaultValue("0") int page,
+        @QueryParam("size") @DefaultValue("10") int size
     ) {
-        return ResponseEntity.ok(
-            repository
-                .findAllByOwnerAndNameContainingIgnoreCase(getOwner(principal), name, pageable)
-                .map(dtoMapper::map)
+        return RestResponse.ok(
+            dtoMapper.map(
+                repository
+                    .findAllByOwnerAndNameContainingIgnoreCase(userInfo.getOwner(), name)
+                    .page(page, size),
+                dtoMapper::map
+            )
         );
     }
 }

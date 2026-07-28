@@ -1,25 +1,14 @@
 package de.iks.grocery_manager.server.jpa.masterdata;
 
-import de.iks.grocery_manager.server.mapping.CrudRepositoryMapper;
+import de.iks.grocery_manager.server.jpa.BaseRepository;
 import de.iks.grocery_manager.server.model.masterdata.PriceListing;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
+import io.quarkus.hibernate.orm.panache.PanacheQuery;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import java.time.Instant;
 import java.util.Collection;
 import java.util.UUID;
-import java.util.stream.Stream;
 
-public interface PriceRepository extends JpaRepository<PriceListing, UUID>, CrudRepositoryMapper.Prices {
-    Page<PriceListing> findByProduct_Uuid(UUID productUuid, Pageable pageable);
-    Page<PriceListing> findByStore_Uuid(UUID storeUuid, Pageable pageable);
-    Page<PriceListing> findByProduct_UuidAndStore_Uuid(UUID productUuid, UUID storeUuid, Pageable pageable);
-
-    Stream<PriceListing> findAllByValidFromLessThanEqualAndValidToGreaterThanEqualAndStore_UuidInAndProduct_UuidIn(
-        Instant validFromBefore,
-        Instant validToAfter,
-        Collection<? extends UUID> stores,
-        Collection<? extends UUID> products
-    );
+@ApplicationScoped
+public class PriceRepository implements BaseRepository<PriceListing> {
 }

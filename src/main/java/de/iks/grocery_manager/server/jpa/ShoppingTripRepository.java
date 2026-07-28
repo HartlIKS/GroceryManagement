@@ -1,12 +1,18 @@
 package de.iks.grocery_manager.server.jpa;
 
-import de.iks.grocery_manager.server.mapping.CrudRepositoryMapper;
 import de.iks.grocery_manager.server.model.ShoppingTrip;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import io.quarkus.hibernate.orm.panache.PanacheQuery;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import java.time.Instant;
+import java.util.Map;
 
-public interface ShoppingTripRepository extends OwnerTrackingJpaRepository<ShoppingTrip>, CrudRepositoryMapper.ShoppingTrips {
-    Page<ShoppingTrip> findByOwnerAndTimeBetween(String owner, Instant timeAfter, Instant timeBefore, Pageable pageable);
+@ApplicationScoped
+public class ShoppingTripRepository implements OwnerTrackingJpaRepository<ShoppingTrip> {
+    public PanacheQuery<ShoppingTrip> findByOwnerAndTimeBetween(String owner, Instant from, Instant to) {
+        return find(
+            "owner = :owner AND time BETWEEN :from AND :to",
+            Map.of("owner", owner, "from", from, "to", to)
+        );
+    }
 }

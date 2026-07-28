@@ -1,11 +1,18 @@
-spring:
+quarkus:
   application:
     name: GroceryManager
-  web:
-    resources:
-      static-locations: file:public
-  security:
-    oauth2:
-      resourceserver:
-        scope:
-          masterdata: "MASTERDATA"
+  http:
+    static-dir:
+      enabled: true
+      endpoint: /
+      path: ./frontend/dist/frontend/browser/
+  oidc:
+    auth-server-url: "http://localhost:8081"
+    client-id: "GroceryManager"
+  liquibase:
+    migrate-at-start: true
+    change-log: db/changelog/db.changelog-master.yaml
+  hibernate-orm:
+    physical-naming-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
+    schema-management:
+      strategy: validate

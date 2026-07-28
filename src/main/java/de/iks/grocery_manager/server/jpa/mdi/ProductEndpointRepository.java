@@ -1,6 +1,8 @@
 package de.iks.grocery_manager.server.jpa.mdi;
 
 import de.iks.grocery_manager.server.model.mdi.ProductEndpoint;
+import jakarta.enterprise.context.ApplicationScoped;
 
-public interface ProductEndpointRepository extends EndpointRepository<ProductEndpoint> {
+@ApplicationScoped
+public class ProductEndpointRepository implements EndpointRepository<ProductEndpoint> {
 }

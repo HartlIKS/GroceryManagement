@@ -1,103 +1,113 @@
 package de.iks.grocery_manager.server.controller.share;
 
-import de.iks.grocery_manager.server.config.ShareFilter.SharePrincipal;
-import de.iks.grocery_manager.server.mapping.DTOMapper;
 import de.iks.grocery_manager.server.dto.share.CreateJoinLinkDTO;
 import de.iks.grocery_manager.server.dto.share.JoinLinkDTO;
 import de.iks.grocery_manager.server.jpa.share.JoinLinkRepository;
+import de.iks.grocery_manager.server.mapping.DTOMapper;
 import de.iks.grocery_manager.server.model.share.JoinLink;
 import de.iks.grocery_manager.server.model.share.Permissions;
-import de.iks.grocery_manager.server.model.share.Share;
+import de.iks.grocery_manager.server.security.UserInfo;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.UriInfo;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.jboss.resteasy.reactive.RestResponse;
+import org.jboss.resteasy.reactive.RestResponse.Status;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
 @RequiredArgsConstructor
-@RestController
-@RequestMapping("/api/share/current/links")
+@Path("/api/share/current/links")
 @Transactional
 public class JoinLinkController {
     private final JoinLinkRepository links;
     private final DTOMapper dtoMapper;
+    private final UserInfo userInfo;
+    private final UriInfo uriInfo;
 
-    private static Predicate<? super JoinLink> sameShare(Share share) {
-        return l -> l.getShare().getUuid().equals(share.getUuid());
+    private static Predicate<? super JoinLink> sameShare(UUID shareId) {
+        return l -> l
+            .getShare()
+            .getUuid()
+            .equals(shareId);
     }
 
-    @GetMapping
-    @Transactional(readOnly = true)
-    public List<JoinLinkDTO> get(@AuthenticationPrincipal SharePrincipal principal) {
-        return dtoMapper.map(principal
-                                 .share()
-                                 .getLinks());
+    @GET
+    public List<JoinLinkDTO> get() {
+        return dtoMapper.map(links.findAllByShare(userInfo.getShareId()));
     }
 
-    @GetMapping("/{uuid}")
-    @Transactional(readOnly = true)
-    public ResponseEntity<JoinLinkDTO> get(@PathVariable UUID uuid, @AuthenticationPrincipal SharePrincipal principal) {
-        return ResponseEntity.of(
-            links
-                .findById(uuid)
-                .filter(sameShare(principal.share()))
-                .map(dtoMapper::map)
-        );
-    }
-
-    @PostMapping
-    public ResponseEntity<JoinLinkDTO> create(
-        @RequestBody CreateJoinLinkDTO dto,
-        @AuthenticationPrincipal SharePrincipal principal,
-        UriComponentsBuilder uriBuilder
+    @GET
+    @Path("{uuid}")
+    public RestResponse<JoinLinkDTO> get(
+        @PathParam("uuid") UUID uuid
     ) {
-        JoinLinkDTO created = dtoMapper.map(links.saveAndFlush(dtoMapper.create(dto, principal.share())));
-        return ResponseEntity
-            .created(
-                uriBuilder
-                    .pathSegment("api", "share", "current", "links", "{uuid}")
-                    .build(created.uuid())
+        return links
+            .findByIdOptional(uuid)
+            .filter(sameShare(userInfo.getShareId()))
+            .map(dtoMapper::map)
+            .map(RestResponse::ok)
+            .orElseGet(RestResponse::notFound);
+    }
+
+    @POST
+    public RestResponse<JoinLinkDTO> create(
+        CreateJoinLinkDTO dto
+    ) {
+        JoinLinkDTO created = dtoMapper.map(links.saveAndFlush(dtoMapper.create(dto, userInfo.getShareId())));
+        return RestResponse.ResponseBuilder
+            .create(Status.CREATED, created)
+            .location(
+                uriInfo
+                    .getAbsolutePathBuilder()
+                    .path(created.uuid().toString())
+                    .build()
             )
-            .body(created);
+            .build();
     }
 
-    @PutMapping("/{uuid}")
-    public ResponseEntity<JoinLinkDTO> create(
-        @PathVariable UUID uuid,
-        @RequestBody CreateJoinLinkDTO dto,
-        @AuthenticationPrincipal SharePrincipal principal
+    @PUT
+    @Path("{uuid}")
+    public RestResponse<JoinLinkDTO> create(
+        @PathParam("uuid") UUID uuid,
+        CreateJoinLinkDTO dto
     ) {
-        return ResponseEntity.of(
-            links
-                .findById(uuid)
-                .filter(sameShare(principal.share()))
-                .map(l -> {
-                    dtoMapper.update(l, dto);
-                    return l;
-                })
-                .map(links::saveAndFlush)
-                .map(dtoMapper::map)
-        );
+        return links
+            .findByIdOptional(uuid)
+            .filter(sameShare(userInfo.getShareId()))
+            .map(l -> {
+                dtoMapper.update(l, dto);
+                return l;
+            })
+            .map(links::saveAndFlush)
+            .map(dtoMapper::map)
+            .map(RestResponse::ok)
+            .orElseGet(RestResponse::notFound);
     }
 
-    @DeleteMapping("/{uuid}")
-    public ResponseEntity<Void> delete(
-        @PathVariable UUID uuid,
-        @AuthenticationPrincipal SharePrincipal principal
+    @DELETE
+    @Path("{uuid}")
+    public RestResponse<?> delete(
+        @PathParam("uuid") UUID uuid
     ) {
-        List<JoinLink> links = principal
-            .share()
-            .getLinks();
-        if(links.stream().filter(j -> !j.getUuid().equals(uuid)).map(JoinLink::getPermissions).noneMatch(Permissions.ADMIN::equals)) {
-            return ResponseEntity.badRequest().build();
+        List<JoinLink> links = this.links.findAllByShare(userInfo.getShareId());
+        if(links
+            .stream()
+            .filter(j -> !j
+                .getUuid()
+                .equals(uuid))
+            .map(JoinLink::getPermissions)
+            .noneMatch(Permissions.ADMIN::equals)) {
+            return RestResponse.status(Status.BAD_REQUEST);
         }
-        if(!links.removeIf(l -> l.getUuid().equals(uuid))) return ResponseEntity.notFound().build();
+        if(!links.removeIf(l -> l
+            .getUuid()
+            .equals(uuid))) {
+            return RestResponse.notFound();
+        }
         this.links.deleteById(uuid);
-        return ResponseEntity.ok().build();
+        return RestResponse.ok();
     }
 }

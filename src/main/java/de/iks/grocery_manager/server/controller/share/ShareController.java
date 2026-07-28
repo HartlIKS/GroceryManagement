@@ -1,86 +1,84 @@
 package de.iks.grocery_manager.server.controller.share;
 
-import de.iks.grocery_manager.server.mapping.DTOMapper;
 import de.iks.grocery_manager.server.dto.share.CreateShareDTO;
 import de.iks.grocery_manager.server.dto.share.ShareDTO;
 import de.iks.grocery_manager.server.jpa.share.JoinLinkRepository;
 import de.iks.grocery_manager.server.jpa.share.ShareRepository;
+import de.iks.grocery_manager.server.mapping.DTOMapper;
 import de.iks.grocery_manager.server.model.share.JoinLink;
 import de.iks.grocery_manager.server.model.share.Permissions;
 import de.iks.grocery_manager.server.model.share.Share;
+import de.iks.grocery_manager.server.security.UserInfo;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.UriInfo;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.jboss.resteasy.reactive.RestResponse;
+import org.jboss.resteasy.reactive.RestResponse.Status;
 
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static de.iks.grocery_manager.server.util.OwnerUtils.getUser;
-
 @RequiredArgsConstructor
-@RestController
-@RequestMapping("/api/share")
+@Path("/api/share")
 @Transactional
 public class ShareController {
     private final ShareRepository shares;
     private final JoinLinkRepository links;
     private final DTOMapper dtoMapper;
+    private final UserInfo userInfo;
+    private final UriInfo uriInfo;
 
-    @PostMapping
-    public ResponseEntity<ShareDTO> create(
-        @RequestBody CreateShareDTO createShareDTO,
-        @AuthenticationPrincipal Object principal,
-        UriComponentsBuilder uriBuilder
+    @POST
+    public RestResponse<ShareDTO> create(
+        CreateShareDTO createShareDTO
     ) {
-        final String user = getUser(principal);
         Share ret = dtoMapper.create(createShareDTO);
         JoinLink ownerLink = new JoinLink();
         ownerLink.setShare(ret);
         ownerLink.setName("Owner");
-        ownerLink.setUsers(Set.of(user));
+        ownerLink.setUsers(Set.of(userInfo.getUser()));
         ownerLink.setPermissions(Permissions.ADMIN);
-        ret.getLinks().add(ownerLink);
-        ret = shares.save(ret);
-        return ResponseEntity
-            .created(
-                uriBuilder
-                    .pathSegment("api", "share", "current")
+        ret
+            .getLinks()
+            .add(ownerLink);
+        ret = shares.saveAndFlush(ret);
+        return RestResponse.ResponseBuilder
+            .create(Status.CREATED, dtoMapper.map(ret, userInfo.getUser()))
+            .location(
+                uriInfo
+                    .getAbsolutePathBuilder()
+                    .path("current")
                     .queryParam("share", ret.getUuid())
                     .build()
-                    .toUri()
             )
-            .body(dtoMapper.map(ret, user));
+            .build();
     }
 
-    @PostMapping("/join/{uuid}")
-    public ResponseEntity<ShareDTO> join(
-        @PathVariable UUID uuid,
-        @AuthenticationPrincipal Object principal
+    @POST
+    @Path("join/{uuid}")
+    public RestResponse<ShareDTO> join(
+        @PathParam("uuid") UUID uuid
     ) {
-        final String user = getUser(principal);
-        return ResponseEntity.of(
-            links
-                .findById(uuid)
-                .map(j -> j.use(user))
-                .map(links::saveAndFlush)
-                .map(JoinLink::getShare)
-                .map(s -> dtoMapper.map(s, user))
-        );
+        return links
+            .findByIdOptional(uuid)
+            .map(j -> j.use(userInfo.getUser()))
+            .map(links::saveAndFlush)
+            .map(JoinLink::getShare)
+            .map(s -> dtoMapper.map(s, userInfo.getUser()))
+            .map(RestResponse::ok)
+            .orElseGet(RestResponse::notFound);
     }
 
-    @GetMapping
-    @Transactional(readOnly = true)
-    public List<ShareDTO> getAll(
-        @AuthenticationPrincipal Object principal
-    ) {
-        final String user = getUser(principal);
+    @GET
+    public List<ShareDTO> getAll() {
         return shares
-            .findByUser(user)
-            .map(s -> dtoMapper.map(s, user))
+            .findByUser(userInfo.getUser())
+            .map(s -> dtoMapper.map(s, userInfo.getUser()))
             .toList();
     }
 }

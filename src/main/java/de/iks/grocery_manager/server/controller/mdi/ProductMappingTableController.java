@@ -6,15 +6,11 @@ import de.iks.grocery_manager.server.mapping.DTOMapper;
 import de.iks.grocery_manager.server.mapping.MappingHandler;
 import de.iks.grocery_manager.server.model.masterdata.Product;
 import de.iks.grocery_manager.server.model.mdi.ExternalAPI;
-import org.springframework.http.MediaType;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.Path;
+import jakarta.transaction.Transactional;
 
-@RestController
-@RequestMapping(
-    path = "/api/masterdata/interface/{uuid}/mapping/product", produces = MediaType.APPLICATION_JSON_VALUE
-)
+@Path("/api/masterdata/interface/{uuid}/mapping/product")
 @Transactional
 public class ProductMappingTableController extends MappingTableController<ExternalAPI, ExternalAPIRepository, Product, ProductRepository> {
     public ProductMappingTableController(

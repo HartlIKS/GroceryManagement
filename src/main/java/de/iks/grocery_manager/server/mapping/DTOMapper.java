@@ -20,6 +20,7 @@ import de.iks.grocery_manager.server.model.mdi.*;
 import de.iks.grocery_manager.server.model.mdi.handling.*;
 import de.iks.grocery_manager.server.model.share.JoinLink;
 import de.iks.grocery_manager.server.model.share.Share;
+import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import org.mapstruct.*;
 
 import java.math.BigDecimal;
@@ -27,28 +28,39 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 
-import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.MappingConstants.ComponentModel.CDI;
+import static org.mapstruct.MappingConstants.ComponentModel.JAKARTA_CDI;
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 import static org.mapstruct.SubclassExhaustiveStrategy.RUNTIME_EXCEPTION;
 
 @Mapper(
-    componentModel = SPRING,
+    componentModel = JAKARTA_CDI,
     nullValuePropertyMappingStrategy = IGNORE,
     subclassExhaustiveStrategy = RUNTIME_EXCEPTION,
     uses = {
-        CrudRepositoryMapper.Prices.class,
-        CrudRepositoryMapper.Products.class,
-        CrudRepositoryMapper.Stores.class,
-
-        CrudRepositoryMapper.ProductGroups.class,
-        CrudRepositoryMapper.ShoppingLists.class,
-        CrudRepositoryMapper.ShoppingTrips.class,
-
-        CrudRepositoryMapper.ExternalAPIs.class,
+        CrudRepositoryMapper.class,
     }
 )
 public interface DTOMapper {
+    static <E, D> PageDTO<D> mapPage(PanacheQuery<E> query, Function<? super E, ? extends D> mapper) {
+        PageInfoDTO info = new PageInfoDTO(
+            query.page().size,
+            query.page().index,
+            query.count(),
+            query.pageCount()
+        );
+        return new PageDTO<>(
+            query.stream().map(mapper).toList(),
+            info
+        );
+    }
+
+    default <E, D> PageDTO<D> map(PanacheQuery<E> query, @Context Function<? super E, ? extends D> mapper) {
+        return mapPage(query, mapper);
+    }
+
     default UUID toUUID(HasUUID entity) {
         return entity.getUuid();
     }
@@ -160,6 +172,12 @@ public interface DTOMapper {
     @Mapping(target = "name", source = "linkDTO.name")
     @Mapping(target = "use", ignore = true)
     JoinLink create(CreateJoinLinkDTO linkDTO, Share share);
+
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "users", expression = "java(new java.util.HashSet<>())")
+    @Mapping(target = "name", source = "linkDTO.name")
+    @Mapping(target = "use", ignore = true)
+    JoinLink create(CreateJoinLinkDTO linkDTO, UUID share);
 
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "share", ignore = true)
