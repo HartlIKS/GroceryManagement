@@ -1,14 +1,9 @@
 package de.iks.grocery_manager.server;
 
-import de.iks.grocery_manager.server.config.AuthorityConfiguration;
-import io.quarkus.test.Mock;
-
-import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-@Mock
-public class Testdata implements AuthorityConfiguration {
+public class Testdata {
     public static final Pattern UUID_PATTERN = Pattern.compile("[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}");
 
     public static final UUID BAD_UUID = UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff");
@@ -27,14 +22,4 @@ public class Testdata implements AuthorityConfiguration {
     public static final UUID PRICE_2_UUID = UUID.fromString("40000000-0000-0000-0000-000000000001");
 
     public static final String AUTHORITY_MASTERDATA = "MASTERDATA";
-
-    @Override
-    public Optional<String> masterdata() {
-        return Optional.of(AUTHORITY_MASTERDATA);
-    }
-
-    @Override
-    public String getMasterdataAuthority() {
-        return AUTHORITY_MASTERDATA;
-    }
 }

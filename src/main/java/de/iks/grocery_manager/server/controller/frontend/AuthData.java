@@ -13,6 +13,7 @@ import org.jboss.resteasy.reactive.RestResponse;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Path("/")
@@ -23,9 +24,11 @@ public class AuthData {
 
     public AuthData(
         FrontendConfig frontendConfig,
-        @ConfigProperty(name = "quarkus.oidc.auth-server-url") String issuer
+        @ConfigProperty(name = "quarkus.oidc.auth-server-url") Optional<String> authServer,
+        @ConfigProperty(name = "quarkus.oidc.token.issuer") Optional<String> issuer
     ) {
         HashMap<String, String> authMap = new HashMap<>(frontendConfig.auth());
+        authMap.computeIfAbsent("issuer", key -> issuer.or(() -> authServer).orElseThrow());
         this.authMap = Collections.unmodifiableMap(authMap);
         this.authTag = new EntityTag(Integer.toHexString(this.authMap.hashCode()));
         cacheControl.setMaxAge((int)TimeUnit.DAYS.toSeconds(1));

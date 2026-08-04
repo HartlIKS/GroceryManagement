@@ -29,17 +29,17 @@ export class AuthService {
   private readonly accessToken_ = signal<string | undefined>(undefined);
   readonly accessToken = this.accessToken_.asReadonly();
   readonly settle: Promise<void>;
-  readonly scopes = computed(() => {
+  readonly roles = computed(() => {
     const token = this.accessToken();
-    return this.oauthService.getGrantedScopes() as string[] ?? getClaims(token)?.['scope']?.split(' ') ?? [];
+    return getClaims(token)?.['roles'] ?? [];
   })
-  readonly hasMasterData = computed(() => this.scopes().includes('MASTERDATA'))
+  readonly hasMasterData = computed<boolean>(() => this.roles().includes('MASTERDATA'))
   readonly claims = computed((): Record<string, any> | undefined => {
     this.accessToken();
     return this.oauthService.getIdentityClaims();
   })
   readonly username = computed((): string | undefined => this.claims()?.['preferred_username'])
-  readonly eff = effect(() => console.log(this.scopes(), this.claims()));
+  readonly eff = effect(() => console.log(this.roles(), this.claims()));
 
   constructor() {
     this.settle = this.setup();

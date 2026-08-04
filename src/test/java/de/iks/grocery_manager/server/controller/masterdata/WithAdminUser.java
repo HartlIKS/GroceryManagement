@@ -1,6 +1,5 @@
 package de.iks.grocery_manager.server.controller.masterdata;
 
-import de.iks.grocery_manager.server.Testdata;
 import de.iks.grocery_manager.server.security.ShareSecurityIdentityAugmentor;
 import io.quarkus.test.security.TestSecurity;
 
@@ -14,7 +13,7 @@ import static java.lang.annotation.ElementType.TYPE;
 
 @TestSecurity(
     user = "admin",
-    permissions = Testdata.AUTHORITY_MASTERDATA,
+    roles = "MASTERDATA",
     augmentors = ShareSecurityIdentityAugmentor.class
 )
 @Retention(RetentionPolicy.RUNTIME)

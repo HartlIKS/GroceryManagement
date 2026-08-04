@@ -1,14 +1,19 @@
 quarkus:
   application:
     name: GroceryManager
-  http:
-    static-dir:
-      enabled: true
-      endpoint: /
-      path: ./frontend/dist/frontend/browser/
-  oidc:
-    auth-server-url: "http://localhost:8081"
-    client-id: "GroceryManager"
+  container-image:
+    registry: ghcr.io
+    group: hartliks
+    name: grocerymanagement
+    additional-tags: quarkus
+    build: true
+  datasource:
+    db-kind: postgresql
+    devservices:
+      image-name: postgres:18-alpine
+  keycloak:
+    devservices:
+      enabled: false
   liquibase:
     migrate-at-start: true
     change-log: db/changelog/db.changelog-master.yaml
@@ -16,3 +21,7 @@ quarkus:
     physical-naming-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
     schema-management:
       strategy: validate
+  quinoa:
+    package-manager-install:
+      ~: true
+      node-version: 24.17.0

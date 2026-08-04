@@ -14,7 +14,6 @@ public class SecurityConfiguration {
     public static final String AUTHORITY_ADMIN = "ADMIN_SCOPED";
     public static final String AUTHORITY_SHARE = "SHARE_SCOPED";
     public static final String AUTHORITY_USER = "USER_SCOPED";
-    private final AuthorityConfiguration authorityConfiguration;
 
     private CORS corsConfigurationSource() {
         return CORS
@@ -31,9 +30,7 @@ public class SecurityConfiguration {
         http
             .cors(corsConfigurationSource())
             .get("/api/masterdata/*").authenticated()
-            .path("/api/masterdata/*").authorization().permissions(
-                authorityConfiguration.getMasterdataAuthority()
-            )
+            .path("/api/masterdata/*").authorization().roles("MASTERDATA")
             .path("/api/share/current/links*").authorization().permissions(
                 AUTHORITY_ADMIN,
                 AUTHORITY_SHARE
