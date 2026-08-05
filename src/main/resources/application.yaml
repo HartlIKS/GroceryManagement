@@ -6,6 +6,8 @@ quarkus:
     group: hartliks
     name: grocerymanagement
     additional-tags: quarkus
+    labels:
+      "org.opencontainers.image.source": "https://github.com/HartlIKS/GroceryManagement"
     build: true
   datasource:
     db-kind: postgresql
