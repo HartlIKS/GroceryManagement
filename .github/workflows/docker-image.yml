@@ -7,10 +7,6 @@ on:
     branches: ["master"]
   workflow_dispatch:
 
-# Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
-env:
-  IMAGE_NAME: ${{ github.repository }}
-
 # There is a single job in this workflow. It's configured to run on the latest available version of Ubuntu.
 jobs:
   build-and-push-image:
@@ -32,6 +28,14 @@ jobs:
           java-version: 17
           distribution: temurin
           cache: maven
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          cache: 'npm'
+          cache-dependency-path: src/main/webui/package-lock.json
+      - name: Expose Github runtime
+        uses: crazy-max/ghaction-github-runtime@v4
       - name: Build & publish
         run: mvn package -f pom.xml
         env:
@@ -40,4 +44,7 @@ jobs:
           QUARKUS_CONTAINER_IMAGE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
           QUARKUS_CONTAINER_IMAGE_PUSH: true
           QUARKUS_CONTAINER_IMAGE_ADDITIONAL_TAGS: ${{ github.head_ref || github.ref_name }}
+          QUARKUS_DOCKER_CACHE_FROM: type=gha
+          QUARKUS_DOCKER_ADDITIONAL_ARGS: "--cache-to type=gha"
           QUARKUS_DOCKER_BUILDX_PLATFORM: "linux/amd64,linux/arm64,linux/arm/v7"
+          QUARKUS_QUINOA_PACKAGE_MANAGER_INSTALL: false
