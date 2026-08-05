@@ -19,11 +19,11 @@ jobs:
       id-token: write
       #
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: 17
           distribution: temurin
@@ -34,8 +34,6 @@ jobs:
           node-version: 24.x
           cache: 'npm'
           cache-dependency-path: src/main/webui/package-lock.json
-      - name: Expose Github runtime
-        uses: crazy-max/ghaction-github-runtime@v4
       - name: Build & publish
         run: mvn package -f pom.xml
         env:
@@ -46,3 +44,4 @@ jobs:
           QUARKUS_CONTAINER_IMAGE_ADDITIONAL_TAGS: ${{ github.head_ref || github.ref_name }}
           QUARKUS_DOCKER_BUILDX_PLATFORM: "linux/amd64,linux/arm64,linux/arm/v7"
           QUARKUS_QUINOA_PACKAGE_MANAGER_INSTALL: false
+          QUARKUS_QUINOA_FROZEN_LOCKFILE: true
