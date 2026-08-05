@@ -1,0 +1,19 @@
+name: Clean untagged Images
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          dry-run: ${{ inputs.dry-run }}
+          package: grocerymanagement
