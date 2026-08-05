@@ -36,12 +36,16 @@ jobs:
           cache-dependency-path: src/main/webui/package-lock.json
       - name: Expose Github runtime
         uses: crazy-max/ghaction-github-runtime@v4
+      - name: ghcr.io Login
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build & publish
         run: mvn package -f pom.xml
         env:
           QUARKUS_CONTAINER_IMAGE_REGISTRY: ghcr.io
-          QUARKUS_CONTAINER_IMAGE_USERNAME: ${{ github.actor }}
-          QUARKUS_CONTAINER_IMAGE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
           QUARKUS_CONTAINER_IMAGE_PUSH: true
           QUARKUS_CONTAINER_IMAGE_ADDITIONAL_TAGS: ${{ github.head_ref || github.ref_name }}
           QUARKUS_DOCKER_CACHE_FROM: type=gha
