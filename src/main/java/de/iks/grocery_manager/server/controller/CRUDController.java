@@ -1,5 +1,6 @@
 package de.iks.grocery_manager.server.controller;
 
+import de.iks.grocery_manager.server.extra_http.QUERY;
 import de.iks.grocery_manager.server.jpa.BaseRepository;
 import de.iks.grocery_manager.server.mapping.EntityMapper;
 import de.iks.grocery_manager.server.mapping.HasUUID_DTO;
@@ -12,7 +13,11 @@ import jakarta.ws.rs.core.UriInfo;
 import lombok.RequiredArgsConstructor;
 import org.jboss.resteasy.reactive.RestResponse;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Transactional
@@ -42,6 +47,13 @@ public abstract class CRUDController<Entity extends HasUUID, ListDTO extends Has
             .map(dtoMapper.map())
             .map(RestResponse::ok)
             .orElseGet(RestResponse::notFound);
+    }
+
+    @QUERY
+    public Map<UUID, ListDTO> getMany(List<UUID> uuids) {
+        return repository.streamByIds(uuids)
+            .map(dtoMapper.map())
+            .collect(Collectors.toUnmodifiableMap(ListDTO::uuid, Function.identity()));
     }
 
     @PUT

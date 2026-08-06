@@ -4,6 +4,7 @@ import io.quarkus.vertx.http.security.CORS;
 import io.quarkus.vertx.http.security.HttpSecurity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.ws.rs.HttpMethod;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -29,13 +30,13 @@ public class SecurityConfiguration {
     void apiFilterChain(@Observes HttpSecurity http) {
         http
             .cors(corsConfigurationSource())
-            .get("/api/masterdata/*").authenticated()
+            .path("/api/masterdata/*").methods(HttpMethod.GET, "QUERY").authenticated()
             .path("/api/masterdata/*").authorization().roles("MASTERDATA")
             .path("/api/share/current/links*").authorization().permissions(
                 AUTHORITY_ADMIN,
                 AUTHORITY_SHARE
             )
-            .get("/api/share/current*").authorization().permissions(
+            .path("/api/share/current*").methods(HttpMethod.GET, "QUERY").authorization().permissions(
                 AUTHORITY_SHARE
             )
             .path("/api/share/current*").authorization().permissions(
@@ -43,7 +44,7 @@ public class SecurityConfiguration {
                 AUTHORITY_SHARE
             )
             .path("/api/share*").authenticated()
-            .get("/api*").authorization().permissions(AUTHORITY_READ)
+            .path("/api*").methods(HttpMethod.GET, "QUERY").authorization().permissions(AUTHORITY_READ)
             .path("/api*").authorization().permissions(AUTHORITY_WRITE)
             .get("*").permit();
     }
