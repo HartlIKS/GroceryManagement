@@ -12,6 +12,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 import static de.iks.grocery_manager.server.UUIDMatcher.*;
@@ -51,6 +52,25 @@ class ProductControllerTest {
                 .statusCode(404)
                 .when()
                 .get("{uuid}", Testdata.BAD_UUID);
+        }
+    }
+
+    @Nested
+    @TestHTTPEndpoint(ProductController.class)
+    @WithTestUser
+    class GetManyProducts {
+        @Test
+        void shouldReturnExistingProductsWhenFound() {
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("size()", is(2))
+                .body("%s.name", withArgs(Testdata.PRODUCT_1_UUID), is("Product 1"))
+                .body("%s.name", withArgs(Testdata.PRODUCT_2_UUID), is("Product 2"))
+                .given()
+                .body(List.of(Testdata.PRODUCT_1_UUID, Testdata.PRODUCT_2_UUID, Testdata.BAD_UUID))
+                .contentType(ContentType.JSON)
+                .request("QUERY");
         }
     }
 
