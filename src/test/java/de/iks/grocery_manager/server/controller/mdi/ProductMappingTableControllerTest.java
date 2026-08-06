@@ -15,7 +15,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import static de.iks.grocery_manager.server.UUIDMatcher.isUuid;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -120,6 +123,113 @@ class ProductMappingTableControllerTest {
     @Nested
     @TestHTTPEndpoint(ProductMappingTableController.class)
     @WithAdminUser
+    class MassTranslateInbound {
+        @Test
+        void shouldReturnLocalIdsWhenMappingsExists() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
+            // Set up mapping
+            api
+                .getProductMappings()
+                .putAll(
+                    Map.of(
+                        productRepository
+                            .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                            .orElseThrow(),
+                        "remote_product_1",
+                        productRepository
+                            .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                            .orElseThrow(),
+                        "remote_product_2",
+                        productRepository
+                            .findByIdOptional(Testdata.PRODUCT_3_UUID)
+                            .orElseThrow(),
+                        "remote_product_3"
+
+                    )
+                );
+            externalAPIRepository.persistAndFlush(api);
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("size()", is(2))
+                .body("%s", withArgs("remote_product_1"), isUuid(Testdata.PRODUCT_1_UUID))
+                .body("%s", withArgs("remote_product_2"), isUuid(Testdata.PRODUCT_2_UUID))
+                .given()
+                .body(List.of("remote_product_1", "remote_product_2"))
+                .contentType(ContentType.JSON)
+                .request("QUERY", "in", api.getUuid());
+        }
+
+        @Test
+        void shouldReturnEmptyWhenMappingsDoNotExist() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body(is("{}"))
+                .given()
+                .body(List.of("nonexistent_remote_id_1", "nonexistent_remote_id_2"))
+                .contentType(ContentType.JSON)
+                .request("QUERY", "in", api.getUuid());
+        }
+
+        @Test
+        void shouldReturn404WhenApiNotFound() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
+            // Set up mapping
+            api
+                .getProductMappings()
+                .put(
+                    productRepository
+                        .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                        .orElseThrow(),
+                    "remote_product_1"
+                );
+            externalAPIRepository.persistAndFlush(api);
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(404)
+                .given()
+                .body(List.of("remote_product_1", "nonexistent_remote_id_2"))
+                .contentType(ContentType.JSON)
+                .request("QUERY", "in", Testdata.BAD_UUID);
+        }
+    }
+
+    @Nested
+    @TestHTTPEndpoint(ProductMappingTableController.class)
+    @WithAdminUser
     class SetInboundTranslation {
         @Test
         void shouldSetMappingWhenValid() {
@@ -145,7 +255,9 @@ class ProductMappingTableControllerTest {
                 .contentType(ContentType.JSON)
                 .put("in/{remoteId}", api.getUuid(), "remote_product_1");
 
-            api = externalAPIRepository.findByIdOptional(api.getUuid()).orElseThrow();
+            api = externalAPIRepository
+                .findByIdOptional(api.getUuid())
+                .orElseThrow();
 
             // Verify mapping was set
             assertEquals(
@@ -263,6 +375,113 @@ class ProductMappingTableControllerTest {
     @Nested
     @TestHTTPEndpoint(ProductMappingTableController.class)
     @WithAdminUser
+    class MassTranslateOutbound {
+        @Test
+        void shouldReturnLocalIdsWhenMappingsExists() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
+            // Set up mapping
+            api
+                .getProductMappings()
+                .putAll(
+                    Map.of(
+                        productRepository
+                            .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                            .orElseThrow(),
+                        "remote_product_1",
+                        productRepository
+                            .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                            .orElseThrow(),
+                        "remote_product_2",
+                        productRepository
+                            .findByIdOptional(Testdata.PRODUCT_3_UUID)
+                            .orElseThrow(),
+                        "remote_product_3"
+
+                    )
+                );
+            externalAPIRepository.persistAndFlush(api);
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("size()", is(2))
+                .body("%s", withArgs(Testdata.PRODUCT_1_UUID), is("remote_product_1"))
+                .body("%s", withArgs(Testdata.PRODUCT_2_UUID), is("remote_product_2"))
+                .given()
+                .body(List.of(Testdata.PRODUCT_1_UUID, Testdata.PRODUCT_2_UUID))
+                .contentType(ContentType.JSON)
+                .request("QUERY", "out", api.getUuid());
+        }
+
+        @Test
+        void shouldReturnEmptyWhenMappingsDoNotExist() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body(is("{}"))
+                .given()
+                .body(List.of(Testdata.PRODUCT_1_UUID, Testdata.PRODUCT_2_UUID))
+                .contentType(ContentType.JSON)
+                .request("QUERY", "in", api.getUuid());
+        }
+
+        @Test
+        void shouldReturn404WhenApiNotFound() {
+            QuarkusTransaction.begin();
+
+            // Create ExternalAPI
+            ExternalAPI api = new ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new HashMap<>());
+            api.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persistAndFlush(api);
+
+            // Set up mapping
+            api
+                .getProductMappings()
+                .put(
+                    productRepository
+                        .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                        .orElseThrow(),
+                    "remote_product_1"
+                );
+            externalAPIRepository.persistAndFlush(api);
+
+            QuarkusTransaction.commit();
+
+            expect()
+                .statusCode(404)
+                .given()
+                .body(List.of(Testdata.PRODUCT_1_UUID, Testdata.PRODUCT_2_UUID))
+                .contentType(ContentType.JSON)
+                .request("QUERY", "in", Testdata.BAD_UUID);
+        }
+    }
+
+    @Nested
+    @TestHTTPEndpoint(ProductMappingTableController.class)
+    @WithAdminUser
     class SetOutboundTranslation {
         @Test
         void shouldSetMappingWhenValid() {
@@ -289,7 +508,9 @@ class ProductMappingTableControllerTest {
                 .put("out/{localId}", api.getUuid(), Testdata.PRODUCT_1_UUID);
 
 
-            api = externalAPIRepository.findByIdOptional(api.getUuid()).orElseThrow();
+            api = externalAPIRepository
+                .findByIdOptional(api.getUuid())
+                .orElseThrow();
 
             // Verify mapping was set
             assertEquals(
