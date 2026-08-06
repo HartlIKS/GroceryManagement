@@ -38,10 +38,10 @@ import { DiffComponent } from './endpoint-test.component';
 export class StoreDiffComponent implements DiffComponent {
   readonly api = input.required<string>();
   readonly item = input.required<Partial<ListStoreDTO> & {uuid: string}>();
+  readonly localId = input.required<string | undefined>();
   private readonly storeService = inject(StoreService);
   private readonly mappingService = inject(StoreMappingTableService);
-  private readonly mappedIdResource = this.mappingService.translateInbound(this.api, computed(() => this.item().uuid));
-  protected readonly mappedId = linkedSignal(() => this.mappedIdResource.value() ?? undefined);
+  protected readonly mappedId = linkedSignal(this.localId);
 
   protected readonly mappedItem = computed(() => {
     const it = this.item();
@@ -118,7 +118,7 @@ export class StoreDiffComponent implements DiffComponent {
     return uuids;
   });
 
-  protected readonly loading = computed(() => this.mappedIdResource.isLoading() || this.mappedStoreResource.isLoading() || this.searchedStoresResource.isLoading());
+  protected readonly loading = computed(() => this.mappedStoreResource.isLoading() || this.searchedStoresResource.isLoading());
 
   readonly status = computed(() => {
     if(this.loading()) return 'loading';

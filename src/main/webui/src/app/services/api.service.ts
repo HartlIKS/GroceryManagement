@@ -125,6 +125,27 @@ export class ApiService {
       injector: this.injector,
     });
   }
+  query<T>(endpoint: Signal<string | undefined> | string, body: any, share?: boolean) {
+    endpoint = resolve(endpoint);
+    body = resolve(body);
+    return httpResource<T>(() => {
+      const end = endpoint();
+      const headers = this.headers();
+      const params = share ? this.shareParams() : undefined;
+      const bodyValue = body();
+      if(end === undefined || headers === undefined || bodyValue === undefined) return undefined;
+      return {
+        method: 'QUERY',
+        url: `${this.baseUrl}${end}`,
+        params,
+        headers,
+        credentials: 'include',
+        body: bodyValue,
+      };
+    }, {
+      injector: this.injector,
+    });
+  }
 
   getShareOnly<T>(endpoint: string, params?: Record<string, Signal<ApiParam> | ApiParam>) {
     const httpParams = this.toParamSignal(params, true);

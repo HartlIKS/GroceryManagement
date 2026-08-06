@@ -40,10 +40,10 @@ import { DiffComponent } from './endpoint-test.component';
 export class ProductDiffComponent implements DiffComponent {
   readonly api = input.required<string>();
   readonly item = input.required<Partial<ListProductDTO> & {uuid: string}>();
+  readonly localId = input.required<string | undefined>();
   private readonly productService = inject(ProductService);
   private readonly mappingService = inject(ProductMappingTableService);
-  private readonly mappedIdResource = this.mappingService.translateInbound(this.api, computed(() => this.item().uuid));
-  protected readonly mappedId = linkedSignal(() => this.mappedIdResource.value() ?? undefined);
+  protected readonly mappedId = linkedSignal(this.localId);
 
   protected readonly mappedItem = computed(() => {
     const it = this.item();
@@ -104,7 +104,7 @@ export class ProductDiffComponent implements DiffComponent {
     }
     return uuids;
   });
-  protected readonly loading = computed(() => this.mappedIdResource.isLoading() || this.mappedProductResource.isLoading() || this.searchedProductsResource.isLoading());
+  protected readonly loading = computed(() => this.mappedProductResource.isLoading() || this.searchedProductsResource.isLoading());
 
   protected access(v: any, f: string[]): any {
     for(const k of f) {

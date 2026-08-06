@@ -19,7 +19,12 @@ import {
   ProductEndpointDTO,
   StoreEndpointDTO
 } from './models';
-import { ProductEndpointService, StoreEndpointService } from './services';
+import {
+  ProductEndpointService,
+  ProductMappingTableService,
+  StoreEndpointService,
+  StoreMappingTableService
+} from './services';
 import { inject } from '@angular/core';
 import jp from 'jsonpath';
 
@@ -127,6 +132,7 @@ export const externalAPIRoutes: Routes = [
         provide: ENDPOINT_TOKEN,
         useFactory: (): EndpointConfig<ProductEndpointDTO, ListProductDTO> => ({
           endpointService: inject(ProductEndpointService),
+          mappingService: inject(ProductMappingTableService),
           toPartials: (endpoint, response) => {
             switch(endpoint.responseType) {
               case 'JSON':
@@ -164,6 +170,7 @@ export const externalAPIRoutes: Routes = [
         provide: ENDPOINT_TOKEN,
         useFactory: (): EndpointConfig<StoreEndpointDTO, ListStoreDTO> => ({
           endpointService: inject(StoreEndpointService),
+          mappingService: inject(StoreMappingTableService),
           toPartials: (endpoint, response) => {
             switch(endpoint.responseType) {
               case 'JSON':

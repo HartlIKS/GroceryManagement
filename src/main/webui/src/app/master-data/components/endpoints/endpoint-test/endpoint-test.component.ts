@@ -17,7 +17,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
-import { EndpointService } from '../../../services';
+import { EndpointService, MappingTableService } from '../../../services';
 import { EndpointDTO, ParameterDTO } from '../../../models';
 import { form, FormField, FormRoot, schema } from '@angular/forms/signals';
 import { MatIcon } from '@angular/material/icon';
@@ -37,6 +37,7 @@ export interface DiffComponent {
 
 export type EndpointConfig<E extends EndpointDTO, T extends {uuid: string, name: string}> = {
   endpointService: EndpointService<E, any>;
+  mappingService: MappingTableService;
   toPartials: (endpoint: E, requestResult: string) => (Partial<T> & {uuid: string})[];
   diffComponent: Type<DiffComponent>;
 };
@@ -144,13 +145,17 @@ export class EndpointTestComponent implements OnInit {
     if(endpoint === undefined) return undefined;
     return this.endpointConfig.toPartials(endpoint, response);
   })
+  protected readonly idMap = this.endpointConfig.mappingService.massTranslateInbound(
+    this.parentUuid,
+    computed(() => this.parsedResponse()?.map(e => e.uuid))
+  )
 
   private readonly diffs = viewChildren<NgComponentOutlet<DiffComponent>>(NgComponentOutlet);
   protected readonly diffCounts = computed(() => this.diffs()
     .reduce<Record<DiffStatus | 'total', number>>(
       (a, v) => {
         a.total++;
-        a[v.componentInstance?.status() ?? 'loading']++;
+        a[(this.idMap.isLoading() ? null : v.componentInstance?.status()) ?? 'loading']++;
         return a;
       },
       {loading: 0, ignored: 0, create: 0, same: 0, different: 0, total: 0}

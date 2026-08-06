@@ -30,6 +30,18 @@ export abstract class MappingTableService {
     }));
   }
 
+  massTranslateInbound(uuid: Signal<string | undefined> | string, remoteIds: Signal<string[] | undefined> | string[]): HttpResourceRef<Record<string, string> | undefined> {
+    uuid = resolve(uuid);
+    return this.apiService.query(
+      computed(() => {
+        const uuidValue = uuid();
+        if(uuidValue === undefined) return undefined;
+        return `${this.endpoint1}/${uuidValue}/mapping/${this.endpoint2}/in`;
+      }),
+      remoteIds
+    );
+  }
+
   // Set inbound translation: remote ID -> local UUID
   setInboundTranslation(uuid: string, remoteId: string, localId: string): Observable<string> {
     return this.apiService.put<string>(`${this.endpoint1}/${uuid}/mapping/${this.endpoint2}/in`, remoteId, localId);
@@ -45,6 +57,18 @@ export abstract class MappingTableService {
       if(uuidValue === undefined || localIdValue === undefined) return undefined;
       return `${this.endpoint1}/${uuidValue}/mapping/${this.endpoint2}/in/${localIdValue}`;
     }));
+  }
+
+  massTranslateOutbound(uuid: Signal<string | undefined> | string, localIds: Signal<string[] | undefined> | string[]): HttpResourceRef<Record<string, string> | undefined> {
+    uuid = resolve(uuid);
+    return this.apiService.query(
+      computed(() => {
+        const uuidValue = uuid();
+        if(uuidValue === undefined) return undefined;
+        return `${this.endpoint1}/${uuidValue}/mapping/${this.endpoint2}/in`;
+      }),
+      localIds
+    );
   }
 
   // Set outbound translation: local UUID -> remote ID
