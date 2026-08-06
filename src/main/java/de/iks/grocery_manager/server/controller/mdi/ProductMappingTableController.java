@@ -6,7 +6,6 @@ import de.iks.grocery_manager.server.mapping.DTOMapper;
 import de.iks.grocery_manager.server.mapping.MappingHandler;
 import de.iks.grocery_manager.server.model.masterdata.Product;
 import de.iks.grocery_manager.server.model.mdi.ExternalAPI;
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.Path;
 import jakarta.transaction.Transactional;
 
@@ -18,6 +17,12 @@ public class ProductMappingTableController extends MappingTableController<Extern
         ProductRepository mappedRepository,
         DTOMapper dtoMapper
     ) {
-        super(repository, new MappingHandler<>(ExternalAPI::getProductMappings, repository::translateInboundProducts, repository::translateOutboundProducts), mappedRepository, dtoMapper);
+        super(repository, new MappingHandler<>(
+            ExternalAPI::getProductMappings,
+            repository::translateInboundProducts,
+            repository::massTranslateInboundProducts,
+            repository::translateOutboundProducts,
+            repository::massTranslateOutboundProducts
+        ), mappedRepository, dtoMapper);
     }
 }
