@@ -7,8 +7,14 @@
   </button>
 } @else if (hasDiff()) {
   <form [formRoot]="form">
-    <div class="form-row">
-      <mat-select [(value)]="mappedId">
+    <mat-expansion-panel [(expanded)]="doReassignment" class="form-row">
+      <mat-expansion-panel-header>Assign existing store</mat-expansion-panel-header>
+      <ng-template matExpansionPanelContent>
+        <mat-form-field>
+          <mat-label>Search</mat-label>
+          <input matInput [(ngModel)]="searchText" [ngModelOptions]="{standalone: true}"/>
+        </mat-form-field>
+        <mat-select [(value)]="mappedId">
         <mat-option [value]="undefined">Create New Store</mat-option>
         @for (store of searchedStores(); track store) {
           <mat-option [value]="store">
@@ -16,9 +22,10 @@
           </mat-option>
         }
       </mat-select>
-    </div>
+      </ng-template>
+    </mat-expansion-panel>
     @let n = mappedItem();
-    @let o = mappedStoreResource.value();
+    @let o = fetchedItem();
     <ng-template let-nf="nf" let-of="of" let-form="form" let-nf2="nf2" let-fieldName="fieldName" #diffField>
       @if (form && (nf ?? nf2) !== of) {
         <div class="full-width">

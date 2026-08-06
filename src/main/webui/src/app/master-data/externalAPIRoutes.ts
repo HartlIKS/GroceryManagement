@@ -21,9 +21,9 @@ import {
 } from './models';
 import {
   ProductEndpointService,
-  ProductMappingTableService,
+  ProductMappingTableService, ProductService,
   StoreEndpointService,
-  StoreMappingTableService
+  StoreMappingTableService, StoreService
 } from './services';
 import { inject } from '@angular/core';
 import jp from 'jsonpath';
@@ -133,6 +133,7 @@ export const externalAPIRoutes: Routes = [
         useFactory: (): EndpointConfig<ProductEndpointDTO, ListProductDTO> => ({
           endpointService: inject(ProductEndpointService),
           mappingService: inject(ProductMappingTableService),
+          massQuery: ((s) => s.getManyProducts.bind(s))(inject(ProductService)),
           toPartials: (endpoint, response) => {
             switch(endpoint.responseType) {
               case 'JSON':
@@ -171,7 +172,8 @@ export const externalAPIRoutes: Routes = [
         useFactory: (): EndpointConfig<StoreEndpointDTO, ListStoreDTO> => ({
           endpointService: inject(StoreEndpointService),
           mappingService: inject(StoreMappingTableService),
-          toPartials: (endpoint, response) => {
+          massQuery: ((s) => s.getManyStores.bind(s))(inject(StoreService)),
+          toPartials(endpoint, response) {
             switch(endpoint.responseType) {
               case 'JSON':
                 return jp.query(JSON.parse(response), endpoint.basePath).map(p => {

@@ -1,4 +1,4 @@
-import { Injectable, isSignal, Signal } from '@angular/core';
+import { computed, Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService, GetApiEndpoint, NamedCacheService } from '../../services';
 import { CreateStoreDTO, ListStoreDTO } from '../models';
@@ -30,9 +30,11 @@ export class StoreService extends NamedCacheService<ListStoreDTO, CreateStoreDTO
   public override search(
     name: Signal<string> | string = '',
     page: Signal<number> | number = 0,
-    size: Signal<number> | number = 20
+    size: Signal<number> | number = 20,
+    suppress?: Signal<boolean>
   ) {
-    return this.apiService.get<Page<ListStoreDTO>>(this.endpoint, {
+    const ep = suppress ? computed(() => suppress() ? undefined : this.endpoint) : this.endpoint;
+    return this.apiService.get<Page<ListStoreDTO>>(ep, {
         name,
         page,
         size,
@@ -43,6 +45,10 @@ export class StoreService extends NamedCacheService<ListStoreDTO, CreateStoreDTO
   getStore(uuid: Signal<string | undefined> | string) {
     if(isSignal(uuid)) return this.apiService.getById<ListStoreDTO>(this.endpoint, uuid, false);
     return this.get(uuid);
+  }
+
+  getManyStores(uuids: Signal<string[] | undefined> | string[]) {
+    return this.apiService.query<Record<string, ListStoreDTO>>(this.endpoint, uuids, false);
   }
 
   // Create store

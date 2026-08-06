@@ -39,42 +39,48 @@
           </div>
         </form>
 
-        @if (requestResource.isLoading() || idMap.isLoading()) {
+        @if (requestResource.isLoading() || idMap.isLoading() || foundCounterparts.isLoading()) {
           <div class="loading">
             <mat-spinner></mat-spinner>
           </div>
-        }
+        } @else {
 
-        @if (requestResource.error()) {
-          <div class="error">
-            <p>{{ requestResource.error() }}</p>
-          </div>
-        }
+          @if (requestResource.error()) {
+            <div class="error">
+              <p>{{ requestResource.error() }}</p>
+            </div>
+          }
 
-        @if (idMap.error()) {
-          <div class="error">
-            <p>{{ idMap.error() }}</p>
-          </div>
-        }
+          @if (idMap.error()) {
+            <div class="error">
+              <p>{{ idMap.error() }}</p>
+            </div>
+          }
 
-        @let response = parsedResponse();
-        <h3>Results</h3>
-        @let stats = diffCounts();
-        <button mat-raised-button (click)="acceptAll({create: true})" [disabled]="stats.create === 0">
-          <mat-icon>check</mat-icon>
-          Accept all new
-        </button>
-        <button mat-raised-button (click)="acceptAll({different: true})" [disabled]="stats.different === 0">
-          <mat-icon>check</mat-icon>
-          Accept all changed
-        </button>
-        <button mat-raised-button color="primary" (click)="acceptAll()"
-                [disabled]="stats.create + stats.different === 0">
-          <mat-icon>check</mat-icon>
-          Accept All
-        </button>
-        <hr>
-        <div class="form-row">
+          @if (foundCounterparts.error()) {
+            <div class="error">
+              <p>{{ foundCounterparts.error() }}</p>
+            </div>
+          }
+
+          @let response = parsedResponse();
+          <h3>Results</h3>
+          @let stats = diffCounts();
+          <button mat-raised-button (click)="acceptAll({create: true})" [disabled]="stats.create === 0">
+            <mat-icon>check</mat-icon>
+            Accept all new
+          </button>
+          <button mat-raised-button (click)="acceptAll({different: true})" [disabled]="stats.different === 0">
+            <mat-icon>check</mat-icon>
+            Accept all changed
+          </button>
+          <button mat-raised-button color="primary" (click)="acceptAll()"
+                  [disabled]="stats.create + stats.different === 0">
+            <mat-icon>check</mat-icon>
+            Accept All
+          </button>
+          <hr>
+          <div class="form-row">
           <span class="barGraph">
             <span class="numLoading" [ngStyle]="{
               width: `${stats.loading / stats.total * 100}%`
@@ -92,12 +98,15 @@
               width: `${stats.same / stats.total * 100}%`
             }" [textContent]="stats.same"></span>
           </span>
-          <span>/</span>
-          <span [textContent]="stats.total"></span>
-        </div>
-        <hr>
-        @for (item of response ?? []; track item.uuid) {
-          <ng-template [ngComponentOutlet]="diffComponent" [ngComponentOutletInputs]="{item, localId: idMap.value()?.[item.uuid], api: parentUuid()}"/>
+            <span>/</span>
+            <span [textContent]="stats.total"></span>
+          </div>
+          <hr>
+          @for (item of response ?? []; track item.uuid) {
+            @let localId = idMap.value()?.[item.uuid];
+            <ng-template [ngComponentOutlet]="diffComponent"
+                         [ngComponentOutletInputs]="{item, fetchedItem: localId === undefined ? undefined : foundCounterparts.value()?.[localId], api: parentUuid(), afterChange: boundAfterChange}"/>
+          }
         }
       </mat-card-content>
       <mat-card-actions>

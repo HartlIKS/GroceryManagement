@@ -3,6 +3,7 @@ import {
   computed,
   inject,
   InjectionToken,
+  InputSignal,
   linkedSignal,
   OnInit,
   Signal,
@@ -21,14 +22,18 @@ import { EndpointService, MappingTableService } from '../../../services';
 import { EndpointDTO, ParameterDTO } from '../../../models';
 import { form, FormField, FormRoot, schema } from '@angular/forms/signals';
 import { MatIcon } from '@angular/material/icon';
-import { httpResource } from '@angular/common/http';
+import { httpResource, HttpResourceRef } from '@angular/common/http';
 import { ApiService } from '../../../../services';
 import { MatCheckbox } from '@angular/material/checkbox';
 
 export type DiffStatus = 'loading' | 'ignored' | 'create' | 'same' | 'different';
 
-export interface DiffComponent {
+export interface DiffComponent<T> {
+  readonly api: InputSignal<string>;
+  readonly item: InputSignal<Partial<T> & {uuid:string}>;
+  readonly fetchedItem: InputSignal<T | undefined>;
   readonly status: Signal<DiffStatus>;
+  readonly afterChange: InputSignal<() => void>;
   accept(status?: {
     create?: boolean,
     different?: boolean,
@@ -38,8 +43,9 @@ export interface DiffComponent {
 export type EndpointConfig<E extends EndpointDTO, T extends {uuid: string, name: string}> = {
   endpointService: EndpointService<E, any>;
   mappingService: MappingTableService;
-  toPartials: (endpoint: E, requestResult: string) => (Partial<T> & {uuid: string})[];
-  diffComponent: Type<DiffComponent>;
+  massQuery(uuids: Signal<string[] | undefined> | string[]): HttpResourceRef<Record<string, T> | undefined>;
+  toPartials(endpoint: E, requestResult: string): (Partial<T> & {uuid: string})[];
+  diffComponent: Type<DiffComponent<T>>;
 };
 
 export const ENDPOINT_TOKEN = new InjectionToken<EndpointConfig<EndpointDTO, {uuid: string, name: string}>>('EndpointConfig');
@@ -145,12 +151,16 @@ export class EndpointTestComponent implements OnInit {
     if(endpoint === undefined) return undefined;
     return this.endpointConfig.toPartials(endpoint, response);
   })
+  private readonly blocked = signal(false);
   protected readonly idMap = this.endpointConfig.mappingService.massTranslateInbound(
     this.parentUuid,
-    computed(() => this.parsedResponse()?.map(e => e.uuid))
+    computed(() => this.blocked() ? undefined : this.parsedResponse()?.map(e => e.uuid))
   )
+  protected readonly foundCounterparts = this.endpointConfig.massQuery(computed(() => {
+    return Object.values(this.idMap.value() ?? {});
+  }));
 
-  private readonly diffs = viewChildren<NgComponentOutlet<DiffComponent>>(NgComponentOutlet);
+  private readonly diffs = viewChildren<NgComponentOutlet<DiffComponent<any>>>(NgComponentOutlet);
   protected readonly diffCounts = computed(() => this.diffs()
     .reduce<Record<DiffStatus | 'total', number>>(
       (a, v) => {
@@ -188,12 +198,21 @@ export class EndpointTestComponent implements OnInit {
     }));
   }
 
+  private afterChange(): void {
+    if(this.blocked()) return;
+    this.idMap.reload();
+  }
+
+  protected readonly boundAfterChange = this.afterChange.bind(this);
+
   acceptAll(status?: {
     create?: boolean,
     different?: boolean,
   }) {
+    this.blocked.set(true);
     for(const c of this.diffs()) {
       c.componentInstance?.accept(status);
     }
+    this.blocked.set(false);
   }
 }

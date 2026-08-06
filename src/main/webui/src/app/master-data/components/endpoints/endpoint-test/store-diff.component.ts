@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, linkedSignal } from '@angular/core';
+import { Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -14,6 +14,7 @@ import { firstValueFrom } from 'rxjs';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { StoreListingComponent } from '../../../../user-interface/components/store-listing/store-listing.component';
 import { DiffComponent } from './endpoint-test.component';
+import { MatExpansionPanel, MatExpansionPanelContent, MatExpansionPanelHeader } from '@angular/material/expansion';
 
 @Component({
   selector: 'app-store-diff',
@@ -30,18 +31,22 @@ import { DiffComponent } from './endpoint-test.component';
     FormRoot,
     FormField,
     MatProgressSpinner,
-    StoreListingComponent
+    StoreListingComponent,
+    MatExpansionPanel,
+    MatExpansionPanelContent,
+    MatExpansionPanelHeader
   ],
   templateUrl: './store-diff.component.html',
   styleUrls: ['./store-diff.component.css']
 })
-export class StoreDiffComponent implements DiffComponent {
+export class StoreDiffComponent implements DiffComponent<ListStoreDTO> {
   readonly api = input.required<string>();
   readonly item = input.required<Partial<ListStoreDTO> & {uuid: string}>();
-  readonly localId = input.required<string | undefined>();
+  readonly fetchedItem = input.required<ListStoreDTO | undefined>();
+  readonly afterChange = input.required<() => void>();
   private readonly storeService = inject(StoreService);
   private readonly mappingService = inject(StoreMappingTableService);
-  protected readonly mappedId = linkedSignal(this.localId);
+  protected readonly mappedId = linkedSignal(() => this.fetchedItem()?.uuid);
 
   protected readonly mappedItem = computed(() => {
     const it = this.item();
@@ -55,10 +60,9 @@ export class StoreDiffComponent implements DiffComponent {
       uuid: mid,
     };
   });
-  protected readonly mappedStoreResource = this.storeService.getStore(this.mappedId);
   protected readonly hasDiff = linkedSignal(() => {
     const it = this.mappedItem();
-    const mp = this.mappedStoreResource.value();
+    const mp = this.fetchedItem();
     if(it === undefined) return false;
     if(mp === undefined) return true;
     if(it.name !== undefined && it.name !== mp.name) return true;
@@ -77,7 +81,7 @@ export class StoreDiffComponent implements DiffComponent {
   protected readonly combinedItem = linkedSignal(() => {
     const it = this.mappedItem();
     return {
-      ...(this.mappedStoreResource.value() ?? {
+      ...(this.fetchedItem() ?? {
         uuid: undefined,
         name: '',
         logo: '',
@@ -106,8 +110,14 @@ export class StoreDiffComponent implements DiffComponent {
     return false;
   });
 
+  protected readonly doReassignment = signal(false);
   protected readonly searchText = linkedSignal(() => this.item().name ?? '');
-  private readonly searchedStoresResource = this.storeService.search(this.searchText);
+  private readonly searchedStoresResource = this.storeService.search(
+    this.searchText,
+    undefined,
+    undefined,
+    computed(() => !this.doReassignment())
+  );
   protected readonly searchedStores = computed(() => {
     const products = this.searchedStoresResource.value()?.content ?? [];
     const uuids = products.map(({uuid}) => uuid);
@@ -118,7 +128,7 @@ export class StoreDiffComponent implements DiffComponent {
     return uuids;
   });
 
-  protected readonly loading = computed(() => this.mappedStoreResource.isLoading() || this.searchedStoresResource.isLoading());
+  protected readonly loading = this.searchedStoresResource.isLoading;
 
   readonly status = computed(() => {
     if(this.loading()) return 'loading';
@@ -141,11 +151,12 @@ export class StoreDiffComponent implements DiffComponent {
     const {uuid, ...createDTO} = this.combinedItem();
     if(uuid) {
       await firstValueFrom(this.mappingService.setInboundTranslation(this.api(), this.item().uuid, uuid))
-      this.mappedStoreResource.set(await firstValueFrom(this.storeService.update(uuid, createDTO)));
+      await firstValueFrom(this.storeService.update(uuid, createDTO));
     } else {
       const {uuid} = await firstValueFrom(this.storeService.createStore(createDTO));
       await firstValueFrom(this.mappingService.setInboundTranslation(this.api(), this.item().uuid, uuid));
       this.mappedId.set(uuid);
     }
+    this.afterChange()();
   }
 }
