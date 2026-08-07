@@ -47,8 +47,8 @@ jobs:
           QUARKUS_CONTAINER_IMAGE_PUSH: true
           QUARKUS_CONTAINER_IMAGE_ADDITIONAL_TAGS: ${{ github.head_ref || github.ref_name }}
           QUARKUS_DOCKER_BUILDX_PLATFORM: "linux/amd64,linux/arm64,linux/arm/v7"
-          QUARKUS_DOCKER_CACHE_FROM: "type=registry,ref=ghcr.io/hartliks/grocerymanagement:buildcache"
+          QUARKUS_DOCKER_CACHE_FROM: "type=gha,token=${{ secrets.GITHUB_TOKEN }}"
           QUARKUS_DOCKER_ADDITIONAL_ARGS_0_: "--cache-to"
-          QUARKUS_DOCKER_ADDITIONAL_ARGS_1_: "type=registry,ref=ghcr.io/hartliks/grocerymanagement:buildcache,mode=max,compression=zstd"
+          QUARKUS_DOCKER_ADDITIONAL_ARGS_1_: "type=gha,mode=max,token=${{ secrets.GITHUB_TOKEN }},ghtoken=${{ secrets.GITHUB_TOKEN }}"
           QUARKUS_QUINOA_PACKAGE_MANAGER_INSTALL: false
           QUARKUS_QUINOA_FROZEN_LOCKFILE: true
