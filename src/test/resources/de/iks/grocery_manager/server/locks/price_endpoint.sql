@@ -1,0 +1,1 @@
+TRUNCATE TABLE price_endpoint CASCADE;

@@ -1,9 +1,9 @@
 package de.iks.grocery_manager.server.controller.masterdata;
 
-import de.iks.grocery_manager.server.Sql;
 import de.iks.grocery_manager.server.Testdata;
 import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.jpa.masterdata.PriceRepository;
+import de.iks.grocery_manager.server.locks.EntityAccess;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.common.http.TestHTTPResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
 @TestHTTPEndpoint(PriceListController.class)
-@Sql("/testdata.sql")
+@EntityAccess(PriceRepository.class)
 class PriceListControllerTest {
     @Inject
     PriceRepository priceRepository;
@@ -33,6 +33,7 @@ class PriceListControllerTest {
     @Nested
     @TestHTTPEndpoint(PriceListController.class)
     @WithTestUser
+    @EntityAccess(value = PriceRepository.class, writes = false)
     class GetPrice {
         @Test
         void shouldReturnPriceWhenFound() {
@@ -260,6 +261,7 @@ class PriceListControllerTest {
     @Nested
     @TestHTTPEndpoint(PriceListController.class)
     @WithTestUser
+    @EntityAccess(value = PriceRepository.class, writes = false)
     class SearchPrices {
         @Test
         void shouldReturnAllPricesWhenSearching() {
@@ -351,6 +353,7 @@ class PriceListControllerTest {
     @Nested
     @TestHTTPEndpoint(PriceListController.class)
     @WithTestUser
+    @EntityAccess(value = PriceRepository.class, writes = false)
     class SearchPricesWithDateStoresAndProducts {
         @Test
         void shouldReturnPricesWhenSearchingWithValidDateStoresAndProducts() {

@@ -1,10 +1,10 @@
 package de.iks.grocery_manager.server.controller;
 
-import de.iks.grocery_manager.server.Sql;
 import de.iks.grocery_manager.server.Testdata;
 import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.jpa.ShoppingListRepository;
 import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
+import de.iks.grocery_manager.server.locks.EntityAccess;
 import de.iks.grocery_manager.server.model.ShoppingList;
 import de.iks.grocery_manager.server.model.masterdata.Product;
 import io.quarkus.narayana.jta.QuarkusTransaction;
@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @QuarkusTest
 @TestHTTPEndpoint(ShoppingListController.class)
 @WithTestUser
-@Sql("/testdata.sql")
+@EntityAccess(ShoppingListRepository.class)
 class ShoppingListControllerTest {
 
     @Inject

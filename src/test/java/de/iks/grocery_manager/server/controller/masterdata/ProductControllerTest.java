@@ -1,9 +1,9 @@
 package de.iks.grocery_manager.server.controller.masterdata;
 
-import de.iks.grocery_manager.server.Sql;
 import de.iks.grocery_manager.server.Testdata;
 import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
+import de.iks.grocery_manager.server.locks.EntityAccess;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.common.http.TestHTTPResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -22,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
 @TestHTTPEndpoint(ProductController.class)
-@Sql("/testdata.sql")
 @WithTestUser
+@EntityAccess(ProductRepository.class)
 class ProductControllerTest {
     @Inject
     ProductRepository productRepository;
@@ -34,6 +34,7 @@ class ProductControllerTest {
     @Nested
     @TestHTTPEndpoint(ProductController.class)
     @WithTestUser
+    @EntityAccess(value = ProductRepository.class, writes = false)
     class GetProduct {
         @Test
         void shouldReturnProductWhenFound() {
@@ -58,6 +59,7 @@ class ProductControllerTest {
     @Nested
     @TestHTTPEndpoint(ProductController.class)
     @WithTestUser
+    @EntityAccess(value = ProductRepository.class, writes = false)
     class GetManyProducts {
         @Test
         void shouldReturnExistingProductsWhenFound() {
@@ -264,6 +266,7 @@ class ProductControllerTest {
     @Nested
     @TestHTTPEndpoint(ProductController.class)
     @WithTestUser
+    @EntityAccess(value = ProductRepository.class, writes = false)
     class SearchProducts {
         @Test
         void shouldReturnAllProductsWhenSearching() {

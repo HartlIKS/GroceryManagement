@@ -1,11 +1,11 @@
 package de.iks.grocery_manager.server.controller.mdi;
 
-import de.iks.grocery_manager.server.Sql;
 import de.iks.grocery_manager.server.Testdata;
 import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.controller.masterdata.WithAdminUser;
 import de.iks.grocery_manager.server.jpa.mdi.ExternalAPIRepository;
 import de.iks.grocery_manager.server.jpa.mdi.StoreEndpointRepository;
+import de.iks.grocery_manager.server.locks.EntityAccess;
 import de.iks.grocery_manager.server.model.mdi.AddressPaths;
 import de.iks.grocery_manager.server.model.mdi.ExternalAPI;
 import de.iks.grocery_manager.server.model.mdi.ResponseType;
@@ -31,7 +31,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @QuarkusTest
 @TestHTTPEndpoint(StoreEndpointController.class)
 @WithAdminUser
-@Sql("/testdata.sql")
+@EntityAccess(StoreEndpointRepository.class)
+@EntityAccess(ExternalAPIRepository.class)
 class StoreEndpointControllerTest {
     private static final String STORE_ENDPOINT_1_CREATE_JSON = """
         {

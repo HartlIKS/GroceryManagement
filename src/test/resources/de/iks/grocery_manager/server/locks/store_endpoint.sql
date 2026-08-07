@@ -1,0 +1,1 @@
+TRUNCATE TABLE store_endpoint CASCADE;

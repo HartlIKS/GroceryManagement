@@ -1,0 +1,1 @@
+TRUNCATE TABLE join_link CASCADE;

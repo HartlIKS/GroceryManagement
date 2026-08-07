@@ -1,0 +1,1 @@
+TRUNCATE TABLE product_endpoint CASCADE;

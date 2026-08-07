@@ -1,10 +1,10 @@
 package de.iks.grocery_manager.server.controller.mdi;
 
-import de.iks.grocery_manager.server.Sql;
 import de.iks.grocery_manager.server.Testdata;
 import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.controller.masterdata.WithAdminUser;
 import de.iks.grocery_manager.server.jpa.mdi.ExternalAPIRepository;
+import de.iks.grocery_manager.server.locks.EntityAccess;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.common.http.TestHTTPResource;
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @QuarkusTest
 @TestHTTPEndpoint(ExternalAPIController.class)
 @WithAdminUser
-@Sql("/testdata.sql")
+@EntityAccess(ExternalAPIRepository.class)
 class ExternalAPIControllerTest {
 
     @Inject

@@ -1,0 +1,3 @@
+TRUNCATE TABLE externalapi CASCADE;
+TRUNCATE TABLE externalapi_product_mappings CASCADE;
+TRUNCATE TABLE externalapi_store_mappings CASCADE;

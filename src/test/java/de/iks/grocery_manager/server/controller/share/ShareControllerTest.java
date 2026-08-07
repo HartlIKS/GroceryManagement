@@ -1,10 +1,10 @@
 package de.iks.grocery_manager.server.controller.share;
 
-import de.iks.grocery_manager.server.Sql;
 import de.iks.grocery_manager.server.Testdata;
 import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.jpa.share.JoinLinkRepository;
 import de.iks.grocery_manager.server.jpa.share.ShareRepository;
+import de.iks.grocery_manager.server.locks.EntityAccess;
 import de.iks.grocery_manager.server.model.share.JoinLink;
 import de.iks.grocery_manager.server.model.share.Permissions;
 import de.iks.grocery_manager.server.model.share.Share;
@@ -30,7 +30,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @QuarkusTest
 @TestHTTPEndpoint(ShareController.class)
 @WithTestUser
-@Sql("/testdata.sql")
+@EntityAccess(ShareRepository.class)
+@EntityAccess(JoinLinkRepository.class)
 class ShareControllerTest {
 
     @Inject
