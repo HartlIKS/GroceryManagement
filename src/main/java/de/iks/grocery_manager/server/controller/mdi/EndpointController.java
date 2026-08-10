@@ -23,8 +23,8 @@ public abstract class EndpointController<E extends Endpoint, D extends HasUUID_D
     R extends EndpointRepository<E> & BaseRepository<E>>
     extends ParentedCRUDController.Standard<E, D, C, R> {
     private final EntityMapper.Parented<E, D, C, C> dtoMapper;
-    /*@RestClient
-    private Receiver webClient;*/
+    @RestClient
+    protected Receiver webClient;
 
     public EndpointController(
         R repository,
@@ -52,7 +52,7 @@ public abstract class EndpointController<E extends Endpoint, D extends HasUUID_D
         );
     }
 
-    /*@POST
+    @POST
     @Path("{uuid}/exec")
     public Response execute(
         @SuppressWarnings("UnresolvedRestParam") @PathParam("parentUuid") UUID parentUuid,
@@ -68,5 +68,5 @@ public abstract class EndpointController<E extends Endpoint, D extends HasUUID_D
         UriBuilder uriBuilder = UriBuilder.fromUri(endpoint.getBaseUrl());
         if(params.pathAppend() != null) uriBuilder = uriBuilder.path(params.pathAppend());
         return webClient.send(uriBuilder.toTemplate(), params.headers(), params.queryParams());
-    }*/
+    }
 }

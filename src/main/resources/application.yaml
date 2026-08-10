@@ -27,3 +27,8 @@ quarkus:
     package-manager-install:
       ~: true
       node-version: 24.17.0
+  rest-client:
+    "any":
+      uri: http://localhost/
+      disable-default-mapper: true
+      follow-redirects: true

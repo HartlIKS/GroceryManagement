@@ -1,6 +1,8 @@
 package de.iks.grocery_manager.server.controller.mdi;
 
 import io.quarkus.rest.client.reactive.Url;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -11,6 +13,7 @@ import org.jboss.resteasy.reactive.RestQuery;
 import java.util.List;
 import java.util.Map;
 
+@Path("/")
 @RegisterRestClient(configKey = "any")
 public interface Receiver {
     @Produces(
@@ -22,9 +25,10 @@ public interface Receiver {
             MediaType.TEXT_PLAIN
         }
     )
+    @GET
     Response send(
         @Url String url,
-        @RestHeader Map<String, List<String>> headers,
+        @RestHeader("dummy") Map<String, List<String>> headers,
         @RestQuery Map<String, List<String>> params
     );
 }
