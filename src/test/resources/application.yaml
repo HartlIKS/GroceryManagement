@@ -3,3 +3,5 @@ quarkus:
     test-port: 0
   oidc:
     auth-server-url: "http://localhost:8081"
+    discovery-enabled: false
+    jwks-path: "oidc/certs"
