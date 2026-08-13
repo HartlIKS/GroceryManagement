@@ -11,6 +11,8 @@ import de.iks.grocery_manager.server.mapping.HasUUID_DTO;
 import de.iks.grocery_manager.server.model.mdi.Endpoint;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -67,6 +69,10 @@ public abstract class EndpointController<E extends Endpoint, D extends HasUUID_D
 
         UriBuilder uriBuilder = UriBuilder.fromUri(endpoint.getBaseUrl());
         if(params.pathAppend() != null) uriBuilder = uriBuilder.path(params.pathAppend());
-        return webClient.send(uriBuilder.toTemplate(), params.headers(), params.queryParams());
+        MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
+        headers.putAll(params.headers());
+        MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
+        queryParams.putAll(params.queryParams());
+        return webClient.send(uriBuilder.toTemplate(), headers,queryParams);
     }
 }
