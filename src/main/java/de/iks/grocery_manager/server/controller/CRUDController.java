@@ -1,7 +1,9 @@
 package de.iks.grocery_manager.server.controller;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import de.iks.grocery_manager.server.extra_http.QUERY;
 import de.iks.grocery_manager.server.jpa.BaseRepository;
+import de.iks.grocery_manager.server.mapping.DTOViews;
 import de.iks.grocery_manager.server.mapping.EntityMapper;
 import de.iks.grocery_manager.server.mapping.HasUUID_DTO;
 import de.iks.grocery_manager.server.model.HasUUID;
@@ -21,27 +23,18 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Transactional
-public abstract class CRUDController<Entity extends HasUUID, ListDTO extends HasUUID_DTO, CreateDTO, UpdateDTO,
+public abstract class CRUDController<Entity extends HasUUID, DTO extends HasUUID_DTO,
     Repository extends BaseRepository<Entity>> {
-    public static abstract class Standard<Entity extends HasUUID, ListDTO extends HasUUID_DTO, CreateDTO,
-        Repository extends BaseRepository<Entity>>
-        extends CRUDController<Entity, ListDTO, CreateDTO, CreateDTO, Repository> {
-        public Standard(
-            Repository repository,
-            EntityMapper<Entity, ListDTO, CreateDTO, CreateDTO> dtoMapper
-        ) {
-            super(repository, dtoMapper);
-        }
-    }
 
     protected final Repository repository;
-    private final EntityMapper<Entity, ListDTO, CreateDTO, UpdateDTO> dtoMapper;
+    private final EntityMapper<Entity, DTO> dtoMapper;
     @Inject
     protected UriInfo uriInfo;
 
     @GET
     @Path("{uuid}")
-    public RestResponse<ListDTO> get(@PathParam("uuid") UUID uuid) {
+    @JsonView(DTOViews.List.class)
+    public RestResponse<DTO> get(@PathParam("uuid") UUID uuid) {
         return repository
             .findByIdOptional(uuid)
             .map(dtoMapper.map())
@@ -50,15 +43,21 @@ public abstract class CRUDController<Entity extends HasUUID, ListDTO extends Has
     }
 
     @QUERY
-    public Map<UUID, ListDTO> getMany(List<UUID> uuids) {
-        return repository.streamByIds(uuids)
+    @JsonView(DTOViews.List.class)
+    public Map<UUID, DTO> getMany(List<UUID> uuids) {
+        return repository
+            .streamByIds(uuids)
             .map(dtoMapper.map())
-            .collect(Collectors.toUnmodifiableMap(ListDTO::uuid, Function.identity()));
+            .collect(Collectors.toUnmodifiableMap(DTO::uuid, Function.identity()));
     }
 
     @PUT
     @Path("{uuid}")
-    public RestResponse<ListDTO> put(@PathParam("uuid") UUID uuid, UpdateDTO updateDTO) {
+    @JsonView(DTOViews.List.class)
+    public RestResponse<DTO> put(
+        @PathParam("uuid") UUID uuid,
+        @JsonView(DTOViews.Update.class) DTO updateDTO
+    ) {
         return repository
             .findByIdOptional(uuid)
             .map(s -> {
@@ -73,12 +72,15 @@ public abstract class CRUDController<Entity extends HasUUID, ListDTO extends Has
     }
 
     @POST
-    public RestResponse<ListDTO> create(CreateDTO createDTO) {
-        ListDTO ret = dtoMapper
+    @JsonView(DTOViews.List.class)
+    public RestResponse<DTO> create(@JsonView(DTOViews.Create.class) DTO createDTO) {
+        DTO ret = dtoMapper
             .map()
             .apply(
                 repository.saveAndFlush(
-                    dtoMapper.create().apply(createDTO)
+                    dtoMapper
+                        .create()
+                        .apply(createDTO)
                 )
             );
         return RestResponse.ResponseBuilder
@@ -86,7 +88,9 @@ public abstract class CRUDController<Entity extends HasUUID, ListDTO extends Has
             .location(
                 uriInfo
                     .getAbsolutePathBuilder()
-                    .path(ret.uuid().toString())
+                    .path(ret
+                              .uuid()
+                              .toString())
                     .build()
             )
             .build();

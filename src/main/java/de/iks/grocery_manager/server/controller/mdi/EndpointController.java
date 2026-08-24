@@ -1,11 +1,13 @@
 package de.iks.grocery_manager.server.controller.mdi;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import de.iks.grocery_manager.server.controller.ParentedCRUDController;
 import de.iks.grocery_manager.server.dto.PageDTO;
 import de.iks.grocery_manager.server.dto.mdi.handling.RequestExecParams;
 import de.iks.grocery_manager.server.jpa.BaseRepository;
 import de.iks.grocery_manager.server.jpa.mdi.EndpointRepository;
 import de.iks.grocery_manager.server.mapping.DTOMapper;
+import de.iks.grocery_manager.server.mapping.DTOViews;
 import de.iks.grocery_manager.server.mapping.EntityMapper;
 import de.iks.grocery_manager.server.mapping.HasUUID_DTO;
 import de.iks.grocery_manager.server.model.mdi.Endpoint;
@@ -21,22 +23,23 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Transactional
-public abstract class EndpointController<E extends Endpoint, D extends HasUUID_DTO, C,
+public abstract class EndpointController<E extends Endpoint, D extends HasUUID_DTO,
     R extends EndpointRepository<E> & BaseRepository<E>>
-    extends ParentedCRUDController.Standard<E, D, C, R> {
-    private final EntityMapper.Parented<E, D, C, C> dtoMapper;
+    extends ParentedCRUDController<E, D, R> {
+    private final EntityMapper.Parented<E, D> dtoMapper;
     @RestClient
     protected Receiver webClient;
 
     public EndpointController(
         R repository,
-        EntityMapper.Parented<E, D, C, C> dtoMapper
+        EntityMapper.Parented<E, D> dtoMapper
     ) {
         super(repository, dtoMapper);
         this.dtoMapper = dtoMapper;
     }
 
     @GET
+    @JsonView(DTOViews.List.class)
     public PageDTO<D> search(
         @PathParam("parentUuid") UUID parentUuid,
         @QueryParam("name") @DefaultValue("") String name,

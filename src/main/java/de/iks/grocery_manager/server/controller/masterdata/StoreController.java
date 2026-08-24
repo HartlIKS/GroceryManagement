@@ -2,8 +2,7 @@ package de.iks.grocery_manager.server.controller.masterdata;
 
 import de.iks.grocery_manager.server.controller.CRUDController;
 import de.iks.grocery_manager.server.dto.PageDTO;
-import de.iks.grocery_manager.server.dto.masterdata.CreateStoreDTO;
-import de.iks.grocery_manager.server.dto.masterdata.ListStoreDTO;
+import de.iks.grocery_manager.server.dto.masterdata.StoreDTO;
 import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;
 import de.iks.grocery_manager.server.mapping.DTOMapper;
 import de.iks.grocery_manager.server.mapping.EntityMapper;
@@ -16,7 +15,7 @@ import jakarta.ws.rs.QueryParam;
 
 @Path("/api/masterdata/store")
 @Transactional
-public class StoreController extends CRUDController.Standard<Store, ListStoreDTO, CreateStoreDTO, StoreRepository> {
+public class StoreController extends CRUDController<Store, StoreDTO, StoreRepository> {
     private final DTOMapper dtoMapper;
     public StoreController(StoreRepository repository, DTOMapper dtoMapper) {
         super(repository, new EntityMapper<>(dtoMapper::map, dtoMapper::create, dtoMapper::update));
@@ -24,7 +23,7 @@ public class StoreController extends CRUDController.Standard<Store, ListStoreDTO
     }
 
     @GET
-    public PageDTO<ListStoreDTO> search(
+    public PageDTO<StoreDTO> search(
         @QueryParam("name") @DefaultValue("") String name,
         @QueryParam("page") @DefaultValue("0") int page,
         @QueryParam("size") @DefaultValue("10") int size

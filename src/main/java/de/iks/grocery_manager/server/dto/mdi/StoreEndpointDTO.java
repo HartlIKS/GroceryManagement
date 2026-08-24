@@ -1,12 +1,15 @@
 package de.iks.grocery_manager.server.dto.mdi;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import de.iks.grocery_manager.server.dto.mdi.handling.ParameterDTO;
+import de.iks.grocery_manager.server.mapping.DTOViews;
 import de.iks.grocery_manager.server.mapping.HasUUID_DTO;
 import de.iks.grocery_manager.server.model.mdi.ResponseType;
 
 import java.util.UUID;
 
 public record StoreEndpointDTO(
+    @JsonView(DTOViews.List.class)
     UUID uuid,
     String name,
     String baseUrl,

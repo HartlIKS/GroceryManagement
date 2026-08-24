@@ -1,6 +1,5 @@
 package de.iks.grocery_manager.server.controller.mdi;
 
-import de.iks.grocery_manager.server.dto.mdi.CreateProductEndpointDTO;
 import de.iks.grocery_manager.server.dto.mdi.ProductEndpointDTO;
 import de.iks.grocery_manager.server.jpa.mdi.ProductEndpointRepository;
 import de.iks.grocery_manager.server.mapping.DTOMapper;
@@ -11,7 +10,7 @@ import jakarta.transaction.Transactional;
 
 @Path("/api/masterdata/interface/{parentUuid}/endpoint/product")
 @Transactional
-public class ProductEndpointController extends EndpointController<ProductEndpoint, ProductEndpointDTO, CreateProductEndpointDTO, ProductEndpointRepository> {
+public class ProductEndpointController extends EndpointController<ProductEndpoint, ProductEndpointDTO, ProductEndpointRepository> {
     public ProductEndpointController(
         ProductEndpointRepository repository,
         DTOMapper dtoMapper

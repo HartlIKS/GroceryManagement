@@ -1,8 +1,9 @@
 package de.iks.grocery_manager.server.controller;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import de.iks.grocery_manager.server.jpa.OwnerTrackingJpaRepository;
+import de.iks.grocery_manager.server.mapping.DTOViews;
 import de.iks.grocery_manager.server.mapping.EntityMapper;
-import de.iks.grocery_manager.server.mapping.EntityMapper.Owned;
 import de.iks.grocery_manager.server.mapping.HasUUID_DTO;
 import de.iks.grocery_manager.server.model.HasOwner;
 import de.iks.grocery_manager.server.model.HasUUID;
@@ -21,21 +22,11 @@ import java.util.UUID;
 
 @RequiredArgsConstructor
 @Transactional
-public abstract class OwnerTrackingCRUDController<Entity extends HasUUID & HasOwner, ListDTO extends HasUUID_DTO,
-    CreateDTO, UpdateDTO, Repository extends OwnerTrackingJpaRepository<@NonNull Entity>> {
-    public static abstract class Standard<Entity extends HasUUID & HasOwner, ListDTO extends HasUUID_DTO, CreateDTO,
-        Repository extends OwnerTrackingJpaRepository<@NonNull Entity>>
-        extends OwnerTrackingCRUDController<Entity, ListDTO, CreateDTO, CreateDTO, Repository> {
-        public Standard(
-            Repository repository,
-            Owned<Entity, ListDTO, CreateDTO, CreateDTO> dtoMapper
-        ) {
-            super(repository, dtoMapper);
-        }
-    }
+public abstract class OwnerTrackingCRUDController<Entity extends HasUUID & HasOwner, DTO extends HasUUID_DTO,
+    Repository extends OwnerTrackingJpaRepository<@NonNull Entity>> {
 
     protected final Repository repository;
-    private final EntityMapper.Owned<Entity, ListDTO, CreateDTO, UpdateDTO> dtoMapper;
+    private final EntityMapper.Owned<Entity, DTO> dtoMapper;
     @Inject
     protected UserInfo userInfo;
     @Inject
@@ -43,7 +34,8 @@ public abstract class OwnerTrackingCRUDController<Entity extends HasUUID & HasOw
 
     @GET
     @Path("{uuid}")
-    public RestResponse<ListDTO> get(
+    @JsonView(DTOViews.List.class)
+    public RestResponse<DTO> get(
         @PathParam("uuid") UUID uuid
     ) {
         return repository
@@ -55,9 +47,10 @@ public abstract class OwnerTrackingCRUDController<Entity extends HasUUID & HasOw
 
     @PUT
     @Path("{uuid}")
-    public RestResponse<ListDTO> update(
+    @JsonView(DTOViews.List.class)
+    public RestResponse<DTO> update(
         @PathParam("uuid") UUID uuid,
-        UpdateDTO createProductGroupDTO
+        @JsonView(DTOViews.Update.class) DTO updateDto
     ) {
         return repository
             .findByUuidAndOwner(uuid, userInfo.getOwner())
@@ -66,7 +59,7 @@ public abstract class OwnerTrackingCRUDController<Entity extends HasUUID & HasOw
                     .update()
                     .accept(
                         p,
-                        createProductGroupDTO
+                        updateDto
                     );
                 return p;
             })
@@ -85,10 +78,11 @@ public abstract class OwnerTrackingCRUDController<Entity extends HasUUID & HasOw
 
     @POST
     @ResponseStatus(201)
-    public RestResponse<ListDTO> create(
-        CreateDTO createProductGroupDTO
+    @JsonView(DTOViews.List.class)
+    public RestResponse<DTO> create(
+        @JsonView(DTOViews.Create.class) DTO createProductGroupDTO
     ) {
-        ListDTO ret = dtoMapper
+        DTO ret = dtoMapper
             .map()
             .apply(
                 repository.saveAndFlush(

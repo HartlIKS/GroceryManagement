@@ -1,9 +1,10 @@
 package de.iks.grocery_manager.server.controller.share;
 
-import de.iks.grocery_manager.server.dto.share.CreateJoinLinkDTO;
+import com.fasterxml.jackson.annotation.JsonView;
 import de.iks.grocery_manager.server.dto.share.JoinLinkDTO;
 import de.iks.grocery_manager.server.jpa.share.JoinLinkRepository;
 import de.iks.grocery_manager.server.mapping.DTOMapper;
+import de.iks.grocery_manager.server.mapping.DTOViews;
 import de.iks.grocery_manager.server.model.share.JoinLink;
 import de.iks.grocery_manager.server.model.share.Permissions;
 import de.iks.grocery_manager.server.security.UserInfo;
@@ -41,6 +42,7 @@ public class JoinLinkController {
 
     @GET
     @Path("{uuid}")
+    @JsonView(DTOViews.List.class)
     public RestResponse<JoinLinkDTO> get(
         @PathParam("uuid") UUID uuid
     ) {
@@ -53,8 +55,9 @@ public class JoinLinkController {
     }
 
     @POST
+    @JsonView(DTOViews.List.class)
     public RestResponse<JoinLinkDTO> create(
-        CreateJoinLinkDTO dto
+        @JsonView(DTOViews.Create.class) JoinLinkDTO dto
     ) {
         JoinLinkDTO created = dtoMapper.map(links.saveAndFlush(dtoMapper.create(dto, userInfo.getShareId())));
         return RestResponse.ResponseBuilder
@@ -70,9 +73,10 @@ public class JoinLinkController {
 
     @PUT
     @Path("{uuid}")
+    @JsonView(DTOViews.List.class)
     public RestResponse<JoinLinkDTO> create(
         @PathParam("uuid") UUID uuid,
-        CreateJoinLinkDTO dto
+        @JsonView(DTOViews.Update.class) JoinLinkDTO dto
     ) {
         return links
             .findByIdOptional(uuid)

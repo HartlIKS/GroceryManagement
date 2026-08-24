@@ -1,6 +1,5 @@
 package de.iks.grocery_manager.server.controller;
 
-import de.iks.grocery_manager.server.dto.CreateShoppingListDTO;
 import de.iks.grocery_manager.server.dto.PageDTO;
 import de.iks.grocery_manager.server.dto.ShoppingListDTO;
 import de.iks.grocery_manager.server.jpa.ShoppingListRepository;
@@ -21,8 +20,7 @@ import java.util.UUID;
 @Path("/api/shoppingLists")
 @Transactional
 public class ShoppingListController
-    extends OwnerTrackingCRUDController.Standard<ShoppingList, ShoppingListDTO, CreateShoppingListDTO,
-    ShoppingListRepository> {
+    extends OwnerTrackingCRUDController<ShoppingList, ShoppingListDTO, ShoppingListRepository> {
     private final DTOMapper dtoMapper;
     private final UriInfo uriInfo;
 

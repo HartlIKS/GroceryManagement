@@ -1,7 +1,9 @@
 package de.iks.grocery_manager.server.controller;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import de.iks.grocery_manager.server.jpa.BaseRepository;
 import de.iks.grocery_manager.server.jpa.share.ParentTrackingRepository;
+import de.iks.grocery_manager.server.mapping.DTOViews;
 import de.iks.grocery_manager.server.mapping.EntityMapper;
 import de.iks.grocery_manager.server.mapping.HasUUID_DTO;
 import de.iks.grocery_manager.server.model.HasUUID;
@@ -18,28 +20,18 @@ import java.util.UUID;
 
 @RequiredArgsConstructor
 @Transactional
-public abstract class ParentedCRUDController<Entity extends HasUUID, ListDTO extends HasUUID_DTO, CreateDTO,
-    UpdateDTO, Repository extends ParentTrackingRepository<Entity> & BaseRepository<Entity>> {
-    public static abstract class Standard<Entity extends HasUUID, ListDTO extends HasUUID_DTO, CreateDTO,
-        Repository extends ParentTrackingRepository<Entity> & BaseRepository<Entity>>
-        extends
-        ParentedCRUDController<Entity, ListDTO, CreateDTO, CreateDTO, Repository> {
-        public Standard(
-            Repository repository,
-            EntityMapper.Parented<Entity, ListDTO, CreateDTO, CreateDTO> dtoMapper
-        ) {
-            super(repository, dtoMapper);
-        }
-    }
+public abstract class ParentedCRUDController<Entity extends HasUUID, DTO extends HasUUID_DTO,
+    Repository extends ParentTrackingRepository<Entity> & BaseRepository<Entity>> {
 
     protected final Repository repository;
-    private final EntityMapper.Parented<Entity, ListDTO, CreateDTO, UpdateDTO> dtoMapper;
+    private final EntityMapper.Parented<Entity, DTO> dtoMapper;
     @Inject
     protected UriInfo uriInfo;
 
     @GET
     @Path("{uuid}")
-    public RestResponse<ListDTO> get(
+    @JsonView(DTOViews.List.class)
+    public RestResponse<DTO> get(
         @SuppressWarnings("UnresolvedRestParam") @PathParam("parentUuid") UUID parentUuid,
         @PathParam("uuid") UUID uuid
     ) {
@@ -52,10 +44,11 @@ public abstract class ParentedCRUDController<Entity extends HasUUID, ListDTO ext
 
     @PUT
     @Path("{uuid}")
-    public RestResponse<ListDTO> put(
+    @JsonView(DTOViews.List.class)
+    public RestResponse<DTO> put(
         @SuppressWarnings("UnresolvedRestParam") @PathParam("parentUuid") UUID parentUuid,
         @PathParam("uuid") UUID uuid,
-        UpdateDTO updateDTO
+        @JsonView(DTOViews.Update.class) DTO updateDTO
     ) {
         return repository
             .findByIdOptional(parentUuid, uuid)
@@ -72,11 +65,12 @@ public abstract class ParentedCRUDController<Entity extends HasUUID, ListDTO ext
 
     @POST
     @ResponseStatus(201)
-    public RestResponse<ListDTO> create(
+    @JsonView(DTOViews.List.class)
+    public RestResponse<DTO> create(
         @PathParam("parentUuid") UUID parentUuid,
-        CreateDTO createDTO
+        @JsonView(DTOViews.Create.class) DTO createDTO
     ) {
-        ListDTO ret = dtoMapper
+        DTO ret = dtoMapper
             .map()
             .apply(repository.saveAndFlush(dtoMapper
                                                .create()

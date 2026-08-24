@@ -2,10 +2,8 @@ package de.iks.grocery_manager.server.controller.masterdata;
 
 import de.iks.grocery_manager.server.controller.CRUDController;
 import de.iks.grocery_manager.server.dto.PageDTO;
-import de.iks.grocery_manager.server.dto.masterdata.CreatePriceListingDTO;
-import de.iks.grocery_manager.server.dto.masterdata.ListPriceDTO;
+import de.iks.grocery_manager.server.dto.masterdata.PriceDTO;
 import de.iks.grocery_manager.server.dto.masterdata.PriceListingDTO;
-import de.iks.grocery_manager.server.dto.masterdata.UpdatePriceDTO;
 import de.iks.grocery_manager.server.jpa.masterdata.PriceRepository;
 import de.iks.grocery_manager.server.mapping.DTOMapper;
 import de.iks.grocery_manager.server.mapping.EntityMapper;
@@ -29,7 +27,7 @@ import java.util.stream.Collectors;
 @Path("/api/masterdata/price")
 @Transactional
 public class PriceListController
-    extends CRUDController<PriceListing, ListPriceDTO, CreatePriceListingDTO, UpdatePriceDTO, PriceRepository> {
+    extends CRUDController<PriceListing, PriceDTO, PriceRepository> {
     private final DTOMapper dtoMapper;
 
     public PriceListController(
@@ -55,7 +53,7 @@ public class PriceListController
         else return RestResponse.ok(getPrices(store, product, page, size));
     }
 
-    private PageDTO<ListPriceDTO> getPrices(
+    private PageDTO<PriceDTO> getPrices(
         UUID store,
         UUID product,
         int page,

@@ -8,20 +8,20 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public record EntityMapper<E extends HasUUID, ListDTO, CreateDTO, UpdateDTO>(
-    Function<E, ListDTO> map,
-    Function<CreateDTO, E> create,
-    BiConsumer<E, UpdateDTO> update
+public record EntityMapper<E extends HasUUID, DTO>(
+    Function<E, DTO> map,
+    Function<DTO, E> create,
+    BiConsumer<E, DTO> update
 ) {
-    public record Owned<E extends HasUUID & HasOwner, ListDTO, CreateDTO, UpdateDTO>(
-        Function<E, ListDTO> map,
-        BiFunction<CreateDTO, String, E> create,
-        BiConsumer<E, UpdateDTO> update
+    public record Owned<E extends HasUUID & HasOwner, DTO>(
+        Function<E, DTO> map,
+        BiFunction<DTO, String, E> create,
+        BiConsumer<E, DTO> update
     ) {
     }
-    public record Parented<E extends HasUUID, ListDTO, CreateDTO, UpdateDTO>(
-        Function<E, ListDTO> map,
-        BiFunction<CreateDTO, UUID, E> create,
-        BiConsumer<E, UpdateDTO> update
+    public record Parented<E extends HasUUID, DTO>(
+        Function<E, DTO> map,
+        BiFunction<DTO, UUID, E> create,
+        BiConsumer<E, DTO> update
     ) {}
 }

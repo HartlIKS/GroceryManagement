@@ -1,9 +1,10 @@
 package de.iks.grocery_manager.server.controller.share;
 
-import de.iks.grocery_manager.server.dto.share.CreateShareDTO;
+import com.fasterxml.jackson.annotation.JsonView;
 import de.iks.grocery_manager.server.dto.share.ShareDTO;
 import de.iks.grocery_manager.server.jpa.share.ShareRepository;
 import de.iks.grocery_manager.server.mapping.DTOMapper;
+import de.iks.grocery_manager.server.mapping.DTOViews;
 import de.iks.grocery_manager.server.model.share.Share;
 import de.iks.grocery_manager.server.security.UserInfo;
 import jakarta.transaction.Transactional;
@@ -24,13 +25,15 @@ public class CurrentShareController {
     private final UserInfo userInfo;
 
     @GET
+    @JsonView(DTOViews.List.class)
     public ShareDTO getCurrent() {
         return dtoMapper.map(shares.findByIdOptional(userInfo.getShareId()).orElseThrow(), userInfo.getUser());
     }
 
     @PUT
+    @JsonView(DTOViews.List.class)
     public ShareDTO updateCurrent(
-        CreateShareDTO dto
+        @JsonView(DTOViews.Update.class) ShareDTO dto
     ) {
         final Share share = shares.findByIdOptional(userInfo.getShareId()).orElseThrow();
         dtoMapper.update(share, dto);

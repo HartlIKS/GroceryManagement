@@ -4,8 +4,6 @@ import de.iks.grocery_manager.server.dto.*;
 import de.iks.grocery_manager.server.dto.masterdata.*;
 import de.iks.grocery_manager.server.dto.mdi.*;
 import de.iks.grocery_manager.server.dto.mdi.handling.*;
-import de.iks.grocery_manager.server.dto.share.CreateJoinLinkDTO;
-import de.iks.grocery_manager.server.dto.share.CreateShareDTO;
 import de.iks.grocery_manager.server.dto.share.JoinLinkDTO;
 import de.iks.grocery_manager.server.dto.share.ShareDTO;
 import de.iks.grocery_manager.server.model.HasUUID;
@@ -30,7 +28,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-import static org.mapstruct.MappingConstants.ComponentModel.CDI;
 import static org.mapstruct.MappingConstants.ComponentModel.JAKARTA_CDI;
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 import static org.mapstruct.SubclassExhaustiveStrategy.RUNTIME_EXCEPTION;
@@ -67,33 +64,30 @@ public interface DTOMapper {
 
     Map<UUID, String> toUUIDMap(Map<? extends HasUUID, String> map);
 
-    ListStoreDTO map(Store store);
+    StoreDTO map(Store store);
+
+    Store create(StoreDTO store);
 
     @Mapping(target = "uuid", ignore = true)
-    Store create(CreateStoreDTO store);
+    void update(@MappingTarget Store target, StoreDTO update);
+
+    ProductDTO map(Product product);
+
+    Product create(ProductDTO product);
 
     @Mapping(target = "uuid", ignore = true)
-    void update(@MappingTarget Store target, CreateStoreDTO update);
-
-    ListProductDTO map(Product product);
-
-    @Mapping(target = "uuid", ignore = true)
-    Product create(CreateProductDTO product);
-
-    @Mapping(target = "uuid", ignore = true)
-    void update(@MappingTarget Product target, CreateProductDTO update);
+    void update(@MappingTarget Product target, ProductDTO update);
 
     Map<Product, BigDecimal> toProducts(Map<UUID, BigDecimal> map);
 
-    ListPriceDTO map(PriceListing price);
+    PriceDTO map(PriceListing price);
 
-    @Mapping(target = "uuid", ignore = true)
-    PriceListing create(CreatePriceListingDTO priceListingDTO);
+    PriceListing create(PriceDTO priceListingDTO);
 
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "store", ignore = true)
     @Mapping(target = "product", ignore = true)
-    void update(@MappingTarget PriceListing target, UpdatePriceDTO update);
+    void update(@MappingTarget PriceListing target, PriceDTO update);
 
     @Mapping(target = "listPriceUUID", source = "uuid")
     PriceListingDTO map2(PriceListing priceListing);
@@ -104,23 +98,21 @@ public interface DTOMapper {
 
     void update(@MappingTarget Address target, AddressDTO update);
 
-    ListProductGroupDTO map(ProductGroup group);
+    ProductGroupDTO map(ProductGroup group);
 
-    @Mapping(target = "uuid", ignore = true)
-    ProductGroup create(CreateProductGroupDTO groupDTO, String owner);
+    ProductGroup create(ProductGroupDTO groupDTO, String owner);
 
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "owner", ignore = true)
     void update(
         @MappingTarget ProductGroup target,
-        CreateProductGroupDTO update
+        ProductGroupDTO update
     );
 
     ShoppingListDTO map(ShoppingList list);
 
-    @Mapping(target = "uuid", ignore = true)
     ShoppingList create(
-        CreateShoppingListDTO listDTO,
+        ShoppingListDTO listDTO,
         String owner
     );
 
@@ -128,14 +120,13 @@ public interface DTOMapper {
     @Mapping(target = "owner", ignore = true)
     void update(
         @MappingTarget ShoppingList target,
-        CreateShoppingListDTO update
+        ShoppingListDTO update
     );
 
     ShoppingTripDTO map(ShoppingTrip trip);
 
-    @Mapping(target = "uuid", ignore = true)
     ShoppingTrip create(
-        CreateShoppingTripDTO listDTO,
+        ShoppingTripDTO listDTO,
         String owner
     );
 
@@ -143,21 +134,20 @@ public interface DTOMapper {
     @Mapping(target = "owner", ignore = true)
     void update(
         @MappingTarget ShoppingTrip target,
-        CreateShoppingTripDTO update
+        ShoppingTripDTO update
     );
 
     @Mapping(target = "permissions", expression = "java(share.getPermissionsFor(user))")
     ShareDTO map(Share share, @Context String user);
 
-    @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "links", expression = "java(new java.util.ArrayList<>())")
-    Share create(CreateShareDTO shareDTO);
+    Share create(ShareDTO shareDTO);
 
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "links", ignore = true)
     void update(
         @MappingTarget Share target,
-        CreateShareDTO update
+        ShareDTO update
     );
 
     default int toSize(Collection<?> collection) {
@@ -167,17 +157,17 @@ public interface DTOMapper {
     @Mapping(target = "numUsers", source = "users")
     JoinLinkDTO map(JoinLink link);
 
-    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "uuid", source = "linkDTO.uuid")
     @Mapping(target = "users", expression = "java(new java.util.HashSet<>())")
     @Mapping(target = "name", source = "linkDTO.name")
     @Mapping(target = "use", ignore = true)
-    JoinLink create(CreateJoinLinkDTO linkDTO, Share share);
+    JoinLink create(JoinLinkDTO linkDTO, Share share);
 
-    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "uuid", source = "linkDTO.uuid")
     @Mapping(target = "users", expression = "java(new java.util.HashSet<>())")
     @Mapping(target = "name", source = "linkDTO.name")
     @Mapping(target = "use", ignore = true)
-    JoinLink create(CreateJoinLinkDTO linkDTO, UUID share);
+    JoinLink create(JoinLinkDTO linkDTO, UUID share);
 
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "share", ignore = true)
@@ -185,7 +175,7 @@ public interface DTOMapper {
     @Mapping(target = "use", ignore = true)
     void update(
         @MappingTarget JoinLink target,
-        CreateJoinLinkDTO update
+        JoinLinkDTO update
     );
 
     List<JoinLinkDTO> map(List<JoinLink> links);
@@ -228,12 +218,11 @@ public interface DTOMapper {
 
     ProductEndpointDTO map(ProductEndpoint endpoint);
 
-    @Mapping(target = "uuid", ignore = true)
-    ProductEndpoint create(CreateProductEndpointDTO createProductEndpointDTO, UUID api);
+    ProductEndpoint create(ProductEndpointDTO createProductEndpointDTO, UUID api);
 
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "api", ignore = true)
-    void update(@MappingTarget ProductEndpoint target, CreateProductEndpointDTO update);
+    void update(@MappingTarget ProductEndpoint target, ProductEndpointDTO update);
 
     AddressPathsDTO map(AddressPaths paths);
 
@@ -243,23 +232,21 @@ public interface DTOMapper {
 
     StoreEndpointDTO map(StoreEndpoint endpoint);
 
-    @Mapping(target = "uuid", ignore = true)
-    StoreEndpoint create(CreateStoreEndpointDTO createStoreEndpointDTO, UUID api);
+    StoreEndpoint create(StoreEndpointDTO createStoreEndpointDTO, UUID api);
 
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "api", ignore = true)
-    void update(@MappingTarget StoreEndpoint target, CreateStoreEndpointDTO update);
+    void update(@MappingTarget StoreEndpoint target, StoreEndpointDTO update);
 
     PriceEndpointDTO map(PriceEndpoint endpoint);
 
-    @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "productHandlingType", ignore = true)
     @Mapping(target = "productPath", ignore = true)
     @Mapping(target = "productParameters", ignore = true)
     @Mapping(target = "storeHandlingType", ignore = true)
     @Mapping(target = "storePath", ignore = true)
     @Mapping(target = "storeParameters", ignore = true)
-    PriceEndpoint create(CreatePriceEndpointDTO createPriceEndpointDTO, UUID api);
+    PriceEndpoint create(PriceEndpointDTO createPriceEndpointDTO, UUID api);
 
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "api", ignore = true)
@@ -269,19 +256,18 @@ public interface DTOMapper {
     @Mapping(target = "storeHandlingType", ignore = true)
     @Mapping(target = "storePath", ignore = true)
     @Mapping(target = "storeParameters", ignore = true)
-    void update(@MappingTarget PriceEndpoint target, CreatePriceEndpointDTO update);
+    void update(@MappingTarget PriceEndpoint target, PriceEndpointDTO update);
 
     ExternalAPIDTO map(ExternalAPI api);
 
-    @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "endpoints", ignore = true)
     @Mapping(target = "productMappings", ignore = true)
     @Mapping(target = "storeMappings", ignore = true)
-    ExternalAPI create(CreateExternalAPIDTO createExternalAPIDTO);
+    ExternalAPI create(ExternalAPIDTO createExternalAPIDTO);
 
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "endpoints", ignore = true)
     @Mapping(target = "productMappings", ignore = true)
     @Mapping(target = "storeMappings", ignore = true)
-    void update(@MappingTarget ExternalAPI target, CreateExternalAPIDTO update);
+    void update(@MappingTarget ExternalAPI target, ExternalAPIDTO update);
 }

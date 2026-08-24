@@ -1,10 +1,11 @@
 package de.iks.grocery_manager.server.controller.share;
 
-import de.iks.grocery_manager.server.dto.share.CreateShareDTO;
+import com.fasterxml.jackson.annotation.JsonView;
 import de.iks.grocery_manager.server.dto.share.ShareDTO;
 import de.iks.grocery_manager.server.jpa.share.JoinLinkRepository;
 import de.iks.grocery_manager.server.jpa.share.ShareRepository;
 import de.iks.grocery_manager.server.mapping.DTOMapper;
+import de.iks.grocery_manager.server.mapping.DTOViews;
 import de.iks.grocery_manager.server.model.share.JoinLink;
 import de.iks.grocery_manager.server.model.share.Permissions;
 import de.iks.grocery_manager.server.model.share.Share;
@@ -34,8 +35,9 @@ public class ShareController {
     private final UriInfo uriInfo;
 
     @POST
+    @JsonView(DTOViews.List.class)
     public RestResponse<ShareDTO> create(
-        CreateShareDTO createShareDTO
+        @JsonView(DTOViews.Create.class) ShareDTO createShareDTO
     ) {
         Share ret = dtoMapper.create(createShareDTO);
         JoinLink ownerLink = new JoinLink();
@@ -61,6 +63,7 @@ public class ShareController {
 
     @POST
     @Path("join/{uuid}")
+    @JsonView(DTOViews.List.class)
     public RestResponse<ShareDTO> join(
         @PathParam("uuid") UUID uuid
     ) {
@@ -75,6 +78,7 @@ public class ShareController {
     }
 
     @GET
+    @JsonView(DTOViews.List.class)
     public List<ShareDTO> getAll() {
         return shares
             .findByUser(userInfo.getUser())

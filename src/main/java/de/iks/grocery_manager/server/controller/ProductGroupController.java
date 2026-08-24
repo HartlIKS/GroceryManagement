@@ -1,8 +1,7 @@
 package de.iks.grocery_manager.server.controller;
 
-import de.iks.grocery_manager.server.dto.CreateProductGroupDTO;
-import de.iks.grocery_manager.server.dto.ListProductGroupDTO;
 import de.iks.grocery_manager.server.dto.PageDTO;
+import de.iks.grocery_manager.server.dto.ProductGroupDTO;
 import de.iks.grocery_manager.server.jpa.ProductGroupRepository;
 import de.iks.grocery_manager.server.mapping.DTOMapper;
 import de.iks.grocery_manager.server.mapping.EntityMapper.Owned;
@@ -17,8 +16,7 @@ import org.jboss.resteasy.reactive.RestResponse;
 @Path("/api/productGroups")
 @Transactional
 public class ProductGroupController
-    extends OwnerTrackingCRUDController.Standard<ProductGroup, ListProductGroupDTO, CreateProductGroupDTO,
-    ProductGroupRepository> {
+    extends OwnerTrackingCRUDController<ProductGroup, ProductGroupDTO, ProductGroupRepository> {
     private final DTOMapper dtoMapper;
 
     public ProductGroupController(
@@ -33,7 +31,7 @@ public class ProductGroupController
     }
 
     @GET
-    public RestResponse<PageDTO<ListProductGroupDTO>> search(
+    public RestResponse<PageDTO<ProductGroupDTO>> search(
         @QueryParam("name") @DefaultValue("") String name,
         @QueryParam("page") @DefaultValue("0") int page,
         @QueryParam("size") @DefaultValue("10") int size
