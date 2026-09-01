@@ -11,9 +11,10 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { ShoppingTripService } from '../../services';
-import { CreateShoppingTripDTO } from '../../models';
+import { ShoppingTripTypes } from '../../models';
 import { ProductService, StoreService } from '../../../master-data/services';
 import { MatTooltip } from '@angular/material/tooltip';
+import { UPDATE } from '../../../models/base.model';
 
 @Component({
   selector: 'app-shopping-trip-form',
@@ -83,6 +84,7 @@ export class ShoppingTripFormComponent implements OnInit {
     private router: Router
   ) {
     this.shoppingTripForm = this.fb.group({
+      version: [0],
       store: ['', Validators.required],
       time: ['', Validators.required]
     });
@@ -159,7 +161,8 @@ export class ShoppingTripFormComponent implements OnInit {
   onSubmit(): void {
     if (this.shoppingTripForm.valid) {
       const formValue = this.shoppingTripForm.value;
-      const shoppingTripData: CreateShoppingTripDTO = {
+      const shoppingTripData: ShoppingTripTypes[UPDATE] = {
+        version: formValue.version,
         store: formValue.store,
         time: new Date(formValue.time).toISOString(),
         products: this.shoppingTripProducts()

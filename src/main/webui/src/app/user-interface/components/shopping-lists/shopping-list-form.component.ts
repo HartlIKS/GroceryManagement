@@ -11,11 +11,12 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { ProductGroupService, ShoppingListService } from '../../services';
-import { CreateShoppingListDTO } from '../../models';
+import { ShoppingListTypes } from '../../models';
 import { ProductService } from '../../../master-data/services';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { MatTooltip } from '@angular/material/tooltip';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { UPDATE } from '../../../models/base.model';
 
 @Component({
   selector: 'app-shopping-list-form',
@@ -163,6 +164,7 @@ export class ShoppingListFormComponent implements OnInit {
   ) {
     this.shoppingListForm = this.fb.group({
       name: ['', Validators.required],
+      version: [0],
       repeating: [false]
     });
     // Watch for changes in the shopping list resource
@@ -338,8 +340,9 @@ export class ShoppingListFormComponent implements OnInit {
 
   onSave(): void {
     if (this.shoppingListForm.valid) {
-      const formData: CreateShoppingListDTO = {
+      const formData: ShoppingListTypes[UPDATE] = {
         name: this.shoppingListForm.value.name,
+        version: this.shoppingListForm.value.version,
         repeating: this.shoppingListForm.value.repeating,
         products: this.shoppingListProducts(),
         productGroups: this.shoppingListProductGroups()

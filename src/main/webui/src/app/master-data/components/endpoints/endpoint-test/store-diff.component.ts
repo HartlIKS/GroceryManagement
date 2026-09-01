@@ -41,7 +41,7 @@ import { MatExpansionPanel, MatExpansionPanelContent, MatExpansionPanelHeader } 
 })
 export class StoreDiffComponent implements DiffComponent<ListStoreDTO> {
   readonly api = input.required<string>();
-  readonly item = input.required<Partial<ListStoreDTO> & {uuid: string}>();
+  readonly item = input.required<Partial<ListStoreDTO> & {uuid: string, version: never}>();
   readonly fetchedItem = input.required<ListStoreDTO | undefined>();
   readonly afterChange = input.required<() => void>();
   private readonly storeService = inject(StoreService);

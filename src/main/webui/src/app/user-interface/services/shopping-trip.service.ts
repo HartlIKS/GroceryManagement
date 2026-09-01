@@ -1,13 +1,13 @@
 import { Injectable, isSignal, Signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { ApiService, CacheService, GetApiEndpoint } from '../../services';
-import { CreateShoppingTripDTO, ListShoppingTripDTO } from '../models';
+import { CreateShoppingTripDTO, ListShoppingTripDTO, ShoppingTripTypes } from '../models';
 import { Page } from '../../models';
 
 @Injectable({
   providedIn: 'root'
 })
-export class ShoppingTripService extends CacheService<ListShoppingTripDTO, CreateShoppingTripDTO> {
+export class ShoppingTripService extends CacheService<ShoppingTripTypes> {
   private readonly endpoint = '/shoppingTrips';
 
   constructor(private apiService: ApiService) {

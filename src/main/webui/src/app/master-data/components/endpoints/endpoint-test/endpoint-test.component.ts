@@ -19,18 +19,19 @@ import { MatInput } from '@angular/material/input';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
 import { EndpointService, MappingTableService } from '../../../services';
-import { EndpointDTO, ParameterDTO } from '../../../models';
+import { EndpointDTOTypes, ParameterDTO } from '../../../models';
 import { form, FormField, FormRoot, schema } from '@angular/forms/signals';
 import { MatIcon } from '@angular/material/icon';
 import { httpResource, HttpResourceRef } from '@angular/common/http';
 import { ApiService } from '../../../../services';
 import { MatCheckbox } from '@angular/material/checkbox';
+import { LIST } from '../../../../models/base.model';
 
 export type DiffStatus = 'loading' | 'ignored' | 'create' | 'same' | 'different';
 
 export interface DiffComponent<T> {
   readonly api: InputSignal<string>;
-  readonly item: InputSignal<Partial<T> & {uuid:string}>;
+  readonly item: InputSignal<Partial<T> & {uuid:string, version: never}>;
   readonly fetchedItem: InputSignal<T | undefined>;
   readonly status: Signal<DiffStatus>;
   readonly afterChange: InputSignal<() => void>;
@@ -40,15 +41,15 @@ export interface DiffComponent<T> {
   }): any;
 }
 
-export type EndpointConfig<E extends EndpointDTO, T extends {uuid: string, name: string}> = {
-  endpointService: EndpointService<E, any>;
+export type EndpointConfig<E extends EndpointDTOTypes, T extends {uuid: string, name: string}> = {
+  endpointService: EndpointService<E>;
   mappingService: MappingTableService;
   massQuery(uuids: Signal<string[] | undefined> | string[]): HttpResourceRef<Record<string, T> | undefined>;
-  toPartials(endpoint: E, requestResult: string): (Partial<T> & {uuid: string})[];
+  toPartials(endpoint: E[LIST], requestResult: string): (Partial<T> & {uuid: string})[];
   diffComponent: Type<DiffComponent<T>>;
 };
 
-export const ENDPOINT_TOKEN = new InjectionToken<EndpointConfig<EndpointDTO, {uuid: string, name: string}>>('EndpointConfig');
+export const ENDPOINT_TOKEN = new InjectionToken<EndpointConfig<EndpointDTOTypes, {uuid: string, name: string}>>('EndpointConfig');
 
 function writeParameter(value: string | number, param: ParameterDTO | undefined, headers: Record<string, string[]>, params: Record<string, string[]>) {
   if(param?.queryParameter) {

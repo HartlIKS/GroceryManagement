@@ -9,7 +9,7 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ShoppingListService } from '../../services';
-import { ListShoppingListDTO } from '../../models';
+import { ShoppingList } from '../../models';
 
 @Component({
   selector: 'app-shopping-list-list',
@@ -49,7 +49,7 @@ export class ShoppingListListComponent {
   // Create MatTableDataSource from shopping lists signal
   public readonly dataSource = computed(() => {
     const shoppingLists = this.shoppingLists();
-    return new MatTableDataSource<ListShoppingListDTO>(shoppingLists);
+    return new MatTableDataSource<ShoppingList>(shoppingLists);
   });
 
   onDeleteShoppingList(uuid: string): void {

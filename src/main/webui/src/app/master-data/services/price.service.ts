@@ -1,13 +1,13 @@
 import { Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService, CacheService, GetApiEndpoint } from '../../services';
-import { CreatePriceListingDTO, ListPriceDTO, PriceListingDTO, UpdatePriceDTO } from '../models';
+import { CreatePriceListingDTO, ListPriceDTO, PriceListingDTO, PriceTypes, UpdatePriceDTO } from '../models';
 import { Page } from '../../models';
 
 @Injectable({
   providedIn: 'root'
 })
-export class PriceService extends CacheService<ListPriceDTO, UpdatePriceDTO> {
+export class PriceService extends CacheService<PriceTypes> {
   private readonly endpoint = '/masterdata/price';
 
   constructor(private apiService: ApiService) {

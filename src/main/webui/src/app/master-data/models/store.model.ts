@@ -1,18 +1,15 @@
 import { AddressDTO } from './address.model';
+import { Always, BaseDTOTypes, CREATE, LIST, Mode } from '../../models/base.model';
 
-export type Store = {
-  uuid: string;
-  name: string;
-  logo: string;
-  address: AddressDTO;
-  currency: string;
-}
+export type StoreTypes = Always<{
+  name: string,
+  logo: string,
+  address: AddressDTO,
+  currency: string,
+}> & BaseDTOTypes;
 
-export type CreateStoreDTO = {
-  name: string;
-  logo: string;
-  address: AddressDTO;
-  currency: string;
-}
+export type Store<mode extends Mode> = StoreTypes[mode];
 
-export type ListStoreDTO = Store;
+export type CreateStoreDTO = Store<CREATE>;
+
+export type ListStoreDTO = Store<LIST>;

@@ -11,10 +11,11 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { ProductGroupService } from '../../services';
-import { CreateProductGroupDTO } from '../../models';
+import { ProductGroupTypes } from '../../models';
 import { ProductService } from '../../../master-data/services';
 import { ListProductDTO } from '../../../master-data/models';
 import { MatTooltip } from '@angular/material/tooltip';
+import { UPDATE } from '../../../models/base.model';
 
 @Component({
   selector: 'app-product-group-form',
@@ -83,6 +84,7 @@ export class ProductGroupFormComponent implements OnInit {
   ) {
     this.productGroupForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(255)]],
+      version: [0],
       amount: [1, [Validators.required, Validators.min(0.01)]]
     });
 
@@ -163,8 +165,9 @@ export class ProductGroupFormComponent implements OnInit {
       }
     });
 
-    const formData: CreateProductGroupDTO = {
+    const formData: ProductGroupTypes[UPDATE] = {
       name: this.productGroupForm.value.name,
+      version: this.productGroupForm.value.version,
       products: products
     };
 

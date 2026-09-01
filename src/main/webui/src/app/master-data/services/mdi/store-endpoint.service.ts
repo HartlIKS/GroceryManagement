@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { EndpointService } from './endpoint.service';
-import { CreateStoreEndpointDTO, StoreEndpointDTO } from '../../models';
+import { StoreEndpointDTOTypes } from '../../models';
 
 @Injectable({
   providedIn: 'root'
 })
-export class StoreEndpointService extends EndpointService<StoreEndpointDTO, CreateStoreEndpointDTO> {
+export class StoreEndpointService extends EndpointService<StoreEndpointDTOTypes> {
   protected readonly endpointType = 'store';
 
   constructor() {

@@ -1,20 +1,16 @@
 import { ProductHandlingDTO, StoreHandlingDTO } from './handling.model';
-import { EndpointDTO, CreateEndpointDTO } from './endpoint.model';
+import { EndpointDTOTypes } from './endpoint.model';
+import { Always, CREATE, LIST, Mode } from '../../../models/base.model';
 
-export type PriceEndpointDTO = EndpointDTO & {
-  productHandling: ProductHandlingDTO;
-  storeHandling: StoreHandlingDTO;
-  pricePath: string;
-  timeFormat: string;
-  validFromPath: string;
-  validUntilPath: string;
-}
+export type PriceEndpointDTOTypes = Always<{
+  productHandling: ProductHandlingDTO,
+  storeHandling: StoreHandlingDTO,
+  pricePath: string,
+  timeFormat: string,
+  validFromPath: string,
+  validUntilPath: string,
+}> & EndpointDTOTypes;
 
-export type CreatePriceEndpointDTO = CreateEndpointDTO & {
-  productHandling: ProductHandlingDTO;
-  storeHandling: StoreHandlingDTO;
-  pricePath: string;
-  timeFormat: string;
-  validFromPath: string;
-  validUntilPath: string;
-}
+export type PriceEndpointDTO<mode extends Mode = LIST> = PriceEndpointDTOTypes[mode];
+
+export type CreatePriceEndpointDTO = PriceEndpointDTO<CREATE>;

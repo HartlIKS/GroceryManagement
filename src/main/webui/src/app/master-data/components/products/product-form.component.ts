@@ -7,7 +7,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { ProductService } from '../../services';
-import { CreateProductDTO } from '../../models';
+import { ProductTypes } from '../../models';
+import { UPDATE } from '../../../models/base.model';
 
 @Component({
   selector: 'app-product-form',
@@ -51,6 +52,7 @@ export class ProductFormComponent implements OnInit {
   ) {
     this.productForm = this.fb.group({
       name: ['', Validators.required],
+      version: [0],
       image: [''],
       EAN: ['']
     });
@@ -75,7 +77,7 @@ export class ProductFormComponent implements OnInit {
       return;
     }
 
-    const productData: CreateProductDTO = this.productForm.value;
+    const productData: ProductTypes[UPDATE] = this.productForm.value;
     const productId = this.productId();
     if (productId) {
       this.productService.update(productId, productData).subscribe({

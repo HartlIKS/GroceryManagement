@@ -58,6 +58,7 @@ export class PriceFormComponent implements OnInit {
     private route: ActivatedRoute
   ) {
     this.priceForm = this.fb.group({
+      version: [0],
       product: ['', Validators.required],
       store: ['', Validators.required],
       price: ['', [Validators.required, Validators.min(0)]],
@@ -93,8 +94,9 @@ export class PriceFormComponent implements OnInit {
     if (priceId) {
       const updateData: UpdatePriceDTO = {
         price: this.priceForm.value.price,
-        validFrom: this.convertToIsoDateTime(this.priceForm.value.validFrom),
-        validTo: this.priceForm.value.validTo ? this.convertToIsoDateTime(this.priceForm.value.validTo) : undefined
+        version: this.priceForm.value.version,
+        validFrom: this.convertToIsoDateTime(this.priceForm.value.validFrom) ?? '',
+        validTo: this.convertToIsoDateTime(this.priceForm.value.validTo) ?? '',
       };
 
       this.priceService.update(priceId, updateData).subscribe({

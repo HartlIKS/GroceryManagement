@@ -43,7 +43,7 @@ import { MatExpansionPanel, MatExpansionPanelContent, MatExpansionPanelHeader } 
 })
 export class ProductDiffComponent implements DiffComponent<ListProductDTO> {
   readonly api = input.required<string>();
-  readonly item = input.required<Partial<ListProductDTO> & {uuid: string}>();
+  readonly item = input.required<Partial<ListProductDTO> & {uuid: string, version: never}>();
   readonly fetchedItem = input.required<ListProductDTO | undefined>();
   readonly afterChange = input.required<() => void>();
   private readonly productService = inject(ProductService);

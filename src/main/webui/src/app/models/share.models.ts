@@ -1,31 +1,27 @@
+import { Always, BaseDTOTypes, CREATE, LIST, ListOnly, Mode } from './base.model';
+
 export type Permissions = 'NONE' | 'READ' | 'WRITE' | 'ADMIN';
 
-export type Share = {
-  uuid: string,
-  name: string,
-  permissions: Permissions,
-}
+export type ShareTypes = Always<{
+  name: string
+}> & ListOnly<{
+  permissions: Permissions
+}> & BaseDTOTypes;
 
-export type CreateShareDTO = {
-  name?: string,
-}
+export type Share<mode extends Mode = LIST> = ShareTypes[mode];
 
-export type ListShareDTO = Share;
+export type CreateShareDTO = Share<CREATE>;
 
-export type JoinLink = {
-  uuid: string,
+export type JoinLinkTypes = Always<{
   name: string,
   permissions: Permissions,
   active: boolean,
   singleUse: boolean,
   validTo: string,
-  numUsers: number,
-}
+}> & ListOnly<{
+  numUsers: number
+}> & BaseDTOTypes;
 
-export type CreateJoinLinkDTO = {
-  name?: string,
-  permissions?: Permissions,
-  active?: boolean,
-  singleUse?: boolean,
-  validTo?: string,
-}
+export type JoinLink<mode extends Mode = LIST> = JoinLinkTypes[mode];
+
+export type CreateJoinLinkDTO = JoinLink<CREATE>;

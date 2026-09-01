@@ -1,13 +1,13 @@
 import { Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService, CacheService, GetApiEndpoint } from '../../../services';
-import { CreateExternalAPIDTO, ExternalAPIDTO } from '../../models';
+import { CreateExternalAPIDTO, ExternalAPIDTO, ExternalAPIDTOTypes } from '../../models';
 import { Page } from '../../../models';
 
 @Injectable({
   providedIn: 'root'
 })
-export class ExternalAPIService extends CacheService<ExternalAPIDTO, CreateExternalAPIDTO> {
+export class ExternalAPIService extends CacheService<ExternalAPIDTOTypes> {
   private readonly endpoint = '/masterdata/interface';
 
   constructor(private apiService: ApiService) {

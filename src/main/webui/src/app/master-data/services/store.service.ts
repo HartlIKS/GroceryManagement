@@ -1,13 +1,13 @@
 import { computed, Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService, GetApiEndpoint, NamedCacheService } from '../../services';
-import { CreateStoreDTO, ListStoreDTO } from '../models';
+import { CreateStoreDTO, ListStoreDTO, StoreTypes } from '../models';
 import { Page } from '../../models';
 
 @Injectable({
   providedIn: 'root'
 })
-export class StoreService extends NamedCacheService<ListStoreDTO, CreateStoreDTO> {
+export class StoreService extends NamedCacheService<StoreTypes> {
   private readonly endpoint = '/masterdata/store';
 
   constructor(private apiService: ApiService) {

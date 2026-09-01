@@ -8,7 +8,8 @@ import { MatInput } from '@angular/material/input';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { ProductEndpointService } from '../../../services';
-import { CreateProductEndpointDTO } from '../../../models';
+import { ProductEndpointDTOTypes } from '../../../models';
+import { UPDATE } from '../../../../models/base.model';
 
 @Component({
   selector: 'app-product-endpoint-form',
@@ -52,6 +53,7 @@ export class ProductEndpointFormComponent implements OnInit {
   ) {
     this.productEndpointForm = this.fb.group({
       name: ['', Validators.required],
+      version: [0],
       baseUrl: ['', Validators.required],
       pageSize: this.fb.group({
         header: [''],
@@ -93,7 +95,7 @@ export class ProductEndpointFormComponent implements OnInit {
       return;
     }
 
-    const productEndpointData: CreateProductEndpointDTO = this.productEndpointForm.value;
+    const productEndpointData: ProductEndpointDTOTypes[UPDATE] = this.productEndpointForm.value;
     const productEndpointId = this.productEndpointId();
     const parentUuid = this.parentUuid();
     if (productEndpointId && parentUuid) {

@@ -21,6 +21,7 @@ import { MatInput } from '@angular/material/input';
 import { NamedCacheService } from '../../../services';
 import { MatPaginator } from '@angular/material/paginator';
 import { NgComponentOutlet } from '@angular/common';
+import { BaseDTOTypes, ListOnly } from '../../../models/base.model';
 
 export const MAPPING_SERVICE_TOKEN = new InjectionToken<MappingTableService>('MappingService');
 
@@ -29,7 +30,7 @@ export interface MappingEntry {
   remoteId: string;
 }
 
-export const ENTITY_SERVICE_TOKEN = new InjectionToken<NamedCacheService<{uuid: string, name: string}, any>>('EntityService');
+export const ENTITY_SERVICE_TOKEN = new InjectionToken<NamedCacheService<ListOnly<{name: string}> & BaseDTOTypes>>('EntityService');
 
 export const ENTITY_DISPLAY_COMPONENT_TOKEN = new InjectionToken<Type<{
   readonly uuid: InputSignal<string>,

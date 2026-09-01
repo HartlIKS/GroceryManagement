@@ -1,16 +1,12 @@
-export type ShoppingList = {
-  uuid: string;
-  name: string;
-  repeating: boolean;
-  products: Record<string, number>;
-  productGroups: Record<string, number>;
-}
+import { Always, BaseDTOTypes, CREATE, LIST, Mode } from '../../models/base.model';
 
-export type CreateShoppingListDTO = {
-  name?: string;
-  repeating?: boolean;
-  products?: Record<string, number>;
-  productGroups?: Record<string, number>;
-}
+export type ShoppingListTypes = Always<{
+  name: string,
+  repeating: boolean,
+  products: Record<string, number>,
+  productGroups: Record<string, number>,
+}> & BaseDTOTypes;
 
-export type ListShoppingListDTO = ShoppingList;
+export type ShoppingList<mode extends Mode = LIST> = ShoppingListTypes[mode];
+
+export type CreateShoppingListDTO = ShoppingList<CREATE>;

@@ -7,7 +7,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { StoreService } from '../../services';
-import { CreateStoreDTO } from '../../models';
+import { StoreTypes } from '../../models';
+import { UPDATE } from '../../../models/base.model';
 
 @Component({
   selector: 'app-store-form',
@@ -50,6 +51,7 @@ export class StoreFormComponent implements OnInit {
     private route: ActivatedRoute
   ) {
     this.storeForm = this.fb.group({
+      version: [0],
       name: ['', Validators.required],
       logo: [''],
       address: this.fb.group({
@@ -81,7 +83,7 @@ export class StoreFormComponent implements OnInit {
       return;
     }
 
-    const storeData: CreateStoreDTO = this.storeForm.value;
+    const storeData: StoreTypes[UPDATE] = this.storeForm.value;
     const storeId = this.storeId();
     if (storeId) {
       this.storeService.update(storeId, storeData).subscribe({

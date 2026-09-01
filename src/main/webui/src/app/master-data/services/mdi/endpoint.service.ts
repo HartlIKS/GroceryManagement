@@ -3,8 +3,10 @@ import { Observable } from 'rxjs';
 import { ApiService } from '../../../services';
 import { Page } from '../../../models';
 import { resolve } from '../../../utils/signalutils';
+import { EndpointDTOTypes } from '../../models';
+import { CREATE, LIST, UPDATE } from '../../../models/base.model';
 
-export abstract class EndpointService<T, C> {
+export abstract class EndpointService<T extends EndpointDTOTypes> {
   protected abstract readonly endpointType: string;
   private readonly apiService = inject(ApiService);
   private readonly baseEndpoint = '/masterdata/interface';
@@ -16,7 +18,7 @@ export abstract class EndpointService<T, C> {
     size: Signal<number> | number = 20
   ) {
     parentUuid = resolve(parentUuid);
-    return this.apiService.get<Page<T>>(computed(() => {
+    return this.apiService.get<Page<T[LIST]>>(computed(() => {
       const pid = parentUuid();
       if(pid === undefined || pid === null) return undefined;
       return `${this.baseEndpoint}/${parentUuid()}/endpoint/${this.endpointType}`;
@@ -31,7 +33,7 @@ export abstract class EndpointService<T, C> {
   getEndpoint(parentUuid: Signal<string | undefined> | string, uuid: Signal<string | undefined> | string) {
     parentUuid = resolve(parentUuid);
     uuid = resolve(uuid);
-    return this.apiService.get<T>(computed(() => {
+    return this.apiService.get<T[LIST]>(computed(() => {
       const pid = parentUuid();
       const id = uuid();
       if(pid === undefined || id === undefined) return undefined;
@@ -40,13 +42,13 @@ export abstract class EndpointService<T, C> {
   }
 
   // Create endpoint
-  create(parentUuid: string, data: C): Observable<T> {
-    return this.apiService.post<T>(`${this.baseEndpoint}/${parentUuid}/endpoint/${this.endpointType}`, data);
+  create(parentUuid: string, data: T[CREATE]): Observable<T[LIST]> {
+    return this.apiService.post<T[LIST]>(`${this.baseEndpoint}/${parentUuid}/endpoint/${this.endpointType}`, data);
   }
 
   // update endpoint
-  update(parentUuid: string, uuid: string, data: C): Observable<T> {
-    return this.apiService.put<T>(`${this.baseEndpoint}/${parentUuid}/endpoint/${this.endpointType}`, uuid, data);
+  update(parentUuid: string, uuid: string, data: T[UPDATE]): Observable<T[LIST]> {
+    return this.apiService.put<T[LIST]>(`${this.baseEndpoint}/${parentUuid}/endpoint/${this.endpointType}`, uuid, data);
   }
 
   // delete endpoint

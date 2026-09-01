@@ -8,7 +8,8 @@ import { MatInput } from '@angular/material/input';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { PriceEndpointService } from '../../../services';
-import { CreatePriceEndpointDTO } from '../../../models';
+import { PriceEndpointDTOTypes } from '../../../models';
+import { UPDATE } from '../../../../models/base.model';
 
 @Component({
   selector: 'app-price-endpoint-form',
@@ -52,6 +53,7 @@ export class PriceEndpointFormComponent implements OnInit {
   ) {
     this.priceEndpointForm = this.fb.group({
       name: ['', Validators.required],
+      version: [0],
       baseUrl: ['', Validators.required],
       pageSize: this.fb.group({
         header: [''],
@@ -99,7 +101,7 @@ export class PriceEndpointFormComponent implements OnInit {
       return;
     }
 
-    const priceEndpointData: CreatePriceEndpointDTO = this.priceEndpointForm.value;
+    const priceEndpointData: PriceEndpointDTOTypes[UPDATE] = this.priceEndpointForm.value;
     const priceEndpointId = this.priceEndpointId();
     const parentUuid = this.parentUuid();
     if (priceEndpointId && parentUuid) {

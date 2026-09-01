@@ -8,7 +8,8 @@ import { MatInput } from '@angular/material/input';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { StoreEndpointService } from '../../../services';
-import { CreateStoreEndpointDTO } from '../../../models';
+import { StoreEndpointDTOTypes } from '../../../models';
+import { UPDATE } from '../../../../models/base.model';
 
 @Component({
   selector: 'app-store-endpoint-form',
@@ -51,6 +52,7 @@ export class StoreEndpointFormComponent implements OnInit {
     private route: ActivatedRoute
   ) {
     this.storeEndpointForm = this.fb.group({
+      version: [0],
       name: ['', Validators.required],
       baseUrl: ['', Validators.required],
       pageSize: this.fb.group({
@@ -101,7 +103,7 @@ export class StoreEndpointFormComponent implements OnInit {
       return;
     }
 
-    const storeEndpointData: CreateStoreEndpointDTO = this.storeEndpointForm.value;
+    const storeEndpointData: StoreEndpointDTOTypes[UPDATE] = this.storeEndpointForm.value;
     const storeEndpointId = this.storeEndpointId();
     const parentUuid = this.parentUuid();
     if (storeEndpointId && parentUuid) {

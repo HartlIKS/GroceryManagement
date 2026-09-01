@@ -16,14 +16,16 @@ import {
   AddressPathsDTO,
   ListProductDTO,
   ListStoreDTO,
-  ProductEndpointDTO,
-  StoreEndpointDTO
+  ProductEndpointDTOTypes,
+  StoreEndpointDTOTypes
 } from './models';
 import {
   ProductEndpointService,
-  ProductMappingTableService, ProductService,
+  ProductMappingTableService,
+  ProductService,
   StoreEndpointService,
-  StoreMappingTableService, StoreService
+  StoreMappingTableService,
+  StoreService
 } from './services';
 import { inject } from '@angular/core';
 import jp from 'jsonpath';
@@ -130,7 +132,7 @@ export const externalAPIRoutes: Routes = [
     providers: [
       {
         provide: ENDPOINT_TOKEN,
-        useFactory: (): EndpointConfig<ProductEndpointDTO, ListProductDTO> => ({
+        useFactory: (): EndpointConfig<ProductEndpointDTOTypes, ListProductDTO> => ({
           endpointService: inject(ProductEndpointService),
           mappingService: inject(ProductMappingTableService),
           massQuery: ((s) => s.getManyProducts.bind(s))(inject(ProductService)),
@@ -169,7 +171,7 @@ export const externalAPIRoutes: Routes = [
     providers: [
       {
         provide: ENDPOINT_TOKEN,
-        useFactory: (): EndpointConfig<StoreEndpointDTO, ListStoreDTO> => ({
+        useFactory: (): EndpointConfig<StoreEndpointDTOTypes, ListStoreDTO> => ({
           endpointService: inject(StoreEndpointService),
           mappingService: inject(StoreMappingTableService),
           massQuery: ((s) => s.getManyStores.bind(s))(inject(StoreService)),

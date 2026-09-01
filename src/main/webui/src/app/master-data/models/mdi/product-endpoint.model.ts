@@ -1,15 +1,13 @@
-import { EndpointDTO, CreateEndpointDTO } from './endpoint.model';
+import { EndpointDTOTypes } from './endpoint.model';
+import { Always, CREATE, LIST, Mode } from '../../../models/base.model';
 
-export type ProductEndpointDTO = EndpointDTO & {
-  productIdPath: string;
-  productNamePath: string;
-  productImagePath: string;
-  productEANPath: string;
-}
+export type ProductEndpointDTOTypes = Always<{
+  productIdPath: string,
+  productNamePath: string,
+  productImagePath: string,
+  productEANPath: string,
+}> & EndpointDTOTypes;
 
-export type CreateProductEndpointDTO = CreateEndpointDTO & {
-  productIdPath: string;
-  productNamePath: string;
-  productImagePath: string;
-  productEANPath: string;
-}
+export type ProductEndpointDTO<mode extends Mode = LIST> = ProductEndpointDTOTypes[mode];
+
+export type CreateProductEndpointDTO = ProductEndpointDTO<CREATE>;

@@ -1,13 +1,13 @@
 import { Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService, CacheService, GetApiEndpoint } from '../../services';
-import { CreateProductGroupDTO, ListProductGroupDTO } from '../models';
+import { CreateProductGroupDTO, ListProductGroupDTO, ProductGroupTypes } from '../models';
 import { Page } from '../../models';
 
 @Injectable({
   providedIn: 'root'
 })
-export class ProductGroupService extends CacheService<ListProductGroupDTO, CreateProductGroupDTO> {
+export class ProductGroupService extends CacheService<ProductGroupTypes> {
   private readonly endpoint = '/productGroups';
 
   constructor(private apiService: ApiService) {

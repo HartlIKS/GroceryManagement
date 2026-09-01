@@ -7,10 +7,10 @@ import { MatInput } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { FormsModule } from '@angular/forms';
-import { EndpointDTO } from '../../models';
+import { EndpointDTOTypes } from '../../models';
 import { EndpointService } from '../../services';
 
-export const ENDPOINT_SERVICE_TOKEN = new InjectionToken<EndpointService<EndpointDTO, unknown>>('EndpointService');
+export const ENDPOINT_SERVICE_TOKEN = new InjectionToken<EndpointService<EndpointDTOTypes>>('EndpointService');
 
 @Component({
   selector: 'app-endpoint-list',

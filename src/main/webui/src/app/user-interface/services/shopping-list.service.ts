@@ -1,25 +1,26 @@
 import { Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiParam, ApiService, CacheService, GetApiEndpoint } from '../../services';
-import { CreateShoppingListDTO, ListShoppingListDTO } from '../models';
+import { ShoppingListTypes } from '../models';
 import { Page } from '../../models';
+import { CREATE, LIST } from '../../models/base.model';
 
 @Injectable({
   providedIn: 'root'
 })
-export class ShoppingListService extends CacheService<ListShoppingListDTO, CreateShoppingListDTO> {
+export class ShoppingListService extends CacheService<ShoppingListTypes> {
   private readonly endpoint = '/shoppingLists';
 
   constructor(private apiService: ApiService) {
     super();
   }
 
-  protected rawGet(uuid: string): GetApiEndpoint<ListShoppingListDTO> {
-    return this.apiService.getById<ListShoppingListDTO>(this.endpoint, uuid);
+  protected rawGet(uuid: string): GetApiEndpoint<ShoppingListTypes[LIST]> {
+    return this.apiService.getById<ShoppingListTypes[LIST]>(this.endpoint, uuid);
   }
 
-  protected rawUpdate(uuid: string, shoppingList: CreateShoppingListDTO): Observable<ListShoppingListDTO> {
-    return this.apiService.put<ListShoppingListDTO>(this.endpoint, uuid, shoppingList);
+  protected rawUpdate(uuid: string, shoppingList: ShoppingListTypes[CREATE]): Observable<ShoppingListTypes[LIST]> {
+    return this.apiService.put<ShoppingListTypes[LIST]>(this.endpoint, uuid, shoppingList);
   }
 
   protected rawDelete(uuid: string, params?: Record<string, ApiParam>): Observable<void> {
@@ -32,7 +33,7 @@ export class ShoppingListService extends CacheService<ListShoppingListDTO, Creat
     page: Signal<number> | number = 0,
     size: Signal<number> | number = 20
   ) {
-    return this.apiService.get<Page<ListShoppingListDTO>>(this.endpoint, {
+    return this.apiService.get<Page<ShoppingListTypes[LIST]>>(this.endpoint, {
       name,
       page,
       size
@@ -41,13 +42,13 @@ export class ShoppingListService extends CacheService<ListShoppingListDTO, Creat
 
   // Get single shopping list by UUID
   getShoppingList(uuid: Signal<string> | string) {
-    if(isSignal(uuid)) return this.apiService.getById<ListShoppingListDTO>(this.endpoint, uuid);
+    if(isSignal(uuid)) return this.apiService.getById<ShoppingListTypes[LIST]>(this.endpoint, uuid);
     return this.get(uuid);
   }
 
   // Create shopping list
-  createShoppingList(shoppingList: CreateShoppingListDTO): Observable<ListShoppingListDTO> {
-    return this.apiService.post<ListShoppingListDTO>(this.endpoint, shoppingList);
+  createShoppingList(shoppingList: ShoppingListTypes[CREATE]): Observable<ShoppingListTypes[LIST]> {
+    return this.apiService.post<ShoppingListTypes[LIST]>(this.endpoint, shoppingList);
   }
 
   deleteNonRepeating(uuid: string) {

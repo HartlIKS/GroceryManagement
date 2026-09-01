@@ -17,7 +17,7 @@ import {
   StoreMappingTableService,
   StoreService
 } from '../../../services';
-import { CreateExternalAPIDTO } from '../../../models';
+import { ExternalAPIDTOTypes } from '../../../models';
 import { ENDPOINT_SERVICE_TOKEN, EndpointListComponent } from '../endpoint-list.component';
 import {
   ENTITY_DISPLAY_COMPONENT_TOKEN,
@@ -32,6 +32,7 @@ import {
   ProductListingComponent
 } from '../../../../user-interface/components/product-listing/product-listing.component';
 import { firstValueFrom } from 'rxjs';
+import { UPDATE } from '../../../../models/base.model';
 
 @Component({
   selector: 'app-external-api-form',
@@ -91,9 +92,10 @@ export class ExternalAPIFormComponent implements OnInit {
   protected readonly externalAPIForm = form(
     linkedSignal({
       source: this.externalAPIResource.value,
-      computation(src, prev): CreateExternalAPIDTO {
+      computation(src, prev): ExternalAPIDTOTypes[UPDATE] {
         return src ?? prev?.value ?? {
           name: '',
+          version: 0,
         };
       }
     }),
@@ -126,7 +128,7 @@ export class ExternalAPIFormComponent implements OnInit {
       return;
     }
 
-    const externalAPIData: CreateExternalAPIDTO = this.externalAPIForm().value();
+    const externalAPIData: ExternalAPIDTOTypes[UPDATE] = this.externalAPIForm().value();
     const externalAPIId = this.externalAPIId();
     if (externalAPIId) {
       await firstValueFrom(this.externalAPIService.update(externalAPIId, externalAPIData));
