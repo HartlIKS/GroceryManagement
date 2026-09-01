@@ -20,7 +20,7 @@ quarkus:
     migrate-at-start: true
     change-log: db/changelog/db.changelog-master.yaml
   hibernate-orm:
-    physical-naming-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
+    physical-naming-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
     schema-management:
       strategy: validate
   quinoa:
