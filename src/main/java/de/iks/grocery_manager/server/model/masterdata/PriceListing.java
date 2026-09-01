@@ -16,6 +16,10 @@ public class PriceListing implements HasUUID {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;
 
+    @Version
+    @Column(nullable = false)
+    private int version;
+
     @ManyToOne
     @JoinColumn(nullable = false)
     private Product product;

@@ -4,4 +4,5 @@ import java.util.UUID;
 
 public interface HasUUID {
     UUID getUuid();
+    int getVersion();
 }

@@ -9,6 +9,8 @@ import java.util.UUID;
 public record ProductDTO(
     @JsonView(DTOViews.List.class)
     UUID uuid,
+    @JsonView(DTOViews.Update.class)
+    int version,
     String name,
     String image,
     String EAN

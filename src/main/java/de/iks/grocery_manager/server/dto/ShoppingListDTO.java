@@ -11,6 +11,8 @@ import java.util.UUID;
 public record ShoppingListDTO(
     @JsonView(DTOViews.List.class)
     UUID uuid,
+    @JsonView(DTOViews.Update.class)
+    int version,
     String name,
     boolean repeating,
     Map<UUID, BigDecimal> products,

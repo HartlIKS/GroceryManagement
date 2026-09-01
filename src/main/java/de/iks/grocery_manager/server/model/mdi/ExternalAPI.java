@@ -5,6 +5,7 @@ import de.iks.grocery_manager.server.model.masterdata.Product;
 import de.iks.grocery_manager.server.model.masterdata.Store;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.OptimisticLock;
 
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,10 @@ public class ExternalAPI implements HasUUID {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;
+
+    @Version
+    @Column(nullable = false)
+    private int version;
 
     @Column(nullable = false)
     private String name;
@@ -34,6 +39,7 @@ public class ExternalAPI implements HasUUID {
     )
     @MapKeyJoinColumn(name = "local_id")
     @Column(name = "remote_id", nullable = false)
+    @OptimisticLock(excluded = true)
     private Map<Product, String> productMappings;
 
     @ElementCollection
@@ -46,5 +52,6 @@ public class ExternalAPI implements HasUUID {
     )
     @MapKeyJoinColumn(name = "local_id")
     @Column(name = "remote_id", nullable = false)
+    @OptimisticLock(excluded = true)
     private Map<Store, String> storeMappings;
 }

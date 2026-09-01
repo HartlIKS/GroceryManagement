@@ -11,6 +11,8 @@ import java.util.UUID;
 public record PriceDTO(
     @JsonView(DTOViews.List.class)
     UUID uuid,
+    @JsonView(DTOViews.Update.class)
+    int version,
     @JsonView(DTOViews.Create.class)
     UUID store,
     @JsonView(DTOViews.Create.class)

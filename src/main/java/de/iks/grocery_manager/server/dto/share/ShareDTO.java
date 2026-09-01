@@ -10,6 +10,8 @@ import java.util.UUID;
 public record ShareDTO(
     @JsonView(DTOViews.List.class)
     UUID uuid,
+    @JsonView(DTOViews.Update.class)
+    int version,
     String name,
     @JsonView(DTOViews.List.class)
     Permissions permissions

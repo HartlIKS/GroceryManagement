@@ -16,6 +16,10 @@ public class JoinLink implements HasUUID {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;
 
+    @Version
+    @Column(nullable = false)
+    private int version;
+
     @ManyToOne(cascade = {
         CascadeType.DETACH,
         CascadeType.MERGE,

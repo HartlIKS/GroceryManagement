@@ -17,11 +17,18 @@ public class ShoppingTrip implements HasUUID, HasOwner {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;
+
+    @Version
+    @Column(nullable = false)
+    private int version;
+
     @Column(nullable = false)
     private String owner;
+
     @ManyToOne
     @JoinColumn(nullable = false)
     private Store store;
+
     @Column(nullable = false)
     private Instant time;
 

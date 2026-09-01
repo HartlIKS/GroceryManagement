@@ -15,6 +15,10 @@ public abstract class Endpoint implements HasUUID {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;
 
+    @Version
+    @Column(nullable = false)
+    private int version;
+
     @ManyToOne
     @JoinColumn(nullable = false)
     private ExternalAPI api;

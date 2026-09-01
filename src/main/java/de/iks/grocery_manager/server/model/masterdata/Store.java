@@ -14,10 +14,17 @@ public class Store implements HasUUID {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;
+
+    @Version
+    @Column(nullable = false)
+    private int version;
+
     @Column(nullable = false)
     private String name;
+
     private Address address = new Address();
     private String logo;
+
     @Column(nullable = false)
     private Currency currency;
 }

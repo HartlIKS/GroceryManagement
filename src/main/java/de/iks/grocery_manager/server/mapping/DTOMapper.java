@@ -19,6 +19,7 @@ import de.iks.grocery_manager.server.model.mdi.handling.*;
 import de.iks.grocery_manager.server.model.share.JoinLink;
 import de.iks.grocery_manager.server.model.share.Share;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
+import jakarta.persistence.OptimisticLockException;
 import org.mapstruct.*;
 
 import java.math.BigDecimal;
@@ -60,6 +61,13 @@ public interface DTOMapper {
 
     default UUID toUUID(HasUUID entity) {
         return entity.getUuid();
+    }
+
+    @BeforeMapping
+    default void checkLocks(@MappingTarget HasUUID entity, HasUUID_DTO entityDTO) {
+        if(entity.getVersion() != entityDTO.version()) {
+            throw new OptimisticLockException(entity);
+        }
     }
 
     Map<UUID, String> toUUIDMap(Map<? extends HasUUID, String> map);
@@ -158,6 +166,7 @@ public interface DTOMapper {
     JoinLinkDTO map(JoinLink link);
 
     @Mapping(target = "uuid", source = "linkDTO.uuid")
+    @Mapping(target = "version", source = "linkDTO.version")
     @Mapping(target = "users", expression = "java(new java.util.HashSet<>())")
     @Mapping(target = "name", source = "linkDTO.name")
     @Mapping(target = "use", ignore = true)

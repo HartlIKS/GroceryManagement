@@ -11,6 +11,8 @@ import java.util.UUID;
 public record StoreEndpointDTO(
     @JsonView(DTOViews.List.class)
     UUID uuid,
+    @JsonView(DTOViews.Update.class)
+    int version,
     String name,
     String baseUrl,
     ParameterDTO pageSize,

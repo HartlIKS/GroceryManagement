@@ -12,6 +12,8 @@ import java.util.UUID;
 public record ShoppingTripDTO(
     @JsonView(DTOViews.List.class)
     UUID uuid,
+    @JsonView(DTOViews.Update.class)
+    int version,
     UUID store,
     Instant time,
     Map<UUID, BigDecimal> products

@@ -11,6 +11,8 @@ import java.util.UUID;
 public record JoinLinkDTO(
     @JsonView(DTOViews.List.class)
     UUID uuid,
+    @JsonView(DTOViews.Update.class)
+    int version,
     String name,
     Permissions permissions,
     boolean active,

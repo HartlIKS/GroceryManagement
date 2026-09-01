@@ -4,4 +4,5 @@ import java.util.UUID;
 
 public interface HasUUID_DTO {
     UUID uuid();
+    int version();
 }

@@ -10,6 +10,8 @@ import java.util.UUID;
 public record StoreDTO(
     @JsonView(DTOViews.List.class)
     UUID uuid,
+    @JsonView(DTOViews.Update.class)
+    int version,
     String name,
     String logo,
     AddressDTO address,

@@ -16,6 +16,10 @@ public class Share implements HasUUID {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;
 
+    @Version
+    @Column(nullable = false)
+    private int version;
+
     @Column(nullable = false)
     private String name;
 
