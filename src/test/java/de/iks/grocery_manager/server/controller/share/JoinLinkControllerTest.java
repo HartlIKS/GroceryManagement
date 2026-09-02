@@ -60,7 +60,7 @@ class JoinLinkControllerTest {
                 .contentType(ContentType.JSON)
                 .body("size()", is(3))
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .get();
         }
@@ -80,7 +80,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .get();
         }
@@ -100,7 +100,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .get();
         }
@@ -122,7 +122,7 @@ class JoinLinkControllerTest {
                 .contentType(ContentType.JSON)
                 .body("size()", is(1))
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .get();
         }
@@ -142,7 +142,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .get();
         }
@@ -152,7 +152,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", Testdata.BAD_UUID)
+                .header("X-Share-ID", Testdata.BAD_UUID)
                 .when()
                 .get();
         }
@@ -205,7 +205,7 @@ class JoinLinkControllerTest {
                 .body("singleUse", is(expectedLink.isSingleUse()))
                 .body("version", is(expectedLink.getVersion()))
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .get("{uuid}", expectedLink.getUuid());
         }
@@ -228,7 +228,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .get("{uuid}", expectedLink.getUuid());
         }
@@ -251,7 +251,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .get("{uuid}", expectedLink.getUuid());
         }
@@ -274,7 +274,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .get("{uuid}", link.getUuid());
 
@@ -294,7 +294,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(404)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .get("{uuid}", Testdata.BAD_UUID);
         }
@@ -304,7 +304,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", Testdata.BAD_UUID)
+                .header("X-Share-ID", Testdata.BAD_UUID)
                 .when()
                 .get("{uuid}", Testdata.BAD_UUID);
         }
@@ -346,7 +346,7 @@ class JoinLinkControllerTest {
                 .body("validTo", nullValue())
                 .body("numUsers", is(0))
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .body(createJson)
                 .contentType(ContentType.JSON)
                 .when()
@@ -397,7 +397,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .body(createJson)
                 .contentType(ContentType.JSON)
                 .when()
@@ -431,7 +431,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .body(createJson)
                 .contentType(ContentType.JSON)
                 .when()
@@ -465,7 +465,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .body(createJson)
                 .contentType(ContentType.JSON)
                 .when()
@@ -486,7 +486,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", Testdata.BAD_UUID)
+                .header("X-Share-ID", Testdata.BAD_UUID)
                 .body(createJson)
                 .contentType(ContentType.JSON)
                 .when()
@@ -519,7 +519,7 @@ class JoinLinkControllerTest {
                 .body("name", is("Minimal Link"))
                 .body("permissions", is("READ"))
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .body(createJson)
                 .contentType(ContentType.JSON)
                 .when()
@@ -571,7 +571,7 @@ class JoinLinkControllerTest {
                 .body("validTo", is("2025-12-31T23:59:59Z"))
                 .body("version", is(1))
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .body(updateJson)
                 .contentType(ContentType.JSON)
                 .when()
@@ -618,7 +618,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .body(updateJson)
                 .contentType(ContentType.JSON)
                 .when()
@@ -657,7 +657,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .body(updateJson)
                 .contentType(ContentType.JSON)
                 .when()
@@ -696,7 +696,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .body(updateJson)
                 .contentType(ContentType.JSON)
                 .when()
@@ -726,7 +726,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(404)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .body(updateJson)
                 .contentType(ContentType.JSON)
                 .when()
@@ -747,7 +747,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", Testdata.BAD_UUID)
+                .header("X-Share-ID", Testdata.BAD_UUID)
                 .body(updateJson)
                 .contentType(ContentType.JSON)
                 .when()
@@ -784,7 +784,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(200)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .delete("{uuid}", linkToDelete.getUuid());
 
@@ -820,7 +820,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .delete("{uuid}", linkToDelete.getUuid());
 
@@ -849,7 +849,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .delete("{uuid}", linkToDelete.getUuid());
 
@@ -878,7 +878,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .delete("{uuid}", linkToDelete.getUuid());
 
@@ -904,7 +904,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(404)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .delete("{uuid}", Testdata.BAD_UUID);
 
@@ -919,7 +919,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", Testdata.BAD_UUID)
+                .header("X-Share-ID", Testdata.BAD_UUID)
                 .when()
                 .delete("{uuid}", Testdata.BAD_UUID);
 
@@ -953,7 +953,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(400)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .delete("{uuid}", adminLink.getUuid());
 
@@ -986,7 +986,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(200)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .delete("{uuid}", writeLink.getUuid());
 
@@ -1029,7 +1029,7 @@ class JoinLinkControllerTest {
             expect()
                 .statusCode(200)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .when()
                 .delete("{uuid}", adminLinkToDelete.getUuid());
 

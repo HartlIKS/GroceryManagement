@@ -22,7 +22,7 @@ public class ShareSecurityService {
     @ActivateRequestContext
     public SecurityIdentity augment(SecurityIdentity identity, RoutingContext ctx) {
         if(identity.isAnonymous()) return identity;
-        List<String> shareIds = ctx != null ? ctx.queryParam("share") : List.of();
+        List<String> shareIds = ctx != null ? ctx.request().headers().getAll("X-Share-ID") : List.of();
         if(shareIds.isEmpty()) return QuarkusSecurityIdentity
             .builder(identity)
             .addPermissionsAsString(Set.of(

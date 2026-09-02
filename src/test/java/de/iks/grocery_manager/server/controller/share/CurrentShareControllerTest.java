@@ -83,7 +83,7 @@ class CurrentShareControllerTest {
                 .body("permissions", is("ADMIN"))
                 .body("version", is(0))
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .get();
         }
 
@@ -106,7 +106,7 @@ class CurrentShareControllerTest {
                 .body("permissions", is("WRITE"))
                 .body("version", is(0))
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .get();
         }
 
@@ -129,7 +129,7 @@ class CurrentShareControllerTest {
                 .body("permissions", is("READ"))
                 .body("version", is(0))
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .get();
         }
 
@@ -147,7 +147,7 @@ class CurrentShareControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .get();
         }
 
@@ -156,7 +156,7 @@ class CurrentShareControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", UUID.randomUUID())
+                .header("X-Share-ID", UUID.randomUUID())
                 .get();
         }
 
@@ -198,7 +198,7 @@ class CurrentShareControllerTest {
                 .body("permissions", is("ADMIN"))
                 .body("version", is(1))
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .body(updateJson)
                 .contentType(ContentType.JSON)
                 .put();
@@ -230,7 +230,7 @@ class CurrentShareControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .body(updateJson)
                 .contentType(ContentType.JSON)
                 .put();
@@ -262,7 +262,7 @@ class CurrentShareControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .body(updateJson)
                 .contentType(ContentType.JSON)
                 .put();
@@ -294,7 +294,7 @@ class CurrentShareControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .body(updateJson)
                 .contentType(ContentType.JSON)
                 .put();
@@ -317,7 +317,7 @@ class CurrentShareControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", Testdata.BAD_UUID)
+                .header("X-Share-ID", Testdata.BAD_UUID)
                 .body(updateJson)
                 .contentType(ContentType.JSON)
                 .put();
@@ -345,7 +345,7 @@ class CurrentShareControllerTest {
                 .body("name", is(""))
                 .body("version", is(1))
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .body(updateJson)
                 .contentType(ContentType.JSON)
                 .put();
@@ -387,7 +387,7 @@ class CurrentShareControllerTest {
             expect()
                 .statusCode(200)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .delete();
 
             // Verify share was deleted
@@ -423,7 +423,7 @@ class CurrentShareControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .delete();
 
             // Verify share was not deleted
@@ -450,7 +450,7 @@ class CurrentShareControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .delete();
 
             // Verify share was not deleted
@@ -476,7 +476,7 @@ class CurrentShareControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", testShare.getUuid())
+                .header("X-Share-ID", testShare.getUuid())
                 .delete();
 
             // Verify share was not deleted
@@ -493,7 +493,7 @@ class CurrentShareControllerTest {
             expect()
                 .statusCode(403)
                 .given()
-                .queryParam("share", Testdata.BAD_UUID)
+                .header("X-Share-ID", Testdata.BAD_UUID)
                 .delete();
 
             // Verify no shares were deleted
@@ -527,7 +527,7 @@ class CurrentShareControllerTest {
             expect()
                 .statusCode(200)
                 .given()
-                .queryParam("share", testShare1.getUuid())
+                .header("X-Share-ID", testShare1.getUuid())
                 .delete();
 
             // Verify only first share and its data were deleted
