@@ -26,7 +26,7 @@ export abstract class EndpointService<T extends EndpointDTOTypes> {
         name,
         page,
         size,
-    }, false);
+    });
   }
 
   // Get single endpoint by UUID

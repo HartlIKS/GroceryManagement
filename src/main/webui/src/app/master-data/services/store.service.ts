@@ -1,8 +1,9 @@
 import { computed, Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiService, GetApiEndpoint, NamedCacheService } from '../../services';
+import { ApiService, NamedCacheService } from '../../services';
 import { CreateStoreDTO, ListStoreDTO, StoreTypes } from '../models';
 import { Page } from '../../models';
+import { HttpResourceRef } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -14,8 +15,8 @@ export class StoreService extends NamedCacheService<StoreTypes> {
     super();
   }
 
-  protected override rawGet(uuid: string): GetApiEndpoint<ListStoreDTO> {
-    return this.apiService.getById<ListStoreDTO>(this.endpoint, uuid, false);
+  protected override rawGet(uuid: string): HttpResourceRef<ListStoreDTO | undefined> {
+    return this.apiService.getById<ListStoreDTO>(this.endpoint, uuid);
   }
 
   protected override rawUpdate(uuid: string, store: CreateStoreDTO): Observable<ListStoreDTO> {
@@ -38,17 +39,17 @@ export class StoreService extends NamedCacheService<StoreTypes> {
         name,
         page,
         size,
-    }, false);
+    });
   }
 
   // Get single store by UUID
   getStore(uuid: Signal<string | undefined> | string) {
-    if(isSignal(uuid)) return this.apiService.getById<ListStoreDTO>(this.endpoint, uuid, false);
+    if(isSignal(uuid)) return this.apiService.getById<ListStoreDTO>(this.endpoint, uuid);
     return this.get(uuid);
   }
 
   getManyStores(uuids: Signal<string[] | undefined> | string[]) {
-    return this.apiService.query<Record<string, ListStoreDTO>>(this.endpoint, uuids, false);
+    return this.apiService.query<Record<string, ListStoreDTO>>(this.endpoint, uuids);
   }
 
   // Create store

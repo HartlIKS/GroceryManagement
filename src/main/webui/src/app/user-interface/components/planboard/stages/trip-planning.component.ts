@@ -5,9 +5,10 @@ import { MatIcon } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { PlanboardService, ShoppingListService, ShoppingTripService } from '../../../services';
 import { selectionEvent, TripPlanningCardComponent } from '../trip-planning/trip-planning-card.component';
-import { combineLatestAll, from, map, Observable, switchMap } from 'rxjs';
+import { combineLatestAll, from, map, Observable, of, switchMap, throwError } from 'rxjs';
 import { PriceService } from '../../../../master-data/services';
 import { Router } from '@angular/router';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-trip-planning',
@@ -56,7 +57,17 @@ export class TripPlanningComponent {
         .map(([trip, sel]) => {
           if (sel.tripUuid !== undefined) return this.shoppingTripService.addProducts(sel.tripUuid, trip.products);
           else return from(Object.entries(trip.products)).pipe(
-            map(([uuid, quantity]) => this.priceService.getObservable(uuid).pipe(
+            map(([uuid, quantity]) => toObservable(this.priceService.get(uuid).snapshot).pipe(
+              switchMap(v => {
+                switch (v.status) {
+                  case "local":
+                  case "resolved":
+                    return of(v.value!);
+                  case "error":
+                    return throwError(() => v.error);
+                }
+                return of();
+              }),
               map(v => [v.product, quantity] as const)
             )),
             combineLatestAll(),

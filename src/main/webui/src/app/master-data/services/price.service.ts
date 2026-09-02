@@ -1,8 +1,9 @@
 import { Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiService, CacheService, GetApiEndpoint } from '../../services';
+import { ApiService, CacheService } from '../../services';
 import { CreatePriceListingDTO, ListPriceDTO, PriceListingDTO, PriceTypes, UpdatePriceDTO } from '../models';
 import { Page } from '../../models';
+import { HttpResourceRef } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -26,11 +27,11 @@ export class PriceService extends CacheService<PriceTypes> {
         size,
         store,
         product,
-    }, false);
+    });
   }
 
-  protected override rawGet(uuid: string): GetApiEndpoint<ListPriceDTO> {
-    return this.apiService.getById<ListPriceDTO>(this.endpoint, uuid, false);
+  protected override rawGet(uuid: string): HttpResourceRef<ListPriceDTO | undefined> {
+    return this.apiService.getById<ListPriceDTO>(this.endpoint, uuid);
   }
 
   protected override rawUpdate(uuid: string, price: UpdatePriceDTO): Observable<ListPriceDTO> {
@@ -43,7 +44,7 @@ export class PriceService extends CacheService<PriceTypes> {
 
 // Get single price by UUID
   getPrice(uuid: Signal<string | undefined> | string) {
-    if(isSignal(uuid)) return this.apiService.getById<ListPriceDTO>(this.endpoint, uuid, false);
+    if(isSignal(uuid)) return this.apiService.getById<ListPriceDTO>(this.endpoint, uuid);
     return this.get(uuid);
   }
 
@@ -62,6 +63,6 @@ export class PriceService extends CacheService<PriceTypes> {
       products,
       stores,
       at
-    }, false);
+    });
   }
 }

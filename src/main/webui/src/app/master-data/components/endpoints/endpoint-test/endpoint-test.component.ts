@@ -129,11 +129,12 @@ export class EndpointTestComponent implements OnInit {
       writeParameter(reqInfo.page, endpoint?.page, ret.headers, ret.queryParams);
       writeParameter(reqInfo.pageSize, endpoint?.pageSize, ret.headers, ret.queryParams);
       writeParameter(reqInfo.itemCount, endpoint?.itemCount, ret.headers, ret.queryParams);
-      return this.apiService.applySpecials({
+      return {
         url: this.endpointConfig.endpointService.execUrl(parentUuid, endpoint.uuid),
         method: 'POST',
+        headers: this.apiService.headers(),
         body: ret,
-      });
+      };
     }
     const ret = {
       url: endpoint.baseUrl,

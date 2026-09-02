@@ -1,9 +1,10 @@
 import { Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiParam, ApiService, CacheService, GetApiEndpoint } from '../../services';
+import { ApiParam, ApiService, CacheService } from '../../services';
 import { ShoppingListTypes } from '../models';
 import { Page } from '../../models';
 import { CREATE, LIST } from '../../models/base.model';
+import { HttpResourceRef } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +16,7 @@ export class ShoppingListService extends CacheService<ShoppingListTypes> {
     super();
   }
 
-  protected rawGet(uuid: string): GetApiEndpoint<ShoppingListTypes[LIST]> {
+  protected rawGet(uuid: string): HttpResourceRef<ShoppingListTypes[LIST] | undefined> {
     return this.apiService.getById<ShoppingListTypes[LIST]>(this.endpoint, uuid);
   }
 

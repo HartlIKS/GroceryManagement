@@ -1,8 +1,9 @@
 import { computed, Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiService, GetApiEndpoint, NamedCacheService } from '../../services';
+import { ApiService, NamedCacheService } from '../../services';
 import { CreateProductDTO, ListProductDTO, ProductTypes } from '../models';
 import { Page } from '../../models';
+import { HttpResourceRef } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -14,8 +15,8 @@ export class ProductService extends NamedCacheService<ProductTypes> {
     super();
   }
 
-  protected override rawGet(uuid: string): GetApiEndpoint<ListProductDTO> {
-    return this.apiService.getById<ListProductDTO>(this.endpoint, uuid, false);
+  protected override rawGet(uuid: string): HttpResourceRef<ListProductDTO | undefined> {
+    return this.apiService.getById<ListProductDTO>(this.endpoint, uuid);
   }
 
   protected override rawUpdate(uuid: string, product: CreateProductDTO): Observable<ListProductDTO> {
@@ -38,17 +39,17 @@ export class ProductService extends NamedCacheService<ProductTypes> {
         name,
         page,
         size,
-    }, false);
+    });
   }
 
   // Get single product by UUID
   getProduct(uuid: Signal<string | undefined> | string) {
-    if(isSignal(uuid)) return this.apiService.getById<ListProductDTO>(this.endpoint, uuid, false);
+    if(isSignal(uuid)) return this.apiService.getById<ListProductDTO>(this.endpoint, uuid);
     return this.get(uuid);
   }
 
   getManyProducts(uuids: Signal<string[] | undefined> | string[]) {
-    return this.apiService.query<Record<string, ListProductDTO>>(this.endpoint, uuids, false);
+    return this.apiService.query<Record<string, ListProductDTO>>(this.endpoint, uuids);
   }
 
   // Create product

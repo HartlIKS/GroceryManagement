@@ -1,8 +1,9 @@
 import { Injectable, isSignal, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiService, CacheService, GetApiEndpoint } from '../../../services';
+import { ApiService, CacheService } from '../../../services';
 import { CreateExternalAPIDTO, ExternalAPIDTO, ExternalAPIDTOTypes } from '../../models';
 import { Page } from '../../../models';
+import { HttpResourceRef } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -14,8 +15,8 @@ export class ExternalAPIService extends CacheService<ExternalAPIDTOTypes> {
     super();
   }
 
-  protected override rawGet(uuid: string): GetApiEndpoint<ExternalAPIDTO> {
-    return this.apiService.getById<ExternalAPIDTO>(this.endpoint, uuid, false);
+  protected override rawGet(uuid: string): HttpResourceRef<ExternalAPIDTO | undefined> {
+    return this.apiService.getById<ExternalAPIDTO>(this.endpoint, uuid);
   }
 
   protected override rawUpdate(uuid: string, externalApi: CreateExternalAPIDTO): Observable<ExternalAPIDTO> {
@@ -36,12 +37,12 @@ export class ExternalAPIService extends CacheService<ExternalAPIDTOTypes> {
         name,
         page,
         size,
-    }, false);
+    });
   }
 
   // Get single external API by UUID
   getExternalAPI(uuid: Signal<string | undefined> | string) {
-    if(isSignal(uuid)) return this.apiService.getById<ExternalAPIDTO>(this.endpoint, uuid, false);
+    if(isSignal(uuid)) return this.apiService.getById<ExternalAPIDTO>(this.endpoint, uuid);
     return this.get(uuid);
   }
 
