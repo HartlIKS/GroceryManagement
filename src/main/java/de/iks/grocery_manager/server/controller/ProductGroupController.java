@@ -1,9 +1,11 @@
 package de.iks.grocery_manager.server.controller;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import de.iks.grocery_manager.server.dto.PageDTO;
 import de.iks.grocery_manager.server.dto.ProductGroupDTO;
 import de.iks.grocery_manager.server.jpa.ProductGroupRepository;
 import de.iks.grocery_manager.server.mapping.DTOMapper;
+import de.iks.grocery_manager.server.mapping.DTOViews;
 import de.iks.grocery_manager.server.mapping.EntityMapper.Owned;
 import de.iks.grocery_manager.server.model.ProductGroup;
 import jakarta.transaction.Transactional;
@@ -31,6 +33,7 @@ public class ProductGroupController
     }
 
     @GET
+    @JsonView(DTOViews.List.class)
     public RestResponse<PageDTO<ProductGroupDTO>> search(
         @QueryParam("name") @DefaultValue("") String name,
         @QueryParam("page") @DefaultValue("0") int page,

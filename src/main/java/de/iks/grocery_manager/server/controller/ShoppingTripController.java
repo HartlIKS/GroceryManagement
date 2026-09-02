@@ -1,9 +1,11 @@
 package de.iks.grocery_manager.server.controller;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import de.iks.grocery_manager.server.dto.PageDTO;
 import de.iks.grocery_manager.server.dto.ShoppingTripDTO;
 import de.iks.grocery_manager.server.jpa.ShoppingTripRepository;
 import de.iks.grocery_manager.server.mapping.DTOMapper;
+import de.iks.grocery_manager.server.mapping.DTOViews;
 import de.iks.grocery_manager.server.mapping.EntityMapper.Owned;
 import de.iks.grocery_manager.server.model.ShoppingTrip;
 import de.iks.grocery_manager.server.model.masterdata.Product;
@@ -35,6 +37,7 @@ public class ShoppingTripController
 
     @POST
     @Path("{uuid}/add")
+    @JsonView(DTOViews.List.class)
     public RestResponse<ShoppingTripDTO> addToShoppingTrip(
         @PathParam("uuid") UUID uuid,
         Map<UUID, BigDecimal> products
@@ -58,6 +61,7 @@ public class ShoppingTripController
     }
 
     @GET
+    @JsonView(DTOViews.List.class)
     public RestResponse<PageDTO<ShoppingTripDTO>> search(
         @QueryParam("from") ZonedDateTime from,
         @QueryParam("to") ZonedDateTime to,

@@ -1,10 +1,12 @@
 package de.iks.grocery_manager.server.controller.mdi;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import de.iks.grocery_manager.server.controller.CRUDController;
 import de.iks.grocery_manager.server.dto.PageDTO;
 import de.iks.grocery_manager.server.dto.mdi.ExternalAPIDTO;
 import de.iks.grocery_manager.server.jpa.mdi.ExternalAPIRepository;
 import de.iks.grocery_manager.server.mapping.DTOMapper;
+import de.iks.grocery_manager.server.mapping.DTOViews;
 import de.iks.grocery_manager.server.mapping.EntityMapper;
 import de.iks.grocery_manager.server.model.mdi.ExternalAPI;
 import jakarta.transaction.Transactional;
@@ -26,6 +28,7 @@ public class ExternalAPIController extends CRUDController<ExternalAPI, ExternalA
     }
 
     @GET
+    @JsonView(DTOViews.List.class)
     public PageDTO<ExternalAPIDTO> search(
         @QueryParam("name") @DefaultValue("") String name,
         @QueryParam("page") @DefaultValue("0") int page,

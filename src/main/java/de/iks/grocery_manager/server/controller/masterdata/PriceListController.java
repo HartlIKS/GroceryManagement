@@ -1,11 +1,13 @@
 package de.iks.grocery_manager.server.controller.masterdata;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import de.iks.grocery_manager.server.controller.CRUDController;
 import de.iks.grocery_manager.server.dto.PageDTO;
 import de.iks.grocery_manager.server.dto.masterdata.PriceDTO;
 import de.iks.grocery_manager.server.dto.masterdata.PriceListingDTO;
 import de.iks.grocery_manager.server.jpa.masterdata.PriceRepository;
 import de.iks.grocery_manager.server.mapping.DTOMapper;
+import de.iks.grocery_manager.server.mapping.DTOViews;
 import de.iks.grocery_manager.server.mapping.EntityMapper;
 import de.iks.grocery_manager.server.model.masterdata.PriceListing;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
@@ -39,6 +41,7 @@ public class PriceListController
     }
 
     @GET
+    @JsonView(DTOViews.List.class)
     public RestResponse<?> getOrSearchPrices(
         @QueryParam("at") Instant at,
         @QueryParam("products") Set<UUID> products,
