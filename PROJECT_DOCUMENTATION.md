@@ -2,16 +2,16 @@
 
 ## Overview
 
-This is a full-stack grocery management system consisting of a Spring Boot REST API backend and an Angular frontend. The system manages grocery products, stores, price listings, and product groups with comprehensive CRUD operations.
+This is a full-stack grocery management system consisting of a Quarkus REST API backend and an Angular frontend. The system manages grocery products, stores, price listings, and product groups with comprehensive CRUD operations.
 
 ## Architecture
 
-### Backend (Spring Boot 4.0.3)
+### Backend (Quarkus 3.39.1)
 - **Language**: Java 17
-- **Framework**: Spring Boot with WebMVC
-- **Database**: PostgreSQL with JPA/Hibernate
-- **Security**: Spring Security with OAuth2 Resource Server and ShareFilter
-- **Documentation**: OpenAPI 3.0 (SpringDoc)
+- **Framework**: Quarkus with RESTEasy Reactive
+- **Database**: PostgreSQL with Hibernate ORM Panache
+- **Security**: Quarkus OIDC with OAuth2 Resource Server and ShareFilter
+- **Documentation**: OpenAPI 3.0 (Smallrye OpenAPI)
 - **Build Tool**: Maven
 - **Migration**: Liquibase
 
@@ -531,17 +531,19 @@ The implementation uses a switch statement in the `toPartials` function within `
    docker-compose up -d
    ```
 
-2. Run the Spring Boot application:
+2. Run the Quarkus application:
    ```bash
-   ./mvnw spring-boot:run
+   ./mvnw quarkus:dev
    ```
 
 The API will be available at `http://localhost:8080`
 
 ### Frontend Setup
-1. Navigate to frontend directory:
+The frontend is built using Quarkus Quinoa, which automatically builds the Angular application during the Quarkus build process. For development with hot reload:
+
+1. Navigate to webui directory:
    ```bash
-   cd frontend
+   cd src/main/webui
    ```
 
 2. Install dependencies:
@@ -557,29 +559,32 @@ The API will be available at `http://localhost:8080`
 The Angular app will be available at `http://localhost:4200`
 
 ### Production Build
-The Maven build process automatically builds the frontend:
+The Quarkus build process automatically builds the frontend using Quinoa:
 ```bash
 ./mvnw clean package
 ```
 
 This will:
-1. Install Node.js and npm
-2. Install frontend dependencies
-3. Build the Angular application
-4. Copy frontend build to Spring Boot static resources
+1. Build the Quarkus application
+2. Build the Angular application using Quinoa
+3. Package everything into a single executable jar
 
 ## Key Technologies & Dependencies
 
 ### Backend Dependencies
-- Spring Boot Starter WebMVC
-- Spring Boot Starter Data JPA
-- Spring Boot Starter Security
-- Spring Boot Starter Liquibase
+- Quarkus REST (RESTEasy Reactive)
+- Quarkus REST Jackson (JSON serialization)
+- Quarkus JDBC PostgreSQL
+- Quarkus Hibernate ORM Panache
+- Quarkus Liquibase (database migrations)
+- Quarkus OIDC (OAuth2 authentication)
+- Quarkus Smallrye OpenAPI (API documentation)
+- Quarkus REST Client Jackson
 - PostgreSQL Driver
 - MapStruct (DTO mapping)
 - Lombok (boilerplate reduction)
-- SpringDoc OpenAPI (API documentation)
 - Micrometer Prometheus (metrics)
+- Quarkus Quinoa (frontend integration)
 
 ### Frontend Dependencies
 - Angular 21.1.0
@@ -635,7 +640,7 @@ This will:
 - Migration files located in `src/main/resources/db/migration/`
 
 ## Testing
-- **Backend**: JUnit 5, Spring Boot Test, MockMvc for controller testing
+- **Backend**: JUnit 5, Quarkus Test, REST Assured for controller testing
 - **Frontend**: Vitest, Angular Testing Utilities
 - **Comprehensive test coverage** for all CRUD operations
 - **Security testing** with JWT authentication
@@ -693,13 +698,13 @@ This will:
 - **Enhanced test architecture** with canary pattern for data isolation and comprehensive validation
 
 ## API Documentation
-- Swagger UI available at: `http://localhost:8080/swagger-ui.html`
-- OpenAPI spec at: `http://localhost:8080/v3/api-docs`
+- Swagger UI available at: `http://localhost:8080/q/swagger-ui`
+- OpenAPI spec at: `http://localhost:8080/q/openapi`
 
 ## Monitoring & Metrics
-- Spring Boot Actuator endpoints
+- Quarkus Smallrye Health endpoints
 - Prometheus metrics integration
-- Health checks at `/actuator/health`
+- Health checks at `/q/health`
 
 ## Development Notes
 - The project uses MapStruct 1.6.3 for DTO-to-entity mapping
