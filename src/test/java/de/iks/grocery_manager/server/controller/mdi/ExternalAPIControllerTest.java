@@ -59,6 +59,7 @@ class ExternalAPIControllerTest {
                 .contentType(ContentType.JSON)
                 .body("uuid", isUuidOf(api))
                 .body("name", is("Test API"))
+                .body("version", is(0))
                 .when()
                 .get("{uuid}", api.getUuid());
         }
@@ -78,7 +79,8 @@ class ExternalAPIControllerTest {
     class UpdateExternalAPI {
         private static final String EXTERNAL_API_1_UPDATE_JSON = """
         {
-          "name": "External API 1 Updated"
+          "name": "External API 1 Updated",
+          "version": 0
         }""";
 
         @Test
@@ -104,6 +106,7 @@ class ExternalAPIControllerTest {
                 .contentType(ContentType.JSON)
                 .body("uuid", isUuidOf(api))
                 .body("name", is("External API 1 Updated"))
+                .body("version", is(1))
                 .given()
                 .body(EXTERNAL_API_1_UPDATE_JSON)
                 .contentType(ContentType.JSON)
@@ -173,6 +176,48 @@ class ExternalAPIControllerTest {
                     .orElseThrow()
                     .getName()
             );
+        }
+
+        @Test
+        void shouldReturn409WhenUpdatingExternalAPIWithOutdatedVersion() {
+            QuarkusTransaction.begin();
+
+            // Create test data
+            de.iks.grocery_manager.server.model.mdi.ExternalAPI api =
+                new de.iks.grocery_manager.server.model.mdi.ExternalAPI();
+            api.setName("Test API");
+            api.setProductMappings(new java.util.HashMap<>());
+            api.setStoreMappings(new java.util.HashMap<>());
+            externalAPIRepository.persist(api);
+
+            externalAPIRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            // Get current API to obtain its version
+            var currentApi = externalAPIRepository.findByIdOptional(api.getUuid());
+            assertTrue(currentApi.isPresent());
+            int currentVersion = currentApi.get().getVersion();
+
+            // Try to update with outdated version
+            String updateJsonWithOutdatedVersion = String.format("""
+            {
+              "name": "External API 1 Updated",
+              "version": %d
+            }""", currentVersion - 1);
+
+            expect()
+                .statusCode(409)
+                .given()
+                .body(updateJsonWithOutdatedVersion)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", api.getUuid());
+
+            // Verify API was not updated
+            var unchangedApi = externalAPIRepository.findByIdOptional(api.getUuid());
+            assertTrue(unchangedApi.isPresent());
+            assertEquals("Test API", unchangedApi.get().getName());
+            assertEquals(currentVersion, unchangedApi.get().getVersion());
         }
     }
 

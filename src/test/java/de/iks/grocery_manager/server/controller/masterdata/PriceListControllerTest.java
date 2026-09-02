@@ -12,6 +12,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.regex.Pattern;
 
@@ -46,6 +47,7 @@ class PriceListControllerTest {
                 .body("validFrom", is("2024-01-01T00:00:00Z"))
                 .body("validTo", is("2024-12-31T23:59:59Z"))
                 .body("price", is(10.99f))
+                .body("version", is(0))
                 .when()
                 .get("{uuid}", Testdata.PRICE_1_UUID);
         }
@@ -67,7 +69,8 @@ class PriceListControllerTest {
             {
               "validFrom": "2024-02-01T00:00:00Z",
               "validTo": "2024-11-30T23:59:59Z",
-              "price": 12.99
+              "price": 12.99,
+              "version": 0
             }""";
 
         @Test
@@ -83,6 +86,7 @@ class PriceListControllerTest {
                 .body("validFrom", is("2024-02-01T00:00:00Z"))
                 .body("validTo", is("2024-11-30T23:59:59Z"))
                 .body("price", is(12.99f))
+                .body("version", is(1))
                 .given()
                 .contentType(ContentType.JSON)
                 .body(PRICE_1_UPDATE_JSON)
@@ -139,6 +143,36 @@ class PriceListControllerTest {
                            .findByIdOptional(Testdata.PRICE_2_UUID)
                            .isPresent());
             assertEquals(initialCount, priceRepository.count());
+        }
+
+        @Test
+        void shouldReturn409WhenUpdatingPriceWithOutdatedVersion() {
+            // Get current price to obtain its version
+            var currentPrice = priceRepository.findByIdOptional(Testdata.PRICE_1_UUID);
+            assertTrue(currentPrice.isPresent());
+            int currentVersion = currentPrice.get().getVersion();
+
+            // Try to update with outdated version
+            String updateJsonWithOutdatedVersion = String.format("""
+            {
+              "validFrom": "2024-02-01T00:00:00Z",
+              "validTo": "2024-11-30T23:59:59Z",
+              "price": 12.99,
+              "version": %d
+            }""", currentVersion - 1);
+
+            expect()
+                .statusCode(409)
+                .given()
+                .contentType(ContentType.JSON)
+                .body(updateJsonWithOutdatedVersion)
+                .put("{uuid}", Testdata.PRICE_1_UUID);
+
+            // Verify price was not updated
+            var unchangedPrice = priceRepository.findByIdOptional(Testdata.PRICE_1_UUID);
+            assertTrue(unchangedPrice.isPresent());
+            assertEquals(new BigDecimal("10.99"), unchangedPrice.get().getPrice());
+            assertEquals(currentVersion, unchangedPrice.get().getVersion());
         }
     }
 

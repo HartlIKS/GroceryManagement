@@ -96,6 +96,7 @@ class ShoppingTripControllerTest {
                 .body("products.size()", is(2))
                 .body("products.%s", withArgs(Testdata.PRODUCT_1_UUID), is(2.5f))
                 .body("products.%s", withArgs(Testdata.PRODUCT_2_UUID), is(1f))
+                .body("version", is(0))
                 .when()
                 .get("{uuid}", testTrip.getUuid());
         }
@@ -277,7 +278,8 @@ class ShoppingTripControllerTest {
                       "products": {
                         "%s": 4.0,
                         "%s": 2.5
-                      }
+                      },
+                      "version": 0
                     }""",
                 Testdata.STORE_3_UUID,
                 updatedTime.toString(),
@@ -298,6 +300,7 @@ class ShoppingTripControllerTest {
                 .body("products.size()", is(2))
                 .body("products.%s", withArgs(Testdata.PRODUCT_3_UUID), is(4f))
                 .body("products.%s", withArgs(Testdata.PRODUCT_4_UUID), is(2.5f))
+                .body("version", is(1))
                 .given()
                 .body(updateJson)
                 .contentType(ContentType.JSON)
@@ -390,6 +393,88 @@ class ShoppingTripControllerTest {
                     .getStore()
                     .getUuid()
             );
+        }
+
+        @Test
+        void shouldReturn409WhenUpdatingShoppingTripWithOutdatedVersion() {
+            QuarkusTransaction.begin();
+
+            // Create test trip
+            Store store1 = storeRepository
+                .findByIdOptional(Testdata.STORE_1_UUID)
+                .orElseThrow();
+            Product product1 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                .orElseThrow();
+            Product product2 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                .orElseThrow();
+
+            ShoppingTrip testTrip = new ShoppingTrip();
+            testTrip.setStore(store1);
+            testTrip.setOwner(WithTestUser.OWNER);
+            testTrip.setTime(Instant.now());
+            testTrip.setProducts(new HashMap<>(Map.of(
+                product1, new BigDecimal("2.5"),
+                product2, new BigDecimal("1.0")
+            )));
+            shoppingTripRepository.persist(testTrip);
+
+            // Create canary trip
+            ShoppingTrip canaryTrip = new ShoppingTrip();
+            canaryTrip.setStore(store1);
+            canaryTrip.setOwner(WithTestUser.OWNER);
+            canaryTrip.setTime(Instant.now());
+            canaryTrip.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
+            shoppingTripRepository.persist(canaryTrip);
+
+            shoppingTripRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            // Get current shopping trip to obtain its version
+            var currentTrip = shoppingTripRepository.findByIdOptional(testTrip.getUuid());
+            assertTrue(currentTrip.isPresent());
+            int currentVersion = currentTrip.get().getVersion();
+
+            // Try to update with outdated version
+            Instant updatedTime = Instant.now().plusSeconds(3600);
+            String updateJsonWithOutdatedVersion = String.format(
+                """
+                    {
+                      "store": "%s",
+                      "time": "%s",
+                      "products": {
+                        "%s": 4.0,
+                        "%s": 2.5
+                      },
+                      "version": %d
+                    }""",
+                Testdata.STORE_3_UUID,
+                updatedTime.toString(),
+                Testdata.PRODUCT_3_UUID,
+                Testdata.PRODUCT_4_UUID,
+                currentVersion - 1
+            );
+
+            expect()
+                .statusCode(409)
+                .given()
+                .body(updateJsonWithOutdatedVersion)
+                .contentType(ContentType.JSON)
+                .when()
+                .put("{uuid}", testTrip.getUuid());
+
+            // Verify shopping trip was not updated
+            var unchangedTrip = shoppingTripRepository.findByIdOptional(testTrip.getUuid());
+            assertTrue(unchangedTrip.isPresent());
+            assertEquals(Testdata.STORE_1_UUID, unchangedTrip.get().getStore().getUuid());
+            assertEquals(currentVersion, unchangedTrip.get().getVersion());
+
+            // Verify canary trip unaffected
+            assertTrue(shoppingTripRepository
+                           .findByIdOptional(canaryTrip.getUuid())
+                           .isPresent());
         }
     }
 

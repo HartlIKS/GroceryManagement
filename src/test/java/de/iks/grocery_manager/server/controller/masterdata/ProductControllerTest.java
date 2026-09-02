@@ -43,6 +43,7 @@ class ProductControllerTest {
                 .contentType(ContentType.JSON)
                 .body("uuid", isUuid(Testdata.PRODUCT_1_UUID))
                 .body("name", is("Product 1"))
+                .body("version", is(0))
                 .when()
                 .get("{uuid}", Testdata.PRODUCT_1_UUID);
         }
@@ -83,7 +84,8 @@ class ProductControllerTest {
         private static final String PRODUCT_1_UPDATE_JSON = """
         {
           "name": "Product 1b",
-          "EAN": "123456"
+          "EAN": "123456",
+          "version": 0
         }""";
 
         @Test
@@ -95,6 +97,7 @@ class ProductControllerTest {
                 .body("uuid", isUuid(Testdata.PRODUCT_1_UUID))
                 .body("name", is("Product 1b"))
                 .body("EAN", is("123456"))
+                .body("version", is(1))
                 .given()
                 .body(PRODUCT_1_UPDATE_JSON)
                 .contentType(ContentType.JSON)
@@ -151,6 +154,35 @@ class ProductControllerTest {
                            .findByIdOptional(Testdata.PRODUCT_2_UUID)
                            .isPresent());
             assertEquals(initialCount, productRepository.count());
+        }
+
+        @Test
+        void shouldReturn409WhenUpdatingProductWithOutdatedVersion() {
+            // Get current product to obtain its version
+            var currentProduct = productRepository.findByIdOptional(Testdata.PRODUCT_1_UUID);
+            assertTrue(currentProduct.isPresent());
+            int currentVersion = currentProduct.get().getVersion();
+
+            // Try to update with outdated version
+            String updateJsonWithOutdatedVersion = String.format("""
+            {
+              "name": "Product 1b",
+              "EAN": "123456",
+              "version": %d
+            }""", currentVersion - 1);
+
+            expect()
+                .statusCode(409)
+                .given()
+                .body(updateJsonWithOutdatedVersion)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", Testdata.PRODUCT_1_UUID);
+
+            // Verify product was not updated
+            var unchangedProduct = productRepository.findByIdOptional(Testdata.PRODUCT_1_UUID);
+            assertTrue(unchangedProduct.isPresent());
+            assertEquals("Product 1", unchangedProduct.get().getName());
+            assertEquals(currentVersion, unchangedProduct.get().getVersion());
         }
     }
 

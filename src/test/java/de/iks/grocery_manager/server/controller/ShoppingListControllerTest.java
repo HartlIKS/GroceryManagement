@@ -81,6 +81,7 @@ class ShoppingListControllerTest {
                 .body("products.%s", withArgs(Testdata.PRODUCT_1_UUID), is(2.5f))
                 .body("products.%s", withArgs(Testdata.PRODUCT_2_UUID), is(1f))
                 .body("productGroups.size()", is(0))
+                .body("version", is(0))
                 .when()
                 .get("{uuid}", testList.getUuid());
         }
@@ -250,7 +251,8 @@ class ShoppingListControllerTest {
                         "%s": 4.0,
                         "%s": 2.5
                       },
-                      "productGroups": {}
+                      "productGroups": {},
+                      "version": 0
                     }""", Testdata.PRODUCT_3_UUID, Testdata.PRODUCT_4_UUID
             );
 
@@ -264,6 +266,7 @@ class ShoppingListControllerTest {
                 .body("products.%s", withArgs(Testdata.PRODUCT_3_UUID), is(4f))
                 .body("products.%s", withArgs(Testdata.PRODUCT_4_UUID), is(2.5f))
                 .body("productGroups.size()", is(0))
+                .body("version", is(1))
                 .given()
                 .body(updateJson)
                 .contentType(ContentType.JSON)
@@ -344,6 +347,82 @@ class ShoppingListControllerTest {
                 .get();
             assertEquals("Canary List", unchangedCanary.getName());
             assertTrue(unchangedCanary.isRepeating());
+        }
+
+        @Test
+        void shouldReturn409WhenUpdatingShoppingListWithOutdatedVersion() {
+            QuarkusTransaction.begin();
+
+            // Create test list
+            Product product1 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                .orElseThrow();
+            Product product2 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                .orElseThrow();
+
+            ShoppingList testList = new ShoppingList();
+            testList.setName("Test List 1");
+            testList.setOwner(WithTestUser.OWNER);
+            testList.setRepeating(false);
+            testList.setProducts(new HashMap<>(Map.of(
+                product1, new BigDecimal("2.5"),
+                product2, new BigDecimal("1.0")
+            )));
+            testList.setProductGroups(new HashMap<>());
+            shoppingListRepository.persist(testList);
+
+            // Create canary list
+            ShoppingList canaryList = new ShoppingList();
+            canaryList.setName("Canary List");
+            canaryList.setOwner(WithTestUser.OWNER);
+            canaryList.setRepeating(true);
+            canaryList.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
+            canaryList.setProductGroups(new HashMap<>());
+            shoppingListRepository.persist(canaryList);
+
+            shoppingListRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            // Get current shopping list to obtain its version
+            var currentList = shoppingListRepository.findByIdOptional(testList.getUuid());
+            assertTrue(currentList.isPresent());
+            int currentVersion = currentList.get().getVersion();
+
+            // Try to update with outdated version
+            String updateJsonWithOutdatedVersion = String.format(
+                """
+                    {
+                      "name": "Updated List 1",
+                      "repeating": true,
+                      "products": {
+                        "%s": 4.0,
+                        "%s": 2.5
+                      },
+                      "productGroups": {},
+                      "version": %d
+                    }""", Testdata.PRODUCT_3_UUID, Testdata.PRODUCT_4_UUID, currentVersion - 1
+            );
+
+            expect()
+                .statusCode(409)
+                .given()
+                .body(updateJsonWithOutdatedVersion)
+                .contentType(ContentType.JSON)
+                .when()
+                .put("{uuid}", testList.getUuid());
+
+            // Verify shopping list was not updated
+            var unchangedList = shoppingListRepository.findByIdOptional(testList.getUuid());
+            assertTrue(unchangedList.isPresent());
+            assertEquals("Test List 1", unchangedList.get().getName());
+            assertEquals(currentVersion, unchangedList.get().getVersion());
+
+            // Verify canary list unaffected
+            assertTrue(shoppingListRepository
+                           .findByIdOptional(canaryList.getUuid())
+                           .isPresent());
         }
     }
 

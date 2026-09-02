@@ -135,7 +135,8 @@ class ProductEndpointControllerTest {
           "productNamePath": "$.name",
           "productImagePath": "$.image",
           "productEANPath": "$.ean",
-          "responseType": "JSON"
+          "responseType": "JSON",
+          "version": 0
         }""";
 
         @Test
@@ -169,6 +170,7 @@ class ProductEndpointControllerTest {
                 .contentType(ContentType.JSON)
                 .body("uuid", isUuidOf(endpoint))
                 .body("name", is("Product Endpoint 1 Updated"))
+                .body("version", is(1))
                 .given()
                 .body(PRODUCT_ENDPOINT_1_UPDATE_JSON)
                 .contentType(ContentType.JSON)
@@ -259,6 +261,63 @@ class ProductEndpointControllerTest {
                     .orElseThrow()
                     .getName()
             );
+        }
+
+        @Test
+        void shouldReturn409WhenUpdatingProductEndpointWithOutdatedVersion() {
+            QuarkusTransaction.begin();
+
+            // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
+            ProductEndpoint endpoint = new ProductEndpoint();
+            endpoint.setApi(parentApi);
+            endpoint.setName("Test Product Endpoint");
+            endpoint.setBaseUrl("https://api.example.com");
+            endpoint.setBasePath("/products");
+            endpoint.setProductIdPath("$.id");
+            endpoint.setResponseType(ResponseType.JSON);
+            productEndpointRepository.persist(endpoint);
+
+            productEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            // Get current endpoint to obtain its version
+            var currentEndpoint = productEndpointRepository.findByIdOptional(endpoint.getUuid());
+            assertTrue(currentEndpoint.isPresent());
+            int currentVersion = currentEndpoint.get().getVersion();
+
+            // Try to update with outdated version
+            String updateJsonWithOutdatedVersion = String.format("""
+            {
+              "name": "Product Endpoint 1 Updated",
+              "baseUrl": "https://api.example.com",
+              "basePath": "/products",
+              "productIdPath": "$.id",
+              "productNamePath": "$.name",
+              "productImagePath": "$.image",
+              "productEANPath": "$.ean",
+              "responseType": "JSON",
+              "version": %d
+            }""", currentVersion - 1);
+
+            expect()
+                .statusCode(409)
+                .given()
+                .body(updateJsonWithOutdatedVersion)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", parentApi.getUuid(), endpoint.getUuid());
+
+            // Verify endpoint was not updated
+            var unchangedEndpoint = productEndpointRepository.findByIdOptional(endpoint.getUuid());
+            assertTrue(unchangedEndpoint.isPresent());
+            assertEquals("Test Product Endpoint", unchangedEndpoint.get().getName());
+            assertEquals(currentVersion, unchangedEndpoint.get().getVersion());
         }
     }
 

@@ -94,7 +94,8 @@ class StoreEndpointControllerTest {
             "numberPath": "$.number"
           },
           "storeCurrencyPath": "$.currency",
-          "responseType": "JSON"
+          "responseType": "JSON",
+          "version": 0
         }""";
 
 
@@ -156,6 +157,7 @@ class StoreEndpointControllerTest {
                 .contentType(ContentType.JSON)
                 .body("uuid", isUuidOf(endpoint))
                 .body("name", is("Test Store Endpoint"))
+                .body("version", is(0))
                 .when()
                 .get("{uuid}", parentApi.getUuid(), endpoint.getUuid());
         }
@@ -224,6 +226,7 @@ class StoreEndpointControllerTest {
                 .contentType(ContentType.JSON)
                 .body("uuid", isUuidOf(endpoint))
                 .body("name", is("Store Endpoint 1 Updated"))
+                .body("version", is(1))
                 .given()
                 .body(STORE_ENDPOINT_1_UPDATE_JSON)
                 .contentType(ContentType.JSON)
@@ -321,6 +324,78 @@ class StoreEndpointControllerTest {
                     .orElseThrow()
                     .getName()
             );
+        }
+
+        @Test
+        void shouldReturn409WhenUpdatingStoreEndpointWithOutdatedVersion() {
+            QuarkusTransaction.begin();
+
+            // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
+            StoreEndpoint endpoint = new StoreEndpoint();
+            endpoint.setApi(parentApi);
+            endpoint.setName("Test Store Endpoint");
+            endpoint.setBaseUrl("https://api.example.com");
+            endpoint.setBasePath("/stores");
+            endpoint.setStoreIdPath("$.id");
+            AddressPaths addressPaths = new AddressPaths();
+            addressPaths.setCountryPath("$.country");
+            addressPaths.setCityPath("$.city");
+            addressPaths.setZipPath("$.zip");
+            addressPaths.setStreetPath("$.street");
+            addressPaths.setNumberPath("$.number");
+            endpoint.setAddressPaths(addressPaths);
+            endpoint.setResponseType(ResponseType.JSON);
+            storeEndpointRepository.persist(endpoint);
+
+            storeEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            // Get current endpoint to obtain its version
+            var currentEndpoint = storeEndpointRepository.findByIdOptional(endpoint.getUuid());
+            assertTrue(currentEndpoint.isPresent());
+            int currentVersion = currentEndpoint.get().getVersion();
+
+            // Try to update with outdated version
+            String updateJsonWithOutdatedVersion = String.format("""
+            {
+              "name": "Store Endpoint 1 Updated",
+              "baseUrl": "https://api.example.com",
+              "basePath": "/stores",
+              "storeIdPath": "$.id",
+              "storeNamePath": "$.name",
+              "storeLogoPath": "$.logo",
+              "addressPath": "$.address",
+              "addressPaths": {
+                "countryPath": "$.country",
+                "cityPath": "$.city",
+                "zipPath": "$.zip",
+                "streetPath": "$.street",
+                "numberPath": "$.number"
+              },
+              "storeCurrencyPath": "$.currency",
+              "responseType": "JSON",
+              "version": %d
+            }""", currentVersion - 1);
+
+            expect()
+                .statusCode(409)
+                .given()
+                .body(updateJsonWithOutdatedVersion)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", parentApi.getUuid(), endpoint.getUuid());
+
+            // Verify endpoint was not updated
+            var unchangedEndpoint = storeEndpointRepository.findByIdOptional(endpoint.getUuid());
+            assertTrue(unchangedEndpoint.isPresent());
+            assertEquals("Test Store Endpoint", unchangedEndpoint.get().getName());
+            assertEquals(currentVersion, unchangedEndpoint.get().getVersion());
         }
     }
 

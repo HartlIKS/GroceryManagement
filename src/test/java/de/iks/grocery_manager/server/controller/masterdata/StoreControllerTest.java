@@ -46,6 +46,7 @@ class StoreControllerTest {
                 .body("address.country", is("DE"))
                 .body("address.city", is("Düsseldorf"))
                 .body("currency", is("EUR"))
+                .body("version", is(0))
                 .when()
                 .get("{uuid}", Testdata.STORE_1_UUID);
         }
@@ -95,7 +96,8 @@ class StoreControllerTest {
               "name": "Store 1b",
               "address": {
                 "city": "Hilden"
-              }
+              },
+              "version": 0
             }""";
 
         @Test
@@ -111,6 +113,7 @@ class StoreControllerTest {
                 .body("address.country", is("DE"))
                 .body("address.city", is("Hilden"))
                 .body("currency", is("EUR"))
+                .body("version", is(1))
                 .given()
                 .contentType(ContentType.JSON)
                 .body(STORE_1_UPDATE_JSON)
@@ -168,6 +171,38 @@ class StoreControllerTest {
                            .findByIdOptional(Testdata.STORE_2_UUID)
                            .isPresent());
             assertEquals(initialCount, storeRepository.count());
+        }
+
+        @Test
+        @WithAdminUser
+        void shouldReturn409WhenUpdatingStoreWithOutdatedVersion() {
+            // Get current store to obtain its version
+            var currentStore = storeRepository.findByIdOptional(Testdata.STORE_1_UUID);
+            assertTrue(currentStore.isPresent());
+            int currentVersion = currentStore.get().getVersion();
+
+            // Try to update with outdated version
+            String updateJsonWithOutdatedVersion = String.format("""
+            {
+              "name": "Store 1b",
+              "address": {
+                "city": "Hilden"
+              },
+              "version": %d
+            }""", currentVersion - 1);
+
+            expect()
+                .statusCode(409)
+                .given()
+                .contentType(ContentType.JSON)
+                .body(updateJsonWithOutdatedVersion)
+                .put("{uuid}", Testdata.STORE_1_UUID);
+
+            // Verify store was not updated
+            var unchangedStore = storeRepository.findByIdOptional(Testdata.STORE_1_UUID);
+            assertTrue(unchangedStore.isPresent());
+            assertEquals("Store 1", unchangedStore.get().getName());
+            assertEquals(currentVersion, unchangedStore.get().getVersion());
         }
     }
 

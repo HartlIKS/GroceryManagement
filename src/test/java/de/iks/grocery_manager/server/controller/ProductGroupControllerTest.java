@@ -163,6 +163,7 @@ class ProductGroupControllerTest {
                 .body("products.size()", is(2))
                 .body("products.%s", withArgs(Testdata.PRODUCT_1_UUID), is(1.5f))
                 .body("products.%s", withArgs(Testdata.PRODUCT_3_UUID), is(2.0f))
+                .body("version", is(0))
                 .given()
                 .contentType(ContentType.JSON)
                 .body(createJson)
@@ -233,7 +234,8 @@ class ProductGroupControllerTest {
                       "products": {
                         "%s": 4.0,
                         "%s": 2.5
-                      }
+                      },
+                      "version": 0
                     }""", Testdata.PRODUCT_3_UUID, Testdata.PRODUCT_4_UUID
             );
 
@@ -244,6 +246,7 @@ class ProductGroupControllerTest {
                 .body("products.size()", is(2))
                 .body("products.%s", withArgs(Testdata.PRODUCT_3_UUID), is(4.0f))
                 .body("products.%s", withArgs(Testdata.PRODUCT_4_UUID), is(2.5f))
+                .body("version", is(1))
                 .given()
                 .contentType(ContentType.JSON)
                 .body(updateJson)
@@ -313,6 +316,75 @@ class ProductGroupControllerTest {
                 .findByIdOptional(canaryGroup.getUuid())
                 .get();
             assertEquals("Canary Group", unchangedCanary.getName());
+        }
+
+        @Test
+        void shouldReturn409WhenUpdatingProductGroupWithOutdatedVersion() {
+            QuarkusTransaction.begin();
+
+            // Create test group
+            Product product1 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_1_UUID)
+                .orElseThrow();
+            Product product2 = productRepository
+                .findByIdOptional(Testdata.PRODUCT_2_UUID)
+                .orElseThrow();
+
+            ProductGroup testGroup = new ProductGroup();
+            testGroup.setName("Test Group 1");
+            testGroup.setOwner(WithTestUser.OWNER);
+            testGroup.setProducts(new HashMap<>(Map.of(
+                product1, new BigDecimal("2.5"),
+                product2, new BigDecimal("1.0")
+            )));
+            productGroupRepository.persist(testGroup);
+
+            // Create canary group
+            ProductGroup canaryGroup = new ProductGroup();
+            canaryGroup.setName("Canary Group");
+            canaryGroup.setOwner(WithTestUser.OWNER);
+            canaryGroup.setProducts(new HashMap<>(Map.of(product1, new BigDecimal("1.0"))));
+            productGroupRepository.persist(canaryGroup);
+
+            productGroupRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            // Get current product group to obtain its version
+            var currentGroup = productGroupRepository.findByIdOptional(testGroup.getUuid());
+            assertTrue(currentGroup.isPresent());
+            int currentVersion = currentGroup.get().getVersion();
+
+            // Try to update with outdated version
+            String updateJsonWithOutdatedVersion = String.format(
+                """
+                    {
+                      "name": "Updated Group 1",
+                      "products": {
+                        "%s": 4.0,
+                        "%s": 2.5
+                      },
+                      "version": %d
+                    }""", Testdata.PRODUCT_3_UUID, Testdata.PRODUCT_4_UUID, currentVersion - 1
+            );
+
+            expect()
+                .statusCode(409)
+                .given()
+                .contentType(ContentType.JSON)
+                .body(updateJsonWithOutdatedVersion)
+                .put("{uuid}", testGroup.getUuid());
+
+            // Verify product group was not updated
+            var unchangedGroup = productGroupRepository.findByIdOptional(testGroup.getUuid());
+            assertTrue(unchangedGroup.isPresent());
+            assertEquals("Test Group 1", unchangedGroup.get().getName());
+            assertEquals(currentVersion, unchangedGroup.get().getVersion());
+
+            // Verify canary group unaffected
+            assertTrue(productGroupRepository
+                           .findByIdOptional(canaryGroup.getUuid())
+                           .isPresent());
         }
     }
 

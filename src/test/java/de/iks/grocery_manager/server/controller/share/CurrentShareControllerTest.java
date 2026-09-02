@@ -81,6 +81,7 @@ class CurrentShareControllerTest {
                 .body("uuid", isUuidOf(testShare))
                 .body("name", is("Test Share"))
                 .body("permissions", is("ADMIN"))
+                .body("version", is(0))
                 .given()
                 .queryParam("share", testShare.getUuid())
                 .get();
@@ -103,6 +104,7 @@ class CurrentShareControllerTest {
                 .body("uuid", isUuidOf(testShare))
                 .body("name", is("Write Share"))
                 .body("permissions", is("WRITE"))
+                .body("version", is(0))
                 .given()
                 .queryParam("share", testShare.getUuid())
                 .get();
@@ -125,6 +127,7 @@ class CurrentShareControllerTest {
                 .body("uuid", isUuidOf(testShare))
                 .body("name", is("Read Share"))
                 .body("permissions", is("READ"))
+                .body("version", is(0))
                 .given()
                 .queryParam("share", testShare.getUuid())
                 .get();
@@ -183,7 +186,8 @@ class CurrentShareControllerTest {
 
             String updateJson = """
                 {
-                  "name": "Updated Name"
+                  "name": "Updated Name",
+                  "version": 0
                 }""";
 
             expect()
@@ -192,6 +196,7 @@ class CurrentShareControllerTest {
                 .body("uuid", isUuidOf(testShare))
                 .body("name", is("Updated Name"))
                 .body("permissions", is("ADMIN"))
+                .body("version", is(1))
                 .given()
                 .queryParam("share", testShare.getUuid())
                 .body(updateJson)
@@ -218,7 +223,8 @@ class CurrentShareControllerTest {
 
             String updateJson = """
                 {
-                  "name": "Updated Name"
+                  "name": "Updated Name",
+                  "version": 0
                 }""";
 
             expect()
@@ -249,7 +255,8 @@ class CurrentShareControllerTest {
 
             String updateJson = """
                 {
-                  "name": "Updated Name"
+                  "name": "Updated Name",
+                  "version": 0
                 }""";
 
             expect()
@@ -280,7 +287,8 @@ class CurrentShareControllerTest {
 
             String updateJson = """
                 {
-                  "name": "Updated Name"
+                  "name": "Updated Name",
+                  "version": 0
                 }""";
 
             expect()
@@ -302,7 +310,8 @@ class CurrentShareControllerTest {
         void shouldReturn403WhenShareNotFound() {
             String updateJson = """
                 {
-                  "name": "Updated Name"
+                  "name": "Updated Name",
+                  "version": 0
                 }""";
 
             expect()
@@ -326,13 +335,15 @@ class CurrentShareControllerTest {
 
             String updateJson = """
                 {
-                  "name": ""
+                  "name": "",
+                  "version": 0
                 }""";
 
             expect()
                 .statusCode(200)
                 .contentType(ContentType.JSON)
                 .body("name", is(""))
+                .body("version", is(1))
                 .given()
                 .queryParam("share", testShare.getUuid())
                 .body(updateJson)

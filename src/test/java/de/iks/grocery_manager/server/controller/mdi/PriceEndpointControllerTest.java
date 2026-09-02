@@ -100,6 +100,7 @@ class PriceEndpointControllerTest {
                 .contentType(ContentType.JSON)
                 .body("uuid", isUuidOf(endpoint))
                 .body("name", is("Test Price Endpoint"))
+                .body("version", is(0))
                 .when()
                 .get("{uuid}", parentApi.getUuid(), endpoint.getUuid());
         }
@@ -158,7 +159,8 @@ class PriceEndpointControllerTest {
               "timeFormat": "yyyy-MM-dd",
               "validFromPath": "$.validFrom",
               "validUntilPath": "$.validUntil",
-              "responseType": "JSON"
+              "responseType": "JSON",
+              "version": 0
             }""";
 
         @Test
@@ -205,6 +207,7 @@ class PriceEndpointControllerTest {
                 .contentType(ContentType.JSON)
                 .body("uuid", isUuidOf(endpoint))
                 .body("name", is("Price Endpoint 1 Updated"))
+                .body("version", is(1))
                 .given()
                 .body(PRICE_ENDPOINT_1_UPDATE_JSON)
                 .contentType(ContentType.JSON)
@@ -308,6 +311,83 @@ class PriceEndpointControllerTest {
                     .orElseThrow()
                     .getName()
             );
+        }
+
+        @Test
+        void shouldReturn409WhenUpdatingPriceEndpointWithOutdatedVersion() {
+            QuarkusTransaction.begin();
+
+            // Create test data
+            ExternalAPI parentApi = new ExternalAPI();
+            parentApi.setName("Test API");
+            parentApi.setProductMappings(new HashMap<>());
+            parentApi.setStoreMappings(new HashMap<>());
+            externalAPIRepository.persist(parentApi);
+
+            PriceEndpoint endpoint = new PriceEndpoint();
+            endpoint.setApi(parentApi);
+            endpoint.setName("Test Price Endpoint");
+            endpoint.setBaseUrl("https://api.example.com");
+            endpoint.setBasePath("/prices");
+            endpoint.setPricePath("$.price");
+            endpoint.setTimeFormat("yyyy-MM-dd");
+            endpoint.setValidFromPath("$.validFrom");
+            endpoint.setValidUntilPath("$.validUntil");
+            endpoint.setProductHandlingType(ProductHandlingType.PARAMETER);
+            Parameter productParam = new Parameter();
+            productParam.setHeader("Product-Header");
+            productParam.setQueryParameter("productId");
+            endpoint.setProductParameters(productParam);
+            endpoint.setStoreHandlingType(StoreHandlingType.PARAMETER);
+            Parameter storeParam = new Parameter();
+            storeParam.setHeader("Store-Header");
+            storeParam.setQueryParameter("storeId");
+            endpoint.setStoreParameters(storeParam);
+            endpoint.setResponseType(ResponseType.JSON);
+            priceEndpointRepository.persist(endpoint);
+
+            priceEndpointRepository.flush();
+
+            QuarkusTransaction.commit();
+
+            // Get current endpoint to obtain its version
+            var currentEndpoint = priceEndpointRepository.findByIdOptional(endpoint.getUuid());
+            assertTrue(currentEndpoint.isPresent());
+            int currentVersion = currentEndpoint.get().getVersion();
+
+            // Try to update with outdated version
+            String updateJsonWithOutdatedVersion = String.format("""
+            {
+              "name": "Price Endpoint 1 Updated",
+              "baseUrl": "https://api.example.com",
+              "basePath": "/prices",
+              "productHandling": {
+                "type": "path",
+                "path": "/product"
+              },
+              "storeHandling": {
+                "type": "oneForAll"
+              },
+              "pricePath": "$.price",
+              "timeFormat": "yyyy-MM-dd",
+              "validFromPath": "$.validFrom",
+              "validUntilPath": "$.validUntil",
+              "responseType": "JSON",
+              "version": %d
+            }""", currentVersion - 1);
+
+            expect()
+                .statusCode(409)
+                .given()
+                .body(updateJsonWithOutdatedVersion)
+                .contentType(ContentType.JSON)
+                .put("{uuid}", parentApi.getUuid(), endpoint.getUuid());
+
+            // Verify endpoint was not updated
+            var unchangedEndpoint = priceEndpointRepository.findByIdOptional(endpoint.getUuid());
+            assertTrue(unchangedEndpoint.isPresent());
+            assertEquals("Test Price Endpoint", unchangedEndpoint.get().getName());
+            assertEquals(currentVersion, unchangedEndpoint.get().getVersion());
         }
     }
 

@@ -203,6 +203,7 @@ class JoinLinkControllerTest {
                 )
                 .body("active", is(expectedLink.isActive()))
                 .body("singleUse", is(expectedLink.isSingleUse()))
+                .body("version", is(expectedLink.getVersion()))
                 .given()
                 .queryParam("share", testShare.getUuid())
                 .when()
@@ -550,7 +551,8 @@ class JoinLinkControllerTest {
                   "permissions": "READ",
                   "active": false,
                   "singleUse": true,
-                  "validTo": "2025-12-31T23:59:59Z"
+                  "validTo": "2025-12-31T23:59:59Z",
+                  "version": 0
                 }""";
 
             expect()
@@ -567,6 +569,7 @@ class JoinLinkControllerTest {
                 .body("active", is(false))
                 .body("singleUse", is(true))
                 .body("validTo", is("2025-12-31T23:59:59Z"))
+                .body("version", is(1))
                 .given()
                 .queryParam("share", testShare.getUuid())
                 .body(updateJson)
