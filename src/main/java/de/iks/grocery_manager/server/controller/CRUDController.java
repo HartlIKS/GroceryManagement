@@ -10,11 +10,14 @@ import de.iks.grocery_manager.server.model.HasUUID;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriInfo;
 import lombok.RequiredArgsConstructor;
 import org.jboss.resteasy.reactive.RestResponse;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -30,15 +33,25 @@ public abstract class CRUDController<Entity extends HasUUID, DTO extends HasUUID
     private final EntityMapper<Entity, DTO> dtoMapper;
     @Inject
     protected UriInfo uriInfo;
+    protected final CacheControl cacheControl = new CacheControl();
+
+    {
+        cacheControl.setMaxAge(600);
+    }
 
     @GET
     @Path("{uuid}")
     @JsonView(DTOViews.List.class)
     public RestResponse<DTO> get(@PathParam("uuid") UUID uuid) {
+
         return repository
             .findByIdOptional(uuid)
             .map(dtoMapper.map())
-            .map(RestResponse::ok)
+            .map(dto -> RestResponse.ResponseBuilder.ok(dto)
+                .cacheControl(cacheControl)
+                .tag(new EntityTag(Integer.toString(dto.version())))
+                .build()
+            )
             .orElseGet(RestResponse::notFound);
     }
 
@@ -67,7 +80,13 @@ public abstract class CRUDController<Entity extends HasUUID, DTO extends HasUUID
                 return repository.saveAndFlush(s);
             })
             .map(dtoMapper.map())
-            .map(RestResponse::ok)
+            .map(d -> RestResponse.ResponseBuilder
+                .ok(d)
+                .cacheControl(cacheControl)
+                .tag(new EntityTag(Integer.toString(d.version())))
+                .contentLocation(uriInfo.getRequestUri())
+                .build()
+            )
             .orElseGet(RestResponse::notFound);
     }
 
@@ -83,16 +102,18 @@ public abstract class CRUDController<Entity extends HasUUID, DTO extends HasUUID
                         .apply(createDTO)
                 )
             );
+        URI location = uriInfo
+            .getAbsolutePathBuilder()
+            .path(ret
+                      .uuid()
+                      .toString())
+            .build();
         return RestResponse.ResponseBuilder
             .create(Status.CREATED, ret)
-            .location(
-                uriInfo
-                    .getAbsolutePathBuilder()
-                    .path(ret
-                              .uuid()
-                              .toString())
-                    .build()
-            )
+            .location(location)
+            .contentLocation(location)
+            .tag(new EntityTag(Integer.toString(ret.version())))
+            .cacheControl(cacheControl)
             .build();
     }
 

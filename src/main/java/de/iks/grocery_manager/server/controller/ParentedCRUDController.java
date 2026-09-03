@@ -10,12 +10,15 @@ import de.iks.grocery_manager.server.model.HasUUID;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.UriInfo;
 import lombok.RequiredArgsConstructor;
 import org.jboss.resteasy.reactive.ResponseStatus;
 import org.jboss.resteasy.reactive.RestResponse;
 import org.jboss.resteasy.reactive.RestResponse.Status;
 
+import java.net.URI;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -27,6 +30,12 @@ public abstract class ParentedCRUDController<Entity extends HasUUID, DTO extends
     private final EntityMapper.Parented<Entity, DTO> dtoMapper;
     @Inject
     protected UriInfo uriInfo;
+    protected final CacheControl cacheControl = new CacheControl();
+
+    {
+        cacheControl.setMaxAge(600);
+    }
+
 
     @GET
     @Path("{uuid}")
@@ -38,7 +47,12 @@ public abstract class ParentedCRUDController<Entity extends HasUUID, DTO extends
         return repository
             .findByIdOptional(parentUuid, uuid)
             .map(dtoMapper.map())
-            .map(RestResponse::ok)
+            .map(dto -> RestResponse.ResponseBuilder
+                .ok(dto)
+                .cacheControl(cacheControl)
+                .tag(new EntityTag(Integer.toString(dto.version())))
+                .build()
+            )
             .orElseGet(RestResponse::notFound);
     }
 
@@ -59,7 +73,13 @@ public abstract class ParentedCRUDController<Entity extends HasUUID, DTO extends
                 return repository.saveAndFlush(s);
             })
             .map(dtoMapper.map())
-            .map(RestResponse::ok)
+            .map(dto -> RestResponse.ResponseBuilder
+                .ok(dto)
+                .cacheControl(cacheControl)
+                .tag(new EntityTag(Integer.toString(dto.version())))
+                .contentLocation(uriInfo.getRequestUri())
+                .build()
+            )
             .orElseGet(RestResponse::notFound);
     }
 
@@ -75,14 +95,16 @@ public abstract class ParentedCRUDController<Entity extends HasUUID, DTO extends
             .apply(repository.saveAndFlush(dtoMapper
                                                .create()
                                                .apply(createDTO, parentUuid)));
+        URI location = uriInfo
+            .getAbsolutePathBuilder()
+            .path(ret.uuid().toString())
+            .build();
         return RestResponse.ResponseBuilder
             .create(Status.CREATED, ret)
-            .location(
-                uriInfo
-                    .getAbsolutePathBuilder()
-                    .path(ret.uuid().toString())
-                    .build()
-            )
+            .location(location)
+            .contentLocation(location)
+            .tag(new EntityTag(Integer.toString(ret.version())))
+            .cacheControl(cacheControl)
             .build();
     }
 

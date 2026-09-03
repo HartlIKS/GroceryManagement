@@ -11,6 +11,8 @@ import de.iks.grocery_manager.server.security.UserInfo;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriInfo;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import org.jboss.resteasy.reactive.ResponseStatus;
 import org.jboss.resteasy.reactive.RestResponse;
 import org.jspecify.annotations.NonNull;
 
+import java.net.URI;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -32,6 +35,13 @@ public abstract class OwnerTrackingCRUDController<Entity extends HasUUID & HasOw
     @Inject
     protected UriInfo uriInfo;
 
+    protected final CacheControl cacheControl = new CacheControl();
+
+    {
+        cacheControl.setMaxAge(60);
+        cacheControl.setPrivate(true);
+    }
+
     @GET
     @Path("{uuid}")
     @JsonView(DTOViews.List.class)
@@ -41,7 +51,12 @@ public abstract class OwnerTrackingCRUDController<Entity extends HasUUID & HasOw
         return repository
             .findByUuidAndOwner(uuid, userInfo.getOwner())
             .map(dtoMapper.map())
-            .map(RestResponse::ok)
+            .map(dto -> RestResponse.ResponseBuilder
+                .ok(dto)
+                .cacheControl(cacheControl)
+                .tag(new EntityTag(Integer.toString(dto.version())))
+                .build()
+            )
             .orElseGet(RestResponse::notFound);
     }
 
@@ -65,7 +80,13 @@ public abstract class OwnerTrackingCRUDController<Entity extends HasUUID & HasOw
             })
             .map(repository::saveAndFlush)
             .map(dtoMapper.map())
-            .map(RestResponse::ok)
+            .map(dto -> RestResponse.ResponseBuilder
+                .ok(dto)
+                .tag(new EntityTag(Integer.toString(dto.version())))
+                .contentLocation(uriInfo.getRequestUri())
+                .cacheControl(cacheControl)
+                .build()
+            )
             .orElseGet(RestResponse::notFound);
     }
 
@@ -94,14 +115,16 @@ public abstract class OwnerTrackingCRUDController<Entity extends HasUUID & HasOw
                         )
                 )
             );
+        URI location = uriInfo
+            .getAbsolutePathBuilder()
+            .path(ret.uuid().toString())
+            .build();
         return RestResponse.ResponseBuilder
             .create(Status.CREATED, ret)
-            .location(
-                uriInfo
-                    .getAbsolutePathBuilder()
-                    .path(ret.uuid().toString())
-                    .build()
-            )
+            .location(location)
+            .contentLocation(location)
+            .tag(new EntityTag(Integer.toString(ret.version())))
+            .cacheControl(cacheControl)
             .build();
     }
 }
