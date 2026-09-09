@@ -11,6 +11,8 @@ import lombok.EqualsAndHashCode;
 @Entity
 @Table
 public class PriceEndpoint extends Endpoint {
+    @Column(nullable = false)
+    private boolean useEAN;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProductHandlingType productHandlingType;

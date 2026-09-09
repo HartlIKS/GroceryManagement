@@ -3,6 +3,7 @@ import { EndpointDTOTypes } from './endpoint.model';
 import { Always, CREATE, LIST, Mode } from '../../../models/base.model';
 
 export type PriceEndpointDTOTypes = Always<{
+  useEAN: boolean,
   productHandling: ProductHandlingDTO,
   storeHandling: StoreHandlingDTO,
   pricePath: string,

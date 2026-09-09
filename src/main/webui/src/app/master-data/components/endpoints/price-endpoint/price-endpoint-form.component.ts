@@ -10,6 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { PriceEndpointService } from '../../../services';
 import { PriceEndpointDTOTypes } from '../../../models';
 import { UPDATE } from '../../../../models/base.model';
+import { MatCheckbox } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-price-endpoint-form',
@@ -22,7 +23,8 @@ import { UPDATE } from '../../../../models/base.model';
     MatInput,
     MatProgressSpinner,
     MatSelectModule,
-    RouterLink
+    RouterLink,
+    MatCheckbox
   ],
   templateUrl: './price-endpoint-form.component.html',
   styleUrls: ['./price-endpoint-form.component.css']
@@ -69,6 +71,7 @@ export class PriceEndpointFormComponent implements OnInit {
       }),
       responseType: ['JSON', Validators.required],
       basePath: ['', Validators.required],
+      useEAN: [true],
       productHandling: this.fb.group({
         type: ['path']
       }),

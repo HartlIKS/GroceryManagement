@@ -22,6 +22,7 @@ public record PriceEndpointDTO(
     ParameterDTO itemCount,
     ResponseType responseType,
     String basePath,
+    boolean useEAN,
     ProductHandlingDTO productHandling,
     StoreHandlingDTO storeHandling,
     String pricePath,
