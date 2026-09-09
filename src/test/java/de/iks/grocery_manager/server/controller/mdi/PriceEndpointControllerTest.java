@@ -5,13 +5,15 @@ import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.controller.masterdata.WithAdminUser;
 import de.iks.grocery_manager.server.jpa.mdi.ExternalAPIRepository;
 import de.iks.grocery_manager.server.jpa.mdi.PriceEndpointRepository;
-import de.iks.grocery_manager.server.locks.EntityAccess;
 import de.iks.grocery_manager.server.model.mdi.ExternalAPI;
 import de.iks.grocery_manager.server.model.mdi.PriceEndpoint;
 import de.iks.grocery_manager.server.model.mdi.ResponseType;
 import de.iks.grocery_manager.server.model.mdi.handling.Parameter;
 import de.iks.grocery_manager.server.model.mdi.handling.ProductHandlingType;
 import de.iks.grocery_manager.server.model.mdi.handling.StoreHandlingType;
+import de.iks.grocery_manager.server.testdata.Data;
+import de.iks.rtrm.UsesResource;
+import de.iks.rtrm.impl.ResourceManager;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.common.http.TestHTTPResource;
@@ -20,20 +22,23 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import static de.iks.grocery_manager.server.UUIDMatcher.isUuidOf;
-import static io.restassured.RestAssured.*;
+import static io.restassured.RestAssured.expect;
+import static io.restassured.RestAssured.withArgs;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
 @TestHTTPEndpoint(PriceEndpointController.class)
 @WithAdminUser
-@EntityAccess(PriceEndpointRepository.class)
-@EntityAccess(ExternalAPIRepository.class)
+@ExtendWith(ResourceManager.class)
+@UsesResource(value = Data.PriceEndpoint.class, dirties = true)
+@UsesResource(value = Data.ExternalApi.class, dirties = true)
 class PriceEndpointControllerTest {
 
     @Inject

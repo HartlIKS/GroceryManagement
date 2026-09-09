@@ -5,10 +5,12 @@ import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.jpa.ShoppingTripRepository;
 import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
 import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;
-import de.iks.grocery_manager.server.locks.EntityAccess;
 import de.iks.grocery_manager.server.model.ShoppingTrip;
 import de.iks.grocery_manager.server.model.masterdata.Product;
 import de.iks.grocery_manager.server.model.masterdata.Store;
+import de.iks.grocery_manager.server.testdata.Data;
+import de.iks.rtrm.UsesResource;
+import de.iks.rtrm.impl.ResourceManager;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.common.http.TestHTTPResource;
@@ -17,6 +19,7 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -28,14 +31,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static io.restassured.RestAssured.*;
+import static io.restassured.RestAssured.expect;
+import static io.restassured.RestAssured.withArgs;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
 @WithTestUser
 @TestHTTPEndpoint(ShoppingTripController.class)
-@EntityAccess(ShoppingTripRepository.class)
+@ExtendWith(ResourceManager.class)
+@UsesResource(value = Data.ShoppingTrip.class, dirties = true)
 class ShoppingTripControllerTest {
 
     @Inject

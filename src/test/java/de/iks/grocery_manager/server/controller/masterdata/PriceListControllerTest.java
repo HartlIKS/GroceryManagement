@@ -3,7 +3,9 @@ package de.iks.grocery_manager.server.controller.masterdata;
 import de.iks.grocery_manager.server.Testdata;
 import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.jpa.masterdata.PriceRepository;
-import de.iks.grocery_manager.server.locks.EntityAccess;
+import de.iks.grocery_manager.server.testdata.Data;
+import de.iks.rtrm.UsesResource;
+import de.iks.rtrm.impl.ResourceManager;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.common.http.TestHTTPResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -11,19 +13,23 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.regex.Pattern;
 
-import static de.iks.grocery_manager.server.UUIDMatcher.*;
-import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
+import static de.iks.grocery_manager.server.UUIDMatcher.isUuid;
+import static io.restassured.RestAssured.expect;
+import static io.restassured.RestAssured.withArgs;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.matchesRegex;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
 @TestHTTPEndpoint(PriceListController.class)
-@EntityAccess(PriceRepository.class)
+@ExtendWith(ResourceManager.class)
+@UsesResource(value = Data.Price.class, dirties = true)
 class PriceListControllerTest {
     @Inject
     PriceRepository priceRepository;
@@ -34,7 +40,7 @@ class PriceListControllerTest {
     @Nested
     @TestHTTPEndpoint(PriceListController.class)
     @WithTestUser
-    @EntityAccess(value = PriceRepository.class, writes = false)
+    @UsesResource(Data.Price.class)
     class GetPrice {
         @Test
         void shouldReturnPriceWhenFound() {
@@ -295,7 +301,7 @@ class PriceListControllerTest {
     @Nested
     @TestHTTPEndpoint(PriceListController.class)
     @WithTestUser
-    @EntityAccess(value = PriceRepository.class, writes = false)
+    @UsesResource(Data.Price.class)
     class SearchPrices {
         @Test
         void shouldReturnAllPricesWhenSearching() {
@@ -387,7 +393,7 @@ class PriceListControllerTest {
     @Nested
     @TestHTTPEndpoint(PriceListController.class)
     @WithTestUser
-    @EntityAccess(value = PriceRepository.class, writes = false)
+    @UsesResource(Data.Price.class)
     class SearchPricesWithDateStoresAndProducts {
         @Test
         void shouldReturnPricesWhenSearchingWithValidDateStoresAndProducts() {

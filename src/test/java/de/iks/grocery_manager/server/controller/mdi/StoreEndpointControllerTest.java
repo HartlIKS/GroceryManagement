@@ -5,11 +5,13 @@ import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.controller.masterdata.WithAdminUser;
 import de.iks.grocery_manager.server.jpa.mdi.ExternalAPIRepository;
 import de.iks.grocery_manager.server.jpa.mdi.StoreEndpointRepository;
-import de.iks.grocery_manager.server.locks.EntityAccess;
 import de.iks.grocery_manager.server.model.mdi.AddressPaths;
 import de.iks.grocery_manager.server.model.mdi.ExternalAPI;
 import de.iks.grocery_manager.server.model.mdi.ResponseType;
 import de.iks.grocery_manager.server.model.mdi.StoreEndpoint;
+import de.iks.grocery_manager.server.testdata.Data;
+import de.iks.rtrm.UsesResource;
+import de.iks.rtrm.impl.ResourceManager;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.common.http.TestHTTPResource;
@@ -18,6 +20,7 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
 import java.util.regex.Pattern;
@@ -25,14 +28,16 @@ import java.util.regex.Pattern;
 import static de.iks.grocery_manager.server.UUIDMatcher.isUuidOf;
 import static io.restassured.RestAssured.expect;
 import static io.restassured.RestAssured.withArgs;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.matchesRegex;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
 @TestHTTPEndpoint(StoreEndpointController.class)
 @WithAdminUser
-@EntityAccess(StoreEndpointRepository.class)
-@EntityAccess(ExternalAPIRepository.class)
+@ExtendWith(ResourceManager.class)
+@UsesResource(value = Data.StoreEndpoint.class, dirties = true)
+@UsesResource(value = Data.ExternalApi.class, dirties = true)
 class StoreEndpointControllerTest {
     private static final String STORE_ENDPOINT_1_CREATE_JSON = """
         {

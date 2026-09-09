@@ -16,6 +16,14 @@
     <mapstruct.version>1.6.3</mapstruct.version>
   </properties>
   <packaging>quarkus</packaging>
+  
+  <repositories>
+    <repository>
+      <id>resourcemanager-github</id>
+      <url>https://maven.pkg.github.com/iks-gmbh-projects/RecursiveTestResourceManager</url>
+    </repository>
+  </repositories>
+  
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -118,6 +126,12 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-test-security</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>de.iks</groupId>
+      <artifactId>recursive-test-resource-manager</artifactId>
+      <version>1.0.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

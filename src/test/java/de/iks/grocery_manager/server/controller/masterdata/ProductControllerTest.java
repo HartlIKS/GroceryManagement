@@ -3,7 +3,9 @@ package de.iks.grocery_manager.server.controller.masterdata;
 import de.iks.grocery_manager.server.Testdata;
 import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
-import de.iks.grocery_manager.server.locks.EntityAccess;
+import de.iks.grocery_manager.server.testdata.Data;
+import de.iks.rtrm.UsesResource;
+import de.iks.rtrm.impl.ResourceManager;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.common.http.TestHTTPResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -11,19 +13,23 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static de.iks.grocery_manager.server.UUIDMatcher.*;
-import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
+import static de.iks.grocery_manager.server.UUIDMatcher.isUuid;
+import static io.restassured.RestAssured.expect;
+import static io.restassured.RestAssured.withArgs;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.matchesRegex;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
 @TestHTTPEndpoint(ProductController.class)
 @WithTestUser
-@EntityAccess(ProductRepository.class)
+@ExtendWith(ResourceManager.class)
+@UsesResource(value = Data.Product.class, dirties = true)
 class ProductControllerTest {
     @Inject
     ProductRepository productRepository;
@@ -34,7 +40,7 @@ class ProductControllerTest {
     @Nested
     @TestHTTPEndpoint(ProductController.class)
     @WithTestUser
-    @EntityAccess(value = ProductRepository.class, writes = false)
+    @UsesResource(Data.Product.class)
     class GetProduct {
         @Test
         void shouldReturnProductWhenFound() {
@@ -60,7 +66,7 @@ class ProductControllerTest {
     @Nested
     @TestHTTPEndpoint(ProductController.class)
     @WithTestUser
-    @EntityAccess(value = ProductRepository.class, writes = false)
+    @UsesResource(Data.Product.class)
     class GetManyProducts {
         @Test
         void shouldReturnExistingProductsWhenFound() {
@@ -298,7 +304,7 @@ class ProductControllerTest {
     @Nested
     @TestHTTPEndpoint(ProductController.class)
     @WithTestUser
-    @EntityAccess(value = ProductRepository.class, writes = false)
+    @UsesResource(Data.Product.class)
     class SearchProducts {
         @Test
         void shouldReturnAllProductsWhenSearching() {

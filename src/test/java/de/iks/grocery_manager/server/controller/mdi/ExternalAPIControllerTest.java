@@ -4,7 +4,9 @@ import de.iks.grocery_manager.server.Testdata;
 import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.controller.masterdata.WithAdminUser;
 import de.iks.grocery_manager.server.jpa.mdi.ExternalAPIRepository;
-import de.iks.grocery_manager.server.locks.EntityAccess;
+import de.iks.grocery_manager.server.testdata.Data;
+import de.iks.rtrm.UsesResource;
+import de.iks.rtrm.impl.ResourceManager;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.common.http.TestHTTPResource;
@@ -13,10 +15,11 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.regex.Pattern;
 
-import static de.iks.grocery_manager.server.UUIDMatcher.*;
+import static de.iks.grocery_manager.server.UUIDMatcher.isUuidOf;
 import static io.restassured.RestAssured.expect;
 import static io.restassured.RestAssured.withArgs;
 import static org.hamcrest.Matchers.*;
@@ -25,7 +28,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @QuarkusTest
 @TestHTTPEndpoint(ExternalAPIController.class)
 @WithAdminUser
-@EntityAccess(ExternalAPIRepository.class)
+@ExtendWith(ResourceManager.class)
+@UsesResource(value = Data.ExternalApi.class, dirties = true)
 class ExternalAPIControllerTest {
 
     @Inject

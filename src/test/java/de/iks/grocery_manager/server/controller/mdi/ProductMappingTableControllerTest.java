@@ -4,8 +4,10 @@ import de.iks.grocery_manager.server.Testdata;
 import de.iks.grocery_manager.server.controller.masterdata.WithAdminUser;
 import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
 import de.iks.grocery_manager.server.jpa.mdi.ExternalAPIRepository;
-import de.iks.grocery_manager.server.locks.EntityAccess;
 import de.iks.grocery_manager.server.model.mdi.ExternalAPI;
+import de.iks.grocery_manager.server.testdata.Data;
+import de.iks.rtrm.UsesResource;
+import de.iks.rtrm.impl.ResourceManager;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.junit.QuarkusTest;
@@ -13,20 +15,23 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static de.iks.grocery_manager.server.UUIDMatcher.isUuid;
-import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static io.restassured.RestAssured.expect;
+import static io.restassured.RestAssured.withArgs;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 @TestHTTPEndpoint(ProductMappingTableController.class)
 @WithAdminUser
-@EntityAccess(ExternalAPIRepository.class)
+@ExtendWith(ResourceManager.class)
+@UsesResource(value = Data.ExternalApi.class, dirties = true)
 class ProductMappingTableControllerTest {
     @Inject
     ExternalAPIRepository externalAPIRepository;

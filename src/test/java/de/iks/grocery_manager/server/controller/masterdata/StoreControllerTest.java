@@ -3,7 +3,9 @@ package de.iks.grocery_manager.server.controller.masterdata;
 import de.iks.grocery_manager.server.Testdata;
 import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;
-import de.iks.grocery_manager.server.locks.EntityAccess;
+import de.iks.grocery_manager.server.testdata.Data;
+import de.iks.rtrm.UsesResource;
+import de.iks.rtrm.impl.ResourceManager;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.common.http.TestHTTPResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -11,19 +13,23 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static de.iks.grocery_manager.server.UUIDMatcher.*;
-import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
+import static de.iks.grocery_manager.server.UUIDMatcher.isUuid;
+import static io.restassured.RestAssured.expect;
+import static io.restassured.RestAssured.withArgs;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.matchesRegex;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
 @TestHTTPEndpoint(StoreController.class)
 @WithTestUser
-@EntityAccess(StoreRepository.class)
+@ExtendWith(ResourceManager.class)
+@UsesResource(value = Data.Store.class, dirties = true)
 class StoreControllerTest {
     @Inject
     StoreRepository storeRepository;
@@ -34,7 +40,7 @@ class StoreControllerTest {
     @Nested
     @TestHTTPEndpoint(StoreController.class)
     @WithTestUser
-    @EntityAccess(value = StoreRepository.class, writes = false)
+    @UsesResource(Data.Store.class)
     class GetStore {
         @Test
         void shouldReturnStoreWhenFound() {
@@ -63,7 +69,7 @@ class StoreControllerTest {
     @Nested
     @TestHTTPEndpoint(StoreController.class)
     @WithTestUser
-    @EntityAccess(value = StoreRepository.class, writes = false)
+    @UsesResource(Data.Store.class)
     class GetManyStores {
         @Test
         void shouldReturnExistingStoresWhenFound() {
@@ -324,7 +330,7 @@ class StoreControllerTest {
     @Nested
     @TestHTTPEndpoint(StoreController.class)
     @WithTestUser
-    @EntityAccess(value = StoreRepository.class, writes = false)
+    @UsesResource(Data.Store.class)
     class SearchStores {
         @Test
         void shouldReturnStoresWhenSearchingByName() {

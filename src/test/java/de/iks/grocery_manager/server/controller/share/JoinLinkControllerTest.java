@@ -4,10 +4,12 @@ import de.iks.grocery_manager.server.Testdata;
 import de.iks.grocery_manager.server.WithTestUser;
 import de.iks.grocery_manager.server.jpa.share.JoinLinkRepository;
 import de.iks.grocery_manager.server.jpa.share.ShareRepository;
-import de.iks.grocery_manager.server.locks.EntityAccess;
 import de.iks.grocery_manager.server.model.share.JoinLink;
 import de.iks.grocery_manager.server.model.share.Permissions;
 import de.iks.grocery_manager.server.model.share.Share;
+import de.iks.grocery_manager.server.testdata.Data;
+import de.iks.rtrm.UsesResource;
+import de.iks.rtrm.impl.ResourceManager;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.common.http.TestHTTPResource;
@@ -16,18 +18,23 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-import static io.restassured.RestAssured.*;
+import static io.restassured.RestAssured.expect;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
 @TestHTTPEndpoint(JoinLinkController.class)
 @WithTestUser
-@EntityAccess(ShareRepository.class)
-@EntityAccess(JoinLinkRepository.class)
+@ExtendWith(ResourceManager.class)
+@UsesResource(value = Data.Share.class, dirties = true)
+@UsesResource(value = Data.JoinLink.class, dirties = true)
 class JoinLinkControllerTest {
 
     @Inject

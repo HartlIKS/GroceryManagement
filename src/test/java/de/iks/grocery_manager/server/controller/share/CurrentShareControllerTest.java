@@ -8,7 +8,6 @@ import de.iks.grocery_manager.server.jpa.ShoppingTripRepository;
 import de.iks.grocery_manager.server.jpa.masterdata.ProductRepository;
 import de.iks.grocery_manager.server.jpa.masterdata.StoreRepository;
 import de.iks.grocery_manager.server.jpa.share.ShareRepository;
-import de.iks.grocery_manager.server.locks.EntityAccess;
 import de.iks.grocery_manager.server.model.ProductGroup;
 import de.iks.grocery_manager.server.model.ShoppingList;
 import de.iks.grocery_manager.server.model.ShoppingTrip;
@@ -17,6 +16,9 @@ import de.iks.grocery_manager.server.model.masterdata.Store;
 import de.iks.grocery_manager.server.model.share.JoinLink;
 import de.iks.grocery_manager.server.model.share.Permissions;
 import de.iks.grocery_manager.server.model.share.Share;
+import de.iks.grocery_manager.server.testdata.Data;
+import de.iks.rtrm.UsesResource;
+import de.iks.rtrm.impl.ResourceManager;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.junit.QuarkusTest;
@@ -24,22 +26,24 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.math.BigDecimal;
 import java.util.*;
 
-import static de.iks.grocery_manager.server.UUIDMatcher.*;
-import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
+import static de.iks.grocery_manager.server.UUIDMatcher.isUuidOf;
+import static io.restassured.RestAssured.expect;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
 @TestHTTPEndpoint(CurrentShareController.class)
 @WithTestUser
-@EntityAccess(ShareRepository.class)
-@EntityAccess(ProductGroupRepository.class)
-@EntityAccess(ShoppingListRepository.class)
-@EntityAccess(ShoppingTripRepository.class)
+@ExtendWith(ResourceManager.class)
+@UsesResource(value = Data.Share.class, dirties = true)
+@UsesResource(value = Data.ProductGroup.class, dirties = true)
+@UsesResource(value = Data.ShoppingList.class, dirties = true)
+@UsesResource(value = Data.ShoppingTrip.class, dirties = true)
 class CurrentShareControllerTest {
 
     @Inject
