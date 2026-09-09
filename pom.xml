@@ -11,7 +11,7 @@
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <quarkus.version>3.39.1</quarkus.version>
+    <quarkus.version>3.39.2</quarkus.version>
     <lombok.version>1.18.46</lombok.version>
     <mapstruct.version>1.6.3</mapstruct.version>
   </properties>
@@ -21,6 +21,7 @@
     <repository>
       <id>resourcemanager-github</id>
       <url>https://maven.pkg.github.com/iks-gmbh-projects/RecursiveTestResourceManager</url>
+      <snapshots><enabled>false</enabled></snapshots>
     </repository>
   </repositories>
   
@@ -133,6 +134,12 @@
       <artifactId>recursive-test-resource-manager</artifactId>
       <version>1.0.0</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
   
