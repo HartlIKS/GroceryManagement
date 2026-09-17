@@ -1,68 +1,40 @@
-import { Injectable, isSignal, Signal } from '@angular/core';
-import { Observable } from 'rxjs';
-import { ApiService, CacheService } from '../../services';
-import { CreatePriceListingDTO, ListPriceDTO, PriceListingDTO, PriceTypes, UpdatePriceDTO } from '../models';
+import { Injectable, ResourceParamsContext } from '@angular/core';
+import { CrudService } from '../../services';
+import { ListPriceDTO, PriceListingDTO, PriceTypes } from '../models';
 import { Page } from '../../models';
-import { HttpResourceRef } from '@angular/common/http';
+import { httpResource, HttpResourceRef } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
-export class PriceService extends CacheService<PriceTypes> {
-  private readonly endpoint = '/masterdata/price';
+export class PriceService extends CrudService<PriceTypes> {
+  protected override readonly endpoint = '/masterdata/price';
 
-  constructor(private apiService: ApiService) {
-    super();
-  }
-
-  // Get prices with pagination and filtering
-  getPrices(
-    page: Signal<number> | number,
-    size: Signal<number> | number,
-    store?: Signal<string | undefined> | string,
-    product?: Signal<string | undefined> | string,
-  ) {
-    return this.apiService.get<Page<ListPriceDTO>>(this.endpoint, {
-        page,
-        size,
-        store,
-        product,
-    });
-  }
-
-  protected override rawGet(uuid: string): HttpResourceRef<ListPriceDTO | undefined> {
-    return this.apiService.getById<ListPriceDTO>(this.endpoint, uuid);
-  }
-
-  protected override rawUpdate(uuid: string, price: UpdatePriceDTO): Observable<ListPriceDTO> {
-    return this.apiService.put<ListPriceDTO>(this.endpoint, uuid, price);
-  }
-
-  protected override rawDelete(uuid: string): Observable<void> {
-    return this.apiService.delete(this.endpoint, uuid);
-  }
-
-// Get single price by UUID
-  getPrice(uuid: Signal<string | undefined> | string) {
-    if(isSignal(uuid)) return this.apiService.getById<ListPriceDTO>(this.endpoint, uuid);
-    return this.get(uuid);
-  }
-
-  // Create price
-  createPrice(price: CreatePriceListingDTO): Observable<ListPriceDTO> {
-    return this.apiService.post<ListPriceDTO>(this.endpoint, price);
-  }
-
-  // Search prices for specific products and stores at a specific time
-  searchPricesForProductsAndStores(
-    products: Signal<string[]> | string[],
-    stores: Signal<string[]> | string[],
-    at: Signal<Date> | Date
-  ) {
-    return this.apiService.get<Record<string, Record<string, PriceListingDTO[]>>>(this.endpoint, {
-      products,
-      stores,
-      at
+  search(q: (ctx: ResourceParamsContext) => {
+    page: number,
+    size: number,
+    store?: string | string[],
+    product?: string | string[],
+  } | undefined): HttpResourceRef<Page<ListPriceDTO> | undefined>;
+  search(q: (ctx: ResourceParamsContext) => {
+    products: string[],
+    stores: string[],
+    at: Date,
+  } | undefined): HttpResourceRef<Record<string, Record<string, PriceListingDTO[]>> | undefined>;
+  search(q: (ctx: ResourceParamsContext) => {
+    page: number,
+    size: number,
+    store?: string | string[],
+    product?: string | string[],
+  } | {
+    products: string[],
+    stores: string[],
+    at: Date,
+  } | undefined) {
+    return httpResource(ctx => {
+      const query = q(ctx);
+      if(query) return this.apiService.get(this.endpoint, query);
+      return undefined;
     });
   }
 }

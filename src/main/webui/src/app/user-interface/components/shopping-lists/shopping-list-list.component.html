@@ -15,13 +15,12 @@
              placeholder="Enter shopping list name">
       <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
-    <button mat-raised-button (click)="shoppingListsResource.reload()">Search</button>
   </div>
 
-  @if (!loading()) {
-    <div class="content">
+  <div class="content">
+    @if (dataSource.hasValue()) {
       <div class="table-container">
-        <mat-table [dataSource]="dataSource()" class="table">
+        <mat-table [dataSource]="dataSource.value()" class="table">
           <!-- Name Column -->
           <ng-container matColumnDef="name">
             <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
@@ -72,24 +71,19 @@
           <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
           <mat-row *matRowDef="let _; columns: displayedColumns;"></mat-row>
         </mat-table>
-
-        @if (dataSource().data.length === 0) {
-          <div class="no-data">
-            <p>No shopping lists found.</p>
-          </div>
-        }
       </div>
-    </div>
-  } @else {
-    <div class="loading">
-      <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
-      <p>Loading shopping lists...</p>
-    </div>
-  }
+    } @else if (dataSource.isLoading()) {
+      <div class="loading">
+        <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+        <p>Loading shopping lists...</p>
+      </div>
+    } @else if (dataSource.error()) {
+      <div class="error">
+        <p>{{ dataSource.error() }}</p>
+      </div>
+    }
+    <mat-paginator [pageIndex]="page()" [pageSize]="pageSize()"
+                   (page)="page.set($event.pageIndex); pageSize.set($event.pageSize)"/>
+  </div>
 
-  @if (error()) {
-    <div class="error">
-      <p>Error loading shopping lists: {{ error() }}</p>
-    </div>
-  }
 </div>

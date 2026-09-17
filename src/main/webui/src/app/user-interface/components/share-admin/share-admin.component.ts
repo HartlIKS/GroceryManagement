@@ -1,11 +1,10 @@
-import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, resource, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormField, MatInput, MatLabel } from '@angular/material/input';
 import { MatIcon } from '@angular/material/icon';
-import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { CurrentShareService } from '../../../services/current-share.service';
 import { CreateShareDTO } from '../../../models';
@@ -27,7 +26,6 @@ import { Clipboard } from '@angular/cdk/clipboard';
     MatFormField,
     MatInput,
     MatIcon,
-    MatProgressSpinner,
     MatTableModule,
     RouterLink,
     MatChipListbox,
@@ -49,16 +47,14 @@ export class ShareAdminComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly clipboard = inject(Clipboard);
 
-  public readonly currentShare = this.currentShareService.currentShareResource.value.asReadonly();
-  public readonly joinLinks = computed(() => this.joinLinkService.joinLinksResource.value() ?? []);
-  public readonly joinLinksDataSource = computed(() => new MatTableDataSource(this.joinLinks()));
-  public readonly displayedJoinLinkColumns = ['name', 'permissions', 'status', 'users', 'expiry', 'actions'];
-  public readonly loading = computed(() => this.currentShareService.currentShareResource.status() === 'loading');
-  public readonly isEditMode = computed(() => this.currentShare() !== undefined);
-  public readonly error = computed(() => {
-    const status = this.currentShareService.currentShareResource.status();
-    return status === 'error' ? 'Failed to load share data' : null;
+  protected readonly joinLinksDataSource = resource({
+    params: ({chain}) => chain(this.joinLinkService.joinLinksResource),
+    async loader({params}) {
+      return new MatTableDataSource(params);
+    }
   });
+  public readonly displayedJoinLinkColumns = ['name', 'permissions', 'status', 'users', 'expiry', 'actions'];
+  public readonly isEditMode = computed(() => this.currentShareService.currentShareResource.hasValue());
 
   public shareForm: FormGroup;
   public readonly isSubmitting = signal(false);
@@ -68,12 +64,11 @@ export class ShareAdminComponent implements OnInit {
       name: ['', [Validators.required, Validators.minLength(3)]]
     });
 
-    // Watch for changes in the current share data
     effect(() => {
-      const share = this.currentShare();
-      if (share) {
+      const res = this.currentShareService.currentShareResource;
+      if(res.hasValue()) {
         this.shareForm.patchValue({
-          name: share.name
+          name: res.value().name,
         });
       }
     });

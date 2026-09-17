@@ -18,10 +18,11 @@ import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
 import { MappingTableService } from '../../services';
 import { MatInput } from '@angular/material/input';
-import { NamedCacheService } from '../../../services';
+import { NamedCrudService } from '../../../services';
 import { MatPaginator } from '@angular/material/paginator';
 import { NgComponentOutlet } from '@angular/common';
 import { BaseDTOTypes, ListOnly } from '../../../models/base.model';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 export const MAPPING_SERVICE_TOKEN = new InjectionToken<MappingTableService>('MappingService');
 
@@ -30,7 +31,7 @@ export interface MappingEntry {
   remoteId: string;
 }
 
-export const ENTITY_SERVICE_TOKEN = new InjectionToken<NamedCacheService<ListOnly<{name: string}> & BaseDTOTypes>>('EntityService');
+export const ENTITY_SERVICE_TOKEN = new InjectionToken<NamedCrudService<ListOnly<{name: string}> & BaseDTOTypes>>('EntityService');
 
 export const ENTITY_DISPLAY_COMPONENT_TOKEN = new InjectionToken<Type<{
   readonly uuid: InputSignal<string>,
@@ -48,7 +49,8 @@ export const ENTITY_DISPLAY_COMPONENT_TOKEN = new InjectionToken<Type<{
     FormsModule,
     MatInput,
     MatPaginator,
-    NgComponentOutlet
+    NgComponentOutlet,
+    MatProgressSpinner
   ],
   templateUrl: './mapping-list.component.html',
   styleUrls: ['./mapping-list.component.css']
@@ -68,8 +70,11 @@ export class MappingListComponent {
   protected readonly entitySearch = signal('');
   protected readonly newLocalId = signal<string | undefined>(undefined);
   protected readonly newRemoteId = signal<string | undefined>(undefined);
-  private readonly availableEntitiesResource = this.entityService.search(this.entitySearch);
-  protected readonly availableEntities = computed(() => this.availableEntitiesResource.value()?.content ?? []);
+  protected readonly availableEntitiesResource = this.entityService.search(_ => ({
+    name: this.entitySearch(),
+    page: 0,
+    size: Number.MAX_SAFE_INTEGER,
+  }));
 
   private readonly paginator = viewChild(MatPaginator);
 

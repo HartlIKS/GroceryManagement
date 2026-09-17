@@ -1,5 +1,5 @@
 import { Component, computed, inject, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { PlannedTrip } from '../../../services';
@@ -17,6 +17,7 @@ import { ProductListComponent } from '../product-list';
     MatProgressSpinner,
     MatCardModule,
     ProductListComponent,
+    NgOptimizedImage,
   ],
   templateUrl: './planned-trip.component.html',
   styleUrls: ['./planned-trip.component.css']
@@ -30,15 +31,7 @@ export class PlannedTripComponent {
   private readonly storeService = inject(StoreService);
 
   // Resources
-  private readonly storeResource = this.storeService.getStore(
-    computed(() => this.trip().storeUuid)
-  );
-
-  // Computed properties
-  protected readonly store = computed(() => this.storeResource.value());
-  protected readonly loading = computed(() =>
-    this.storeResource.status() === 'loading'
-  );
+  protected readonly storeResource = this.storeService.get(_ => this.trip().storeUuid);
 
   protected readonly hasValidity = computed(() =>
     this.trip().validFrom && this.trip().validTo

@@ -88,7 +88,7 @@ export class ExternalAPIFormComponent implements OnInit {
   });
 
 
-  private readonly externalAPIResource = this.externalAPIService.getExternalAPI(this.externalAPIId);
+  private readonly externalAPIResource = this.externalAPIService.get(this.externalAPIId);
   protected readonly externalAPIForm = form(
     linkedSignal({
       source: this.externalAPIResource.value,
@@ -133,7 +133,7 @@ export class ExternalAPIFormComponent implements OnInit {
     if (externalAPIId) {
       await firstValueFrom(this.externalAPIService.update(externalAPIId, externalAPIData));
     } else {
-      await firstValueFrom(this.externalAPIService.createExternalAPI(externalAPIData));
+      await firstValueFrom(this.externalAPIService.create(externalAPIData));
     }
     await this.router.navigate(['/master-data/external-api']);
   }

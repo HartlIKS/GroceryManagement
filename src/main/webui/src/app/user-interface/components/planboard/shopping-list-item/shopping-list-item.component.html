@@ -1,36 +1,42 @@
-@if (loading()) {
+@if (productOrGroupResource.hasValue()) {
   <mat-list-item>
-    <mat-spinner diameter="20"></mat-spinner>
-    <span>Loading...</span>
-  </mat-list-item>
-} @else {
-  <mat-list-item>
-    @if(itemImage()) {
-      <img matListItemIcon class="image-large" [src]="itemImage()" alt="">
+    @let itemValue = productOrGroupResource.value();
+    @if ("image" in itemValue) {
+      <img matListItemIcon class="image-large" [ngSrc]="itemValue.image" width="50" height="50" alt="">
     } @else {
       <div matListItemIcon class="image-large"></div>
     }
-    <span matListItemTitle>{{ itemName() }}</span>
-    @if (availablePriceEntries().length) {
-    <mat-form-field appearance="outline" matListItemMeta>
-      <mat-label>Select Price Entry</mat-label>
-      <mat-select
-        [value]="selectedPriceEntry()"
-        (valueChange)="onPriceSelection($event)"
-      >
-        <mat-select-trigger>
-          Trip {{availablePriceEntries()[selectedPriceEntry() ?? -1]?.tripId}}
-        </mat-select-trigger>
-        <mat-option [value]="undefined">Unassigned</mat-option>
-        @for (priceEntry of availablePriceEntries(); track `${priceEntry.price.uuid}-${priceEntry.tripId}`) {
-          <mat-option [value]="$index">
-            <app-price-option [priceEntry]="priceEntry"/>
-          </mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-    } @else {
-      <mat-error matListItemMeta>No prices found!</mat-error>
+    <span matListItemTitle>{{ itemValue.name }}</span>
+    @if (availablePriceEntries.hasValue()) {
+      <mat-form-field appearance="outline" matListItemMeta>
+        @let entries = availablePriceEntries.value();
+        <mat-label>Select Price Entry</mat-label>
+        <mat-select
+          [value]="selectedPriceEntry()"
+          (valueChange)="onPriceSelection($event)"
+        >
+          <mat-select-trigger>
+            Trip {{ entries[selectedPriceEntry() ?? -1]?.tripId }}
+          </mat-select-trigger>
+          <mat-option [value]="undefined">Unassigned</mat-option>
+          @for (priceEntry of entries; track `${priceEntry.price.uuid}-${priceEntry.tripId}`) {
+            <mat-option [value]="$index">
+              <app-price-option [priceEntry]="priceEntry"/>
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    } @else if (availablePriceEntries.isLoading()) {
+    } @else if (availablePriceEntries.error(); as error) {
+      <mat-error matListItemMeta>{{ error }}</mat-error>
     }
+  </mat-list-item>
+} @else if (productOrGroupResource.isLoading()) {
+  <mat-list-item>
+    <mat-progress-spinner mode="indeterminate"/>
+  </mat-list-item>
+} @else if (productOrGroupResource.error(); as error) {
+  <mat-list-item>
+    <mat-error matListItemMeta>{{ error }}</mat-error>
   </mat-list-item>
 }

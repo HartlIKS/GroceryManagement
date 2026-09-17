@@ -33,17 +33,7 @@ export class StoreFormComponent implements OnInit {
   private readonly storeService = inject(StoreService);
 
   // Create HTTP resource for store
-  private readonly storeResource = this.storeService.getStore(this.storeId);
-
-  // Computed properties from resource
-  public readonly loading = computed(() => {
-    const storeStatus = this.storeResource.status();
-    return storeStatus === 'loading';
-  });
-  public readonly error = computed(() => {
-    const storeStatus = this.storeResource.status();
-    return storeStatus === 'error' ? 'Failed to load store' : null;
-  });
+  protected readonly storeResource = this.storeService.get(this.storeId);
 
   constructor(
     private fb: FormBuilder,
@@ -64,9 +54,8 @@ export class StoreFormComponent implements OnInit {
     });
     // Watch for changes in the store resource
     effect(() => {
-      const store = this.storeResource.value();
-      if (store) {
-        this.storeForm.patchValue(store);
+      if (this.storeResource.hasValue()) {
+        this.storeForm.patchValue(this.storeResource.value());
       }
     });
   }
@@ -95,7 +84,7 @@ export class StoreFormComponent implements OnInit {
         }
       });
     } else {
-      this.storeService.createStore(storeData).subscribe({
+      this.storeService.create(storeData).subscribe({
         next: () => {
           this.router.navigate(['/master-data/stores']);
         },

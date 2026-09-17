@@ -27,10 +27,10 @@
     </div>
   </div>
 
-  @if (!loading()) {
+  @if (dataSource.hasValue()) {
     <div class="content">
       <div class="table-container">
-        <mat-table [dataSource]="dataSource()" class="table">
+        <mat-table [dataSource]="dataSource.value()" class="table">
           <!-- Date/Time Column -->
           <ng-container matColumnDef="time">
             <mat-header-cell *matHeaderCellDef>Date & Time</mat-header-cell>
@@ -77,26 +77,17 @@
           <mat-row *matRowDef="let trip; columns: displayedColumns;" [routerLink]="['/shopping-trips', trip.uuid, 'checklist']"></mat-row>
         </mat-table>
 
-        @if (dataSource().data.length === 0) {
-          <div class="no-data">
-            <p>No shopping trips found.</p>
-            <a routerLink="/shopping-trips/new" mat-raised-button color="primary">
-              Create Your First Shopping Trip
-            </a>
-          </div>
-        }
+        <mat-paginator [pageIndex]="page()" [pageSize]="pageSize()" (page)="page.set($event.pageIndex); pageSize.set($event.pageSize)"/>
       </div>
     </div>
-  } @else {
+  } @else if(dataSource.isLoading()) {
     <div class="loading">
       <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
       <p>Loading shopping trips...</p>
     </div>
-  }
-
-  @if (error()) {
+  } @else if (dataSource.error()) {
     <div class="error">
-      <p>Error loading shopping trips: {{ error() }}</p>
+      <p>Error loading shopping trips: {{ dataSource.error() }}</p>
       <button mat-raised-button color="primary" (click)="shoppingTripsResource.reload()">Retry</button>
     </div>
   }

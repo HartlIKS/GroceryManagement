@@ -57,7 +57,7 @@ export class TripPlanningComponent {
         .map(([trip, sel]) => {
           if (sel.tripUuid !== undefined) return this.shoppingTripService.addProducts(sel.tripUuid, trip.products);
           else return from(Object.entries(trip.products)).pipe(
-            map(([uuid, quantity]) => toObservable(this.priceService.get(uuid).snapshot).pipe(
+            map(([uuid, quantity]) => toObservable(this.priceService.get(_ => uuid).snapshot).pipe(
               switchMap(v => {
                 switch (v.status) {
                   case "local":
@@ -71,7 +71,7 @@ export class TripPlanningComponent {
               map(v => [v.product, quantity] as const)
             )),
             combineLatestAll(),
-            switchMap(products => this.shoppingTripService.createShoppingTrip({
+            switchMap(products => this.shoppingTripService.create({
               store: trip.storeUuid,
               time: sel.date!.toISOString(),
               products: Object.fromEntries(products),

@@ -1,23 +1,25 @@
-import { computed, inject, Injectable, Injector, linkedSignal, Signal } from '@angular/core';
+import { computed, inject, Injectable, linkedSignal } from '@angular/core';
 import { AuthService } from './auth.service';
-import { HttpClient, HttpParams, httpResource, HttpResourceRef } from '@angular/common/http';
-import { resolve } from '../utils/signalutils';
+import { HttpClient, HttpParams, HttpResourceRequest } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { Observable } from 'rxjs';
+import { EMPTY, Observable, of, switchMap, take } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 export type ApiParam = string | Date | number | boolean | string[] | undefined;
 
-export type ApiHeaders = {
+export type ApiHeaders = Record<string, string | string[]> & {
   Authorization: `Bearer ${string}`,
   'X-Share-ID'?: string,
 };
 
+export type httpRequest = HttpResourceRequest & {
+  headers: ApiHeaders,
+};
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  private readonly injector = inject(Injector);
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
   private readonly authService = inject(AuthService);
@@ -25,170 +27,139 @@ export class ApiService {
   private readonly share_ = linkedSignal({
     source: this.subject,
     computation(sub): string | undefined {
-      if(sub === undefined) return undefined;
+      if (sub === undefined) return undefined;
       return sessionStorage.getItem(`share-${sub}`) ?? undefined;
     }
   });
   public readonly share = this.share_.asReadonly();
   public readonly headers = computed((): ApiHeaders | undefined => {
     const token = this.authService.accessToken();
-    if(token === undefined) return undefined;
+    if (token === undefined) return undefined;
     const ret: ApiHeaders = {
       Authorization: `Bearer ${token}`,
     };
     const share = this.share();
-    if(share) ret['X-Share-ID'] = share;
+    if (share) ret['X-Share-ID'] = share;
     return ret;
   });
 
   public setShare(share: string | undefined) {
     const sub = this.subject();
-    if(sub === undefined) return;
-    if(share === undefined) sessionStorage.removeItem(`share-${sub}`);
+    if (sub === undefined) return;
+    if (share === undefined) sessionStorage.removeItem(`share-${sub}`);
     else sessionStorage.setItem(`share-${sub}`, share);
     this.share_.set(share);
   }
 
-  private toParamSignal(params: Record<string, Signal<ApiParam> | ApiParam> = {}): Signal<HttpParams | undefined> {
-    const resolvedParams: Record<string, Signal<ApiParam>> = Object.fromEntries(
-      Object.entries(params ?? {})
-        .map(([k, v]) => [k, resolve(v)])
-    );
-    return computed(() => {
-      let httpParams = new HttpParams();
-      for (const [key, valueSignal] of Object.entries(resolvedParams)) {
-        let value = valueSignal();
-        if (value !== null && value !== undefined) {
-          if (Array.isArray(value)) {
-            for (const item of value) httpParams = httpParams.append(key, String(item));
-          } else if (value instanceof Date) {
-            httpParams = httpParams.set(key, value.toISOString());
-          } else {
-            httpParams = httpParams.set(key, String(value));
-          }
+  private toParams(params: Record<string, ApiParam> = {}): HttpParams {
+    let httpParams = new HttpParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== null && value !== undefined) {
+        if (Array.isArray(value)) {
+          for (const item of value) httpParams = httpParams.append(key, String(item));
+        } else if (value instanceof Date) {
+          httpParams = httpParams.set(key, value.toISOString());
+        } else {
+          httpParams = httpParams.set(key, String(value));
         }
       }
-      return httpParams;
-    });
+    }
+    return httpParams;
   }
 
   // Generic CRUD operations
-  get<T>(endpoint: Signal<string | undefined> | string, params?: Record<string, Signal<ApiParam> | ApiParam>) {
-    endpoint = resolve(endpoint);
-    const httpParams = this.toParamSignal(params);
-    return httpResource<T>(() => {
-      const end = endpoint();
-      const headers = this.headers();
-      if(end === undefined || headers === undefined) return undefined;
-      return {
-        url: `${this.baseUrl}${end}`,
-        params: httpParams(),
-        headers,
-        credentials: 'include',
-      };
-    }, {
-      injector: this.injector,
-    });
-  }
-  query<T>(endpoint: Signal<string | undefined> | string, body: any) {
-    endpoint = resolve(endpoint);
-    body = resolve(body);
-    return httpResource<T>(() => {
-      const end = endpoint();
-      const headers = this.headers();
-      const bodyValue = body();
-      if(end === undefined || headers === undefined || bodyValue === undefined) return undefined;
-      return {
-        method: 'QUERY',
-        url: `${this.baseUrl}${end}`,
-        headers,
-        credentials: 'include',
-        body: bodyValue,
-      };
-    }, {
-      injector: this.injector,
-    });
+  get(endpoint: string, params?: Record<string, ApiParam>): httpRequest | undefined {
+    const headers = this.headers();
+    if (headers === undefined) return undefined;
+    return {
+      url: `${this.baseUrl}${endpoint}`,
+      params: this.toParams(params),
+      headers,
+      credentials: 'include',
+    };
   }
 
-  getShareOnly<T>(endpoint: string, params?: Record<string, Signal<ApiParam> | ApiParam>) {
-    const httpParams = this.toParamSignal(params);
-
-    return httpResource<T>(() => {
-      const params = httpParams();
-      if((params?.get('share') ?? undefined) === undefined) return undefined;
-      const headers = this.headers();
-      if(headers === undefined) return undefined;
-      return {
-        url: `${this.baseUrl}${endpoint}`,
-        params,
-        headers,
-        credentials: 'include',
-      };
-    }, {
-      injector: this.injector,
-    });
+  getShareOnly(endpoint: string, params?: Record<string, ApiParam>): httpRequest | undefined {
+    const ret = this.get(endpoint, params);
+    if (ret?.headers?.["X-Share-ID"]) return ret;
+    return undefined;
   }
 
-  getById<T>(endpoint: string, id: Signal<string | undefined> | string): HttpResourceRef<T | undefined> {
-    id = resolve(id);
-    return httpResource<T>(() => {
-      const uuid = id();
-      if (uuid === undefined) return undefined;
-      return {
-        url: `${this.baseUrl}${endpoint}/${uuid}`,
-        headers: this.headers(),
-        credentials: 'include',
-      };
-    }, {
-      injector: this.injector,
-    });
+  getById(endpoint: string, uuid: string): httpRequest | undefined {
+    const headers = this.headers();
+    if (headers === undefined) return undefined;
+    return {
+      url: `${this.baseUrl}${endpoint}/${uuid}`,
+      headers,
+      credentials: 'include',
+    };
   }
 
   post<T>(endpoint: string, data: any): Observable<T> {
-    let headers: Record<string, string> | undefined = this.headers();
-    if(typeof data === 'string') {
-      data = JSON.stringify(data);
-      headers = {
-        ...(headers ?? {}),
-        'Content-Type': 'application/json',
-      };
-    }
-    return this.http.post<T>(`${this.baseUrl}${endpoint}`, data, {
-      headers,
-      withCredentials: true,
-    });
+    return toObservable(this.headers)
+      .pipe(
+        switchMap(headers => headers ? of(headers) : EMPTY),
+        take(1),
+        switchMap(headers => {
+          if (typeof data === 'string') {
+            data = JSON.stringify(data);
+            headers = {
+              ...headers,
+              'Content-Type': 'application/json',
+            };
+          }
+          return this.http.post<T>(`${this.baseUrl}${endpoint}`, data, {
+            headers,
+            withCredentials: true,
+          });
+        })
+      );
   }
 
   put<T>(endpoint: string, id: string, data: any): Observable<T> {
-    let headers: Record<string, string> | undefined = this.headers();
-    if(typeof data === 'string') {
-      data = JSON.stringify(data);
-      headers = {
-        ...(headers ?? {}),
-        'Content-Type': 'application/json',
-      };
-    }
-    return this.http.put<T>(`${this.baseUrl}${endpoint}/${id}`, data, {
-      headers,
-      withCredentials: true,
-    });
+    return toObservable(this.headers)
+      .pipe(
+        switchMap(headers => headers ? of(headers) : EMPTY),
+        take(1),
+        switchMap(headers => {
+          if (typeof data === 'string') {
+            data = JSON.stringify(data);
+            headers = {
+              ...headers,
+              'Content-Type': 'application/json',
+            };
+          }
+          return this.http.put<T>(`${this.baseUrl}${endpoint}/${id}`, data, {
+            headers,
+            withCredentials: true,
+          });
+        })
+      );
   }
 
   delete(endpoint: string, id: string, params?: Record<string, ApiParam>): Observable<void> {
-    const httpParams = this.toParamSignal(params);
-    return this.http.delete<void>(`${this.baseUrl}${endpoint}/${id}`, {
-      params: httpParams(),
-      headers: this.headers(),
-      withCredentials: true,
-    });
+    return toObservable(this.headers)
+      .pipe(
+        switchMap(headers => headers ? of(headers) : EMPTY),
+        take(1),
+        switchMap(headers => this.http.delete<void>(`${this.baseUrl}${endpoint}/${id}`, {
+          params: this.toParams(params),
+          headers,
+          withCredentials: true,
+        }))
+      );
   }
 
   deleteWithData<T>(endpoint: string, id: string, params?: Record<string, ApiParam>): Observable<T> {
-    const httpParams = this.toParamSignal(params);
-    return this.http.delete<T>(`${this.baseUrl}${endpoint}/${id}`, {
-      params: httpParams(),
-      headers: this.headers(),
-      withCredentials: true,
-    });
+    return toObservable(this.headers)
+      .pipe(
+        switchMap(headers => headers ? of(headers) : EMPTY),
+        take(1),
+        switchMap(headers => this.http.delete<T>(`${this.baseUrl}${endpoint}/${id}`, {
+          params: this.toParams(),
+          headers,
+          withCredentials: true,
+        }))
+      );
   }
 }

@@ -1,4 +1,4 @@
-import { Component, computed, inject, InjectionToken, input, signal } from '@angular/core';
+import { Component, computed, inject, InjectionToken, input, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,6 +9,7 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { FormsModule } from '@angular/forms';
 import { EndpointDTOTypes } from '../../models';
 import { EndpointService } from '../../services';
+import { MatPaginator } from '@angular/material/paginator';
 
 export const ENDPOINT_SERVICE_TOKEN = new InjectionToken<EndpointService<EndpointDTOTypes>>('EndpointService');
 
@@ -23,31 +24,34 @@ export const ENDPOINT_SERVICE_TOKEN = new InjectionToken<EndpointService<Endpoin
     MatFormFieldModule,
     MatProgressSpinner,
     FormsModule,
-    RouterLink
+    RouterLink,
+    MatPaginator
   ],
   templateUrl: './endpoint-list.component.html',
   styleUrls: ['./endpoint-list.component.css']
 })
 export class EndpointListComponent {
-  displayedColumns: string[] = ['name', 'baseUrl', 'actions'];
-
-  protected readonly searchTerm = signal('');
+  protected readonly displayedColumns: readonly string[] = ['name', 'baseUrl', 'actions'];
   readonly parentUuid = input.required<string>();
   readonly endpointType = input.required<string>();
+
+  protected readonly searchTerm = signal('');
+  protected readonly pageIndex = signal(0);
+  protected readonly pageSize = signal(20);
   private readonly endpointService = inject(ENDPOINT_SERVICE_TOKEN);
 
-  protected readonly endpointsResource = this.endpointService.getEndpoints(this.parentUuid, this.searchTerm);
+  protected readonly endpointsResource = this.endpointService.search(_ => ({
+    parentUuid: this.parentUuid(),
+    name: this.searchTerm(),
+    page: this.pageIndex(),
+    pageSize: this.pageSize(),
+  }));
 
-  public readonly endpoints = computed(() => this.endpointsResource.value()?.content ?? []);
-  public readonly loading = computed(() => this.endpointsResource.status() === 'loading');
-  public readonly error = computed(() => {
-    const status = this.endpointsResource.status();
-    return status === 'error' ? `Failed to load ${this.endpointType()} endpoints` : null;
-  });
-
-  public readonly dataSource = computed(() => {
-    const endpoints = this.endpoints();
-    return new MatTableDataSource(endpoints);
+  public readonly dataSource = resource({
+    params: ({ chain }) => chain(this.endpointsResource)?.content,
+    async loader({ params }) {
+      return new MatTableDataSource(params);
+    }
   });
 
   public readonly formPath = computed(() => `/master-data/external-api/${this.parentUuid()}/${this.endpointType()}`);

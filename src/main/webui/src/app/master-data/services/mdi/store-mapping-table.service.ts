@@ -7,8 +7,4 @@ import { MappingTableService } from './mapping-table.service';
 export class StoreMappingTableService extends MappingTableService {
   protected readonly endpoint1 = '/masterdata/interface';
   protected readonly endpoint2 = 'store';
-
-  constructor() {
-    super();
-  }
 }

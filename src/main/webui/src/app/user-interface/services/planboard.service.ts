@@ -1,4 +1,4 @@
-import { Injectable, computed, linkedSignal, signal, inject } from '@angular/core';
+import { computed, inject, Injectable, linkedSignal, signal } from '@angular/core';
 import { ShoppingListService } from './shopping-list.service';
 import { Price } from '../../master-data/models';
 import { ShoppingList } from '../models';
@@ -46,14 +46,16 @@ export class PlanboardService {
     price: Price,
   }>>>({});
 
-  // Services
   private readonly shoppingListService = inject(ShoppingListService);
 
-  // HTTP Resources
-  private readonly shoppingListsResource = this.shoppingListService.getShoppingLists('', 0, 1000);
+  private readonly shoppingListsResource = this.shoppingListService.search(_ => ({
+    name: '',
+    page: 0,
+    size: Number.MAX_SAFE_INTEGER,
+  }));
 
   // Computed properties
-  readonly shoppingLists = computed(() => this.shoppingListsResource.value()?.content ?? []);
+  readonly shoppingLists = computed(() => this.shoppingListsResource.hasValue() ? this.shoppingListsResource.value().content : []);
 
   // Selected shopping lists
   readonly selectedShoppingListUuids = linkedSignal({

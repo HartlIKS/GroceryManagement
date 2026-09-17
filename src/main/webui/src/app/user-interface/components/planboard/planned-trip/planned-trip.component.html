@@ -1,18 +1,13 @@
 <mat-card>
-  @if (loading()) {
-    <mat-card-content>
-      <mat-spinner diameter="20"></mat-spinner>
-      <span>Loading store...</span>
-    </mat-card-content>
-  } @else {
-    @let store = this.store();
+  @if(storeResource.hasValue()) {
+    @let store = storeResource.value();
     <mat-card-header>
-      @if (store?.logo) {
-        <img [src]="store?.logo" [alt]="store?.name" mat-card-avatar class="logo">
+      @if (store.logo) {
+        <img [ngSrc]="store.logo" width="" height="" [alt]="store?.name" mat-card-avatar>
       }
       <mat-card-title-group>
         <mat-card-title>
-          {{ store?.name ?? 'Unknown Store' }}
+          {{ store.name }}
         </mat-card-title>
         <mat-card-subtitle>
           Trip {{ tripId() }}
@@ -23,5 +18,11 @@
       <p [ngClass]="{error: !hasValidity()}">Timespan: {{ validityText() }}</p>
       <app-trip-product-display [products]="trip().products" />
     </mat-card-content>
+  } @else if (storeResource.isLoading()) {
+    <mat-progress-spinner mode="indeterminate"/>
+  } @else if (storeResource.error(); as error) {
+    <div class="error">
+      <p>{{ error }}</p>
+    </div>
   }
 </mat-card>

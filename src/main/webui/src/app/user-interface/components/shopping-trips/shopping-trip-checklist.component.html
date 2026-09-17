@@ -3,72 +3,52 @@
     <h2>Shopping Trip Checklist</h2>
   </div>
 
-  @if (loading()) {
-    <div class="loading">
-      <mat-spinner></mat-spinner>
-    </div>
-  }
-
-  @if (error()) {
-    <div class="error">
-      {{ error() }}
-    </div>
-  }
-
-  @if (!loading() && !error() && currentShoppingTrip(); as trip) {
+  @if (combinedResource.hasValue()) {
+    @let combo = combinedResource.value();
     <mat-card>
       <mat-card-title>
         <div class="form-row-spaced">
           <div class="filter-option">
-            @if (currentStore()?.logo) {
-              <img [src]="currentStore()?.logo" [alt]="currentStore()?.name ?? 'Unknown Store'" class="image-small">
+            @if (combo.store.logo) {
+              <img [src]="combo.store.logo" [alt]="combo.store.name" class="image-small">
             }
-            <span>{{ currentStore()?.name ?? 'Unknown Store' }}</span>
+            <span>{{ combo.store.name }}</span>
           </div>
-          <span>{{ formatDate(trip.time) }}</span>
+          <span>{{ formatDate(combo.trip.time) }}</span>
         </div>
       </mat-card-title>
       <mat-card-content>
-        <mat-progress-bar mode="determinate" [value]="getCompletionPercentage()"></mat-progress-bar>
+        <mat-progress-bar mode="determinate" [value]="getCompletionPercentage(combo.items)"></mat-progress-bar>
       </mat-card-content>
     </mat-card>
 
     <div class="section-header">
       <h3>Shopping List</h3>
-      <span>Total Expected Cost: {{ getHasUnknownPrices() ? '≥ ' : '' }}{{ getTotalPrice() | currency: currentStore()?.currency }}</span>
+      <span>Total Expected Cost: {{ getHasUnknownPrices(combo.items) ? '≥ ' : '' }}{{ getTotalPrice(combo.items) | currency: combo.store.currency }}</span>
     </div>
 
-    @if (checklistItems().length === 0) {
+    @if (combo.items.length === 0) {
       <div class="no-data">
         No items in this shopping trip.
       </div>
     } @else {
       <div class="dashboard-grid">
-        @for (item of checklistItems(); track item.productUuid) {
+        @for (item of combo.items; track item.productUuid) {
           <mat-checkbox
             [checked]="item.checked"
             (click)="$event.stopPropagation(); toggleItem(item)">
             <div class="filter-option">
-              @if (item.productImage) {
-                <img [src]="item.productImage" [alt]="item.productName" class="image-large">
-              }
-              <div class="half-width">
-                <div>{{ item.productName }}</div>
-                <div>Quantity: {{ item.quantity }}</div>
-                @if (item.price) {
-                  <div>Price: {{ item.price | currency: currentStore()?.currency }}</div>
-                }
-              </div>
+              <app-product-listing [uuid]="item.productUuid" [quantity]="item.quantity" [price]="item.price" [currency]="combo.store.currency"/>
             </div>
           </mat-checkbox>
         }
       </div>
     }
-  }
-
-  @if (!loading() && !error() && !currentShoppingTrip()) {
-    <div class="no-data">
-      Shopping trip not found.
+  } @else if (combinedResource.isLoading()) {
+    <mat-progress-spinner mode="indeterminate"/>
+  } @else if (combinedResource.error()) {
+    <div class="error">
+      <p>{{ combinedResource.error() }}</p>
     </div>
   }
 </div>

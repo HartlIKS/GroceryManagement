@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, OnInit, resource, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -46,20 +46,25 @@ export class ShoppingListFormComponent implements OnInit {
 
   private readonly shoppingListService = inject(ShoppingListService);
 
-  // Create HTTP resources
-  private readonly productsResource = inject(ProductService).search('', 0, 1000);
-  private readonly productGroupsResource = inject(ProductGroupService).getProductGroups('', 0, 1000);
-  private readonly shoppingListResource = this.shoppingListService.getShoppingList(this.shoppingListUuid);
+  protected readonly productsResource = inject(ProductService).search(_ => ({
+    name: '',
+    page: 0,
+    size: Number.MAX_SAFE_INTEGER,
+  }));
+  protected readonly productGroupsResource = inject(ProductGroupService).search(_ => ({
+    name: '',
+    page: 0,
+    size: Number.MAX_SAFE_INTEGER,
+  }));
+  private readonly shoppingListResource = this.shoppingListService.get(this.shoppingListUuid);
 
   // Product management properties
   selectedProductUuid: string | null = null;
-  availableProducts = computed(() => this.productsResource.value()?.content ?? []);
   shoppingListProducts = signal<Record<string, number>>({});
   productAmountControls = signal<Record<string, FormControl>>({});
 
   // Product group management properties
   selectedProductGroupUuid: string | null = null;
-  availableProductGroups = computed(() => this.productGroupsResource.value()?.content ?? []);
   shoppingListProductGroups = signal<Record<string, number>>({});
   productGroupAmountControls = signal<Record<string, FormControl>>({});
 
@@ -68,92 +73,107 @@ export class ShoppingListFormComponent implements OnInit {
   selectedItemType: 'product' | 'productGroup' | null = null;
 
   // Combined available items for dropdown
-  availableItems = computed(() => {
-    const products = this.availableProducts().map(p => ({ ...p, type: 'product' as const }));
-    const groups = this.availableProductGroups().map(g => {
-      // Get sample images from products in this group for dropdown
-      const groupProducts = g.products || {};
-      const availableProducts = this.availableProducts();
-
-      const sampleImages = Object.keys(groupProducts)
-        .slice(0, 2) // Take up to 2 sample images for dropdown
-        .map(productUuid => availableProducts.find(p => p.uuid === productUuid)?.image)
-        .filter(image => image); // Remove null/undefined images
-
-      return { ...g, type: 'productGroup' as const, sampleImages };
-    });
-    return [...products, ...groups];
-  });
-
-  currentProducts = computed(() => {
-    const products = this.shoppingListProducts();
-    const availableProducts = this.availableProducts();
-    return Object.entries(products).map(([uuid, amount]) => {
-      const product = availableProducts.find(p => p.uuid === uuid);
+  availableItems = resource({
+    params: ({chain}) => {
+      const availableProducts = chain(this.productsResource)?.content ?? [];
+      const availableProductGroups = chain(this.productGroupsResource)?.content ?? [];
       return {
-        uuid,
-        amount,
-        name: product?.name ?? 'Unknown Product',
-        image: product?.image,
-        type: 'product' as const,
-        EAN: product?.EAN
-      };
-    });
+        availableProducts,
+        availableProductGroups,
+      }
+    },
+    async loader({params}) {
+      const {availableProducts, availableProductGroups} = params;
+      const products = availableProducts.map(p => ({ ...p, type: 'product' as const }));
+      const groups = availableProductGroups.map(g => {
+        // Get sample images from products in this group for dropdown
+        const groupProducts = g.products || {};
+
+        const sampleImages = Object.keys(groupProducts)
+          .slice(0, 2) // Take up to 2 sample images for dropdown
+          .map(productUuid => availableProducts.find(p => p.uuid === productUuid)?.image)
+          .filter(image => image); // Remove null/undefined images
+
+        return { ...g, type: 'productGroup' as const, sampleImages };
+      });
+      return [...products, ...groups];
+    }
   });
 
-  currentProductGroups = computed(() => {
-    const groups = this.shoppingListProductGroups();
-    const availableGroups = this.availableProductGroups();
-    const availableProducts = this.availableProducts();
-
-    return Object.entries(groups).map(([uuid, amount]) => {
-      const group = availableGroups.find(g => g.uuid === uuid);
-
-      // Get sample images from products in this group
-      const groupProducts = group?.products || {};
-      const sampleImages = Object.keys(groupProducts)
-        .slice(0, 3) // Take up to 3 sample images
-        .map(productUuid => {
-          const product = availableProducts.find(p => p.uuid === productUuid);
-          return product?.image;
-        })
-        .filter(image => image); // Remove null/undefined images;
-
+  currentProducts = resource({
+    params: ({chain}) => {
+      const availableProducts = chain(this.productsResource)?.content ?? [];
       return {
-        uuid,
-        amount,
-        name: group?.name ?? 'Unknown Group',
-        image: null, // Product groups don't have single images
-        type: 'productGroup' as const,
-        sampleImages,
-        productCount: Object.keys(groupProducts).length
+        products: this.shoppingListProducts(),
+        availableProducts,
+      }
+    },
+    async loader({params}) {
+      const {products, availableProducts} = params;
+      return Object.entries(products).map(([uuid, amount]) => {
+        const product = availableProducts.find(p => p.uuid === uuid);
+        return {
+          uuid,
+          amount,
+          name: product?.name ?? 'Unknown Product',
+          image: product?.image,
+          type: 'product' as const,
+          EAN: product?.EAN
+        };
+      });
+    }
+  });
+
+  currentProductGroups = resource({
+    params: ({chain}) => {
+      const availableGroups = chain(this.productGroupsResource)?.content ?? [];
+      const availableProducts = chain(this.productsResource)?.content ?? [];
+      return {
+        groups: this.shoppingListProductGroups(),
+        availableGroups,
+        availableProducts,
+      }
+    },
+    async loader({params}) {
+      const {groups, availableGroups, availableProducts} = params;
+      return Object.entries(groups).map(([uuid, amount]) => {
+        const group = availableGroups.find(g => g.uuid === uuid);
+
+        // Get sample images from products in this group
+        const groupProducts = group?.products || {};
+        const sampleImages = Object.keys(groupProducts)
+          .slice(0, 3) // Take up to 3 sample images
+          .map(productUuid => {
+            const product = availableProducts.find(p => p.uuid === productUuid);
+            return product?.image;
+          })
+          .filter(image => image); // Remove null/undefined images;
+
+        return {
+          uuid,
+          amount,
+          name: group?.name ?? 'Unknown Group',
+          image: null, // Product groups don't have single images
+          type: 'productGroup' as const,
+          sampleImages,
+          productCount: Object.keys(groupProducts).length
+        };
+      });
+    }
+  });
+
+  combinedDataSource = resource({
+    params: ({chain}) => {
+      const products = chain(this.currentProducts) ?? [];
+      const groups = chain(this.currentProductGroups) ?? [];
+      return {
+        products,
+        groups
       };
-    });
-  });
-
-  // Combined data source for unified table
-  combinedItems = computed(() => {
-    const products = this.currentProducts();
-    const groups = this.currentProductGroups();
-    return [...products, ...groups];
-  });
-
-  // Table data sources
-  combinedDataSource = computed(() => new MatTableDataSource(this.combinedItems()));
-
-  // Loading and error states
-  public readonly loading = computed(() =>
-    this.productsResource.status() === 'loading' ||
-    this.productGroupsResource.status() === 'loading' ||
-    this.shoppingListResource.status() === 'loading'
-  );
-  public readonly error = computed(() => {
-    const productStatus = this.productsResource.status();
-    const groupStatus = this.productGroupsResource.status();
-    const listStatus = this.shoppingListResource.status();
-    return productStatus === 'error' || groupStatus === 'error' || listStatus === 'error'
-      ? 'Failed to load data'
-      : null;
+    },
+    async loader({params}) {
+      return new MatTableDataSource([...params.products, ...params.groups]);
+    }
   });
 
   constructor(
@@ -242,7 +262,7 @@ export class ShoppingListFormComponent implements OnInit {
   // Helper method to handle selection change
   onSelectionChange(): void {
     if (this.selectedItemUuid) {
-      const selectedItem = this.availableItems().find(item => item.uuid === this.selectedItemUuid);
+      const selectedItem = this.availableItems.value()?.find(item => item.uuid === this.selectedItemUuid);
       this.selectedItemType = selectedItem?.type ?? null;
     } else {
       this.selectedItemType = null;
@@ -352,7 +372,7 @@ export class ShoppingListFormComponent implements OnInit {
 
       const operation = shoppingListUuid
         ? this.shoppingListService.update(shoppingListUuid, formData)
-        : this.shoppingListService.createShoppingList(formData);
+        : this.shoppingListService.create(formData);
 
       operation.subscribe({
         next: () => {
@@ -364,5 +384,4 @@ export class ShoppingListFormComponent implements OnInit {
       });
     }
   }
-
 }

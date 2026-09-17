@@ -1,18 +1,22 @@
 package de.iks.grocery_manager.server.controller.mdi;
 
 import de.iks.grocery_manager.server.dto.JsonString;
-import de.iks.grocery_manager.server.extra_http.QUERY;
 import de.iks.grocery_manager.server.jpa.BaseRepository;
 import de.iks.grocery_manager.server.mapping.DTOMapper;
 import de.iks.grocery_manager.server.mapping.MappingHandler;
 import de.iks.grocery_manager.server.model.HasUUID;
-import jakarta.ws.rs.*;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import lombok.RequiredArgsConstructor;
 import org.jboss.resteasy.reactive.RestResponse;
 import org.jspecify.annotations.NonNull;
-import jakarta.transaction.Transactional;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Transactional
@@ -37,21 +41,6 @@ public abstract class MappingTableController<
             .map(dtoMapper::toUUIDMap)
             .map(RestResponse::ok)
             .orElseGet(RestResponse::notFound);
-    }
-
-    @QUERY
-    @Path("in")
-    public RestResponse<Map<String, UUID>> massTranslateInbound(
-        @SuppressWarnings("UnresolvedRestParam") @PathParam("uuid") UUID uuid,
-        List<String> remoteIds
-    ) {
-        Map<String, UUID> ret = mappingHandler
-            .massTranslateInbound()
-            .apply(uuid, remoteIds);
-        if(ret.isEmpty() && !repository.existsById(uuid)) {
-            return RestResponse.notFound();
-        }
-        return RestResponse.ok(ret);
     }
 
     @GET
@@ -96,20 +85,6 @@ public abstract class MappingTableController<
             .orElseGet(RestResponse::notFound);
     }
 
-    @QUERY
-    @Path("out")
-    public RestResponse<Map<UUID, String>> massTranslateOutbound(
-        @SuppressWarnings("UnresolvedRestParam") @PathParam("uuid") UUID uuid,
-        List<UUID> localIds
-    ) {
-        Map<UUID, String> ret = mappingHandler
-            .massTranslateOutbound()
-            .apply(uuid, localIds);
-        if(ret.isEmpty() && !repository.existsById(uuid)) {
-            return RestResponse.notFound();
-        }
-        return RestResponse.ok(ret);
-    }
     @GET
     @Path("out/{localId}")
     public RestResponse<JsonString> translateOutbound(

@@ -6,64 +6,12 @@
   <div class="main-content">
     <mat-card>
       <mat-card-content>
-        <div class="section-header">
-          <h3>Pagination Parameters</h3>
-        </div>
-        <form [formRoot]="pagingForm">
-          <div class="form-row">
-            <mat-form-field appearance="outline" class="half-width">
-              <mat-label>Page</mat-label>
-              <input matInput type="number" [formField]="pagingForm.page" placeholder="Page number">
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="half-width">
-              <mat-label>Page Size</mat-label>
-              <input matInput type="number" [formField]="pagingForm.pageSize" placeholder="Items per page">
-            </mat-form-field>
-          </div>
-          <div class="form-row">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Item Count</mat-label>
-              <input matInput type="number" [formField]="pagingForm.itemCount" placeholder="Total items">
-            </mat-form-field>
-          </div>
-          <div class="form-row">
-            <mat-checkbox [formField]="pagingForm.direct">
-              Direct
-            </mat-checkbox>
-          </div>
+        <app-exec-form [api]="parentUuid()!" [endpoint]="endpoint()!" (submit)="requestInfo.set($event)"/>
 
-          <div class="header-actions">
-            <button mat-raised-button color="primary" type="submit">
-              Send Request
-            </button>
-          </div>
-        </form>
+        <mat-checkbox [checked]="direct" (change)="direct.set($event.checked)">Direct</mat-checkbox>
 
-        @if (requestResource.isLoading() || idMap.isLoading() || foundCounterparts.isLoading()) {
-          <div class="loading">
-            <mat-spinner></mat-spinner>
-          </div>
-        } @else {
-
-          @if (requestResource.error()) {
-            <div class="error">
-              <p>{{ requestResource.error() }}</p>
-            </div>
-          }
-
-          @if (idMap.error()) {
-            <div class="error">
-              <p>{{ idMap.error() }}</p>
-            </div>
-          }
-
-          @if (foundCounterparts.error()) {
-            <div class="error">
-              <p>{{ foundCounterparts.error() }}</p>
-            </div>
-          }
-
-          @let response = parsedResponse();
+        @if (requestResource.hasValue()) {
+          @let response = requestResource.value();
           <h3>Results</h3>
           @let stats = diffCounts();
           <button mat-raised-button (click)="acceptAll({create: true})" [disabled]="stats.create === 0">
@@ -103,9 +51,10 @@
           </div>
           <hr>
           @for (item of response ?? []; track item.uuid) {
-            @let localId = idMap.value()?.[item.uuid];
-            <ng-template [ngComponentOutlet]="diffComponent"
-                         [ngComponentOutletInputs]="{item, fetchedItem: localId === undefined ? undefined : foundCounterparts.value()?.[localId], api: parentUuid(), afterChange: boundAfterChange}"/>
+            <app-diff
+              [api]="parentUuid()!"
+              [item]="item"
+            />
           }
         }
       </mat-card-content>

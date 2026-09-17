@@ -37,7 +37,13 @@ export class PriceEndpointFormComponent implements OnInit {
 
   private readonly priceEndpointService = inject(PriceEndpointService);
 
-  private readonly priceEndpointResource = this.priceEndpointService.getEndpoint(this.parentUuid, this.priceEndpointId);
+  private readonly priceEndpointResource = this.priceEndpointService.get(_ => {
+    const api = this.parentUuid();
+    if(!api) return undefined;
+    const uuid = this.priceEndpointId();
+    if(!uuid) return undefined;
+    return [api, uuid];
+  });
 
   public readonly loading = computed(() => {
     const endpointStatus = this.priceEndpointResource.status();

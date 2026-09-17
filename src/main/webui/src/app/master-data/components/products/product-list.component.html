@@ -23,55 +23,50 @@
   </div>
 
   <div class="table-container">
-    <mat-table [dataSource]="dataSource()" class="table">
-      <ng-container matColumnDef="name">
-        <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
-        <mat-cell *matCellDef="let product">{{ product.name }}</mat-cell>
-      </ng-container>
+    @if (dataSource.hasValue()) {
+      <mat-table [dataSource]="dataSource.value()" class="table">
+        <ng-container matColumnDef="name">
+          <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
+          <mat-cell *matCellDef="let product">{{ product.name }}</mat-cell>
+        </ng-container>
 
-      <ng-container matColumnDef="image">
-        <mat-header-cell *matHeaderCellDef>Image</mat-header-cell>
-        <mat-cell *matCellDef="let product">
-          @if (product.image) {
-            <img [src]="product.image" [alt]="product.name" class="image-large">
-          } @else {
-            <span>-</span>
-          }
-        </mat-cell>
-      </ng-container>
+        <ng-container matColumnDef="image">
+          <mat-header-cell *matHeaderCellDef>Image</mat-header-cell>
+          <mat-cell *matCellDef="let product">
+            @if (product.image) {
+              <img [src]="product.image" [alt]="product.name" class="image-large">
+            } @else {
+              <span>-</span>
+            }
+          </mat-cell>
+        </ng-container>
 
-      <ng-container matColumnDef="EAN">
-        <mat-header-cell *matHeaderCellDef>EAN</mat-header-cell>
-        <mat-cell *matCellDef="let product">{{ product.EAN || '-' }}</mat-cell>
-      </ng-container>
+        <ng-container matColumnDef="EAN">
+          <mat-header-cell *matHeaderCellDef>EAN</mat-header-cell>
+          <mat-cell *matCellDef="let product">{{ product.EAN || '-' }}</mat-cell>
+        </ng-container>
 
-      <ng-container matColumnDef="actions">
-        <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
-        <mat-cell *matCellDef="let product">
-          <a mat-icon-button color="primary" [routerLink]="['/master-data/products', product.uuid]">
-            <mat-icon>edit</mat-icon>
-          </a>
-          <button mat-icon-button color="warn" (click)="onDeleteProduct(product.uuid)">
-            <mat-icon>delete</mat-icon>
-          </button>
-        </mat-cell>
-      </ng-container>
+        <ng-container matColumnDef="actions">
+          <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+          <mat-cell *matCellDef="let product">
+            <a mat-icon-button color="primary" [routerLink]="['/master-data/products', product.uuid]">
+              <mat-icon>edit</mat-icon>
+            </a>
+            <button mat-icon-button color="warn" (click)="onDeleteProduct(product.uuid)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </mat-cell>
+        </ng-container>
 
-      <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-      <mat-row *matRowDef="let _; columns: displayedColumns;"></mat-row>
-    </mat-table>
-
-    @if (loading()) {
+        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+        <mat-row *matRowDef="let _; columns: displayedColumns;"></mat-row>
+      </mat-table>
+      <mat-paginator [pageIndex]="page()" [pageSize]="pageSize()" (page)="page.set($event.pageIndex); pageSize.set($event.pageSize)"/>
+    } @else if (loading()) {
       <div class="loading">
         <mat-spinner></mat-spinner>
       </div>
-    } @else if (products().length === 0) {
-      <div class="no-data">
-        <p>No products found</p>
-      </div>
-    }
-
-    @if (error()) {
+    } @else if (error()) {
       <div class="error">
         <p>{{ error() }}</p>
       </div>

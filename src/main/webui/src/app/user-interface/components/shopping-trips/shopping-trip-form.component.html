@@ -18,16 +18,24 @@
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Store</mat-label>
             <mat-select formControlName="store" required>
-              <mat-option value="">Select a store</mat-option>
-              @for (store of availableStores(); track store.uuid) {
-                <mat-option [value]="store.uuid">
-                  <div class="filter-option">
-                    @if (store.logo) {
-                      <img [src]="store.logo" [alt]="store.name" class="image-small">
-                    }
-                    <span>{{ store.name }}</span>
-                  </div>
-                </mat-option>
+              @if (storesResource.hasValue()) {
+                <mat-option value="">Select a store</mat-option>
+                @for (store of storesResource.value().content; track store.uuid) {
+                  <mat-option [value]="store.uuid">
+                    <div class="filter-option">
+                      @if (store.logo) {
+                        <img [src]="store.logo" [alt]="store.name" class="image-small">
+                      }
+                      <span>{{ store.name }}</span>
+                    </div>
+                  </mat-option>
+                }
+              } @else if (storesResource.isLoading()) {
+                <mat-progress-spinner mode="indeterminate"/>
+              } @else if (storesResource.error()) {
+                <div class="error">
+                  <p>{{ storesResource.error() }}</p>
+                </div>
               }
             </mat-select>
           </mat-form-field>
@@ -52,8 +60,9 @@
           <mat-form-field appearance="outline" class="half-width">
             <mat-label>Select Product</mat-label>
             <mat-select [formControl]="productSelectControl">
+              @if(productsResource.hasValue()) {
               <mat-option value="">Choose a product</mat-option>
-              @for (product of availableProducts(); track product.uuid) {
+              @for (product of productsResource.value().content; track product.uuid) {
                 @if (!shoppingTripProducts()[product.uuid]) {
                   <mat-option [value]="product.uuid">
                     <div class="filter-option">
@@ -64,6 +73,13 @@
                     </div>
                   </mat-option>
                 }
+              }
+              } @else if (productsResource.isLoading()) {
+                <mat-progress-spinner mode="indeterminate"/>
+              } @else if (productsResource.error()) {
+                <div class="error">
+                  <p>{{ productsResource.error() }}</p>
+                </div>
               }
             </mat-select>
           </mat-form-field>
@@ -79,7 +95,8 @@
         </div>
 
         <div class="form-row">
-          <mat-table [dataSource]="productsDataSource()">
+          @if (productsDataSource.hasValue()) {
+          <mat-table [dataSource]="productsDataSource.value()">
             <!-- Product Name Column -->
             <ng-container matColumnDef="productName">
               <mat-header-cell *matHeaderCellDef>Product</mat-header-cell>
@@ -131,6 +148,13 @@
             <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
             <mat-row *matRowDef="let _; columns: displayedColumns;"></mat-row>
           </mat-table>
+          } @else if (productsDataSource.isLoading()) {
+            <mat-progress-spinner mode="indeterminate"/>
+          } @else if (productsDataSource.error()) {
+            <div class="error">
+              <p>{{ productsDataSource.error() }}</p>
+            </div>
+          }
         </div>
       </form>
     </mat-card-content>
@@ -145,8 +169,8 @@
               color="primary"
               type="submit"
               (click)="onSubmit()"
-              [disabled]="shoppingTripForm.invalid || loading()">
-        @if (loading()) {
+              [disabled]="shoppingTripForm.invalid || productsDataSource.isLoading()">
+        @if (productsDataSource.isLoading()) {
           <mat-spinner diameter="20"></mat-spinner>
         }
         {{ isEditMode() ? 'Update Trip' : 'Create Trip' }}

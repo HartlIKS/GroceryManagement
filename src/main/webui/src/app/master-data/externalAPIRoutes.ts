@@ -13,7 +13,7 @@ import {
 } from './components/endpoints';
 import {
   AddressDTO,
-  AddressPathsDTO,
+  AddressPathsDTO, CreateProductDTO, CreateStoreDTO,
   ListProductDTO,
   ListStoreDTO,
   ProductEndpointDTOTypes,
@@ -22,13 +22,13 @@ import {
 import {
   ProductEndpointService,
   ProductMappingTableService,
-  ProductService,
   StoreEndpointService,
-  StoreMappingTableService,
-  StoreService
+  StoreMappingTableService
 } from './services';
 import { inject } from '@angular/core';
 import jp from 'jsonpath';
+import { BasicPagingFormComponent } from './components/endpoints/endpoint-test/arg/basic-paging-form.component';
+import { LIST } from '../models/base.model';
 
 const domParser = new DOMParser();
 
@@ -132,10 +132,10 @@ export const externalAPIRoutes: Routes = [
     providers: [
       {
         provide: ENDPOINT_TOKEN,
-        useFactory: (): EndpointConfig<ProductEndpointDTOTypes, ListProductDTO> => ({
+        useFactory: (): EndpointConfig<ProductEndpointDTOTypes, CreateProductDTO> => ({
+          formComponent: BasicPagingFormComponent<ProductEndpointDTOTypes[LIST]>,
           endpointService: inject(ProductEndpointService),
           mappingService: inject(ProductMappingTableService),
-          massQuery: ((s) => s.getManyProducts.bind(s))(inject(ProductService)),
           toPartials: (endpoint, response) => {
             switch(endpoint.responseType) {
               case 'JSON':
@@ -171,10 +171,10 @@ export const externalAPIRoutes: Routes = [
     providers: [
       {
         provide: ENDPOINT_TOKEN,
-        useFactory: (): EndpointConfig<StoreEndpointDTOTypes, ListStoreDTO> => ({
+        useFactory: (): EndpointConfig<StoreEndpointDTOTypes, CreateStoreDTO> => ({
+          formComponent: BasicPagingFormComponent<StoreEndpointDTOTypes[LIST]>,
           endpointService: inject(StoreEndpointService),
           mappingService: inject(StoreMappingTableService),
-          massQuery: ((s) => s.getManyStores.bind(s))(inject(StoreService)),
           toPartials(endpoint, response) {
             switch(endpoint.responseType) {
               case 'JSON':

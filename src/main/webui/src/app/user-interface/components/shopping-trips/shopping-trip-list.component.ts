@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, resource, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -13,7 +13,8 @@ import { CommonModule } from '@angular/common';
 import { ShoppingTripService } from '../../services';
 import { ListShoppingTripDTO } from '../../models';
 import { StoreService } from '../../../master-data/services';
-import { toDate } from '../../../utils/signalutils';
+import { toDate } from '../../../utils/dateUtil';
+import { MatPaginator } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-shopping-trip-list',
@@ -29,40 +30,39 @@ import { toDate } from '../../../utils/signalutils';
     MatSelectModule,
     RouterLink,
     MatCardModule,
-    FormsModule
+    FormsModule,
+    MatPaginator
   ],
   templateUrl: './shopping-trip-list.component.html',
   styleUrls: ['./shopping-trip-list.component.css']
 })
 export class ShoppingTripListComponent {
   displayedColumns: string[] = ['time', 'store', 'productCount', 'actions'];
-  // Filter signals
   protected readonly fromDate = signal<string | undefined>(this.toDatetimeLocal());
   protected readonly toDate = signal<string | undefined>(undefined);
+  protected readonly page = signal(0);
+  protected readonly pageSize = signal(20);
 
   private readonly shoppingTripService = inject(ShoppingTripService);
   private readonly storeService = inject(StoreService);
 
-  // Create HTTP resources
-  protected readonly shoppingTripsResource = this.shoppingTripService.getShoppingTrips(
-    toDate(this.fromDate),
-    toDate(this.toDate)
-  );
-  private readonly storesResource = this.storeService.search('', 0, 1000);
+  protected readonly shoppingTripsResource = this.shoppingTripService.search(_ => ({
+    from: toDate(this.fromDate()),
+    to: toDate(this.toDate()),
+    page: this.page(),
+    pageSize: this.pageSize(),
+  }));
+  private readonly storesResource = this.storeService.search(_ => ({
+    name: '',
+    page: 0,
+    size: Number.MAX_SAFE_INTEGER,
+  }));
 
-  // Computed properties from resources
-  public readonly shoppingTrips = computed(() => this.shoppingTripsResource.value()?.content ?? []);
-  public readonly loading = computed(() => this.shoppingTripsResource.status() === 'loading');
-  public readonly error = computed(() => {
-    const status = this.shoppingTripsResource.status();
-    return status === 'error' ? 'Failed to load shopping trips' : null;
-  });
-  public readonly availableStores = computed(() => this.storesResource.value()?.content ?? []);
-
-  // Create MatTableDataSource from shopping trips signal
-  public readonly dataSource = computed(() => {
-    const shoppingTrips = this.shoppingTrips();
-    return new MatTableDataSource<ListShoppingTripDTO>(shoppingTrips);
+  protected readonly dataSource = resource({
+    params: ({chain}) => chain(this.shoppingTripsResource),
+    async loader({params}) {
+      return new MatTableDataSource<ListShoppingTripDTO>(params.content);
+    }
   });
 
   clearFilters(): void {
@@ -86,11 +86,11 @@ export class ShoppingTripListComponent {
   }
 
   getStoreName(storeUuid: string): string {
-    return this.availableStores().find(s => s.uuid === storeUuid)?.name ?? 'Unknown Store';
+    return (this.storesResource.value()?.content ?? []).find(s => s.uuid === storeUuid)?.name ?? 'Unknown Store';
   }
 
   getStoreLogo(storeUuid: string): string | undefined {
-    return this.availableStores().find(s => s.uuid === storeUuid)?.logo;
+    return (this.storesResource.value()?.content ?? []).find(s => s.uuid === storeUuid)?.logo;
   }
 
   formatDate(dateString: string): string {

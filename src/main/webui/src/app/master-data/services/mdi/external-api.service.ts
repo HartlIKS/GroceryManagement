@@ -1,53 +1,10 @@
-import { Injectable, isSignal, Signal } from '@angular/core';
-import { Observable } from 'rxjs';
-import { ApiService, CacheService } from '../../../services';
-import { CreateExternalAPIDTO, ExternalAPIDTO, ExternalAPIDTOTypes } from '../../models';
-import { Page } from '../../../models';
-import { HttpResourceRef } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { NamedCrudService } from '../../../services';
+import { ExternalAPIDTOTypes } from '../../models';
 
 @Injectable({
   providedIn: 'root'
 })
-export class ExternalAPIService extends CacheService<ExternalAPIDTOTypes> {
-  private readonly endpoint = '/masterdata/interface';
-
-  constructor(private apiService: ApiService) {
-    super();
-  }
-
-  protected override rawGet(uuid: string): HttpResourceRef<ExternalAPIDTO | undefined> {
-    return this.apiService.getById<ExternalAPIDTO>(this.endpoint, uuid);
-  }
-
-  protected override rawUpdate(uuid: string, externalApi: CreateExternalAPIDTO): Observable<ExternalAPIDTO> {
-    return this.apiService.put<ExternalAPIDTO>(this.endpoint, uuid, externalApi);
-  }
-
-  protected override rawDelete(uuid: string): Observable<void> {
-    return this.apiService.delete(this.endpoint, uuid);
-  }
-
-  // Get external APIs with pagination and search
-  getExternalAPIs(
-    name: Signal<string> | string = '',
-    page: Signal<number> | number = 0,
-    size: Signal<number> | number = 20
-  ) {
-    return this.apiService.get<Page<ExternalAPIDTO>>(this.endpoint, {
-        name,
-        page,
-        size,
-    });
-  }
-
-  // Get single external API by UUID
-  getExternalAPI(uuid: Signal<string | undefined> | string) {
-    if(isSignal(uuid)) return this.apiService.getById<ExternalAPIDTO>(this.endpoint, uuid);
-    return this.get(uuid);
-  }
-
-  // Create external API
-  createExternalAPI(externalApi: CreateExternalAPIDTO): Observable<ExternalAPIDTO> {
-    return this.apiService.post<ExternalAPIDTO>(this.endpoint, externalApi);
-  }
+export class ExternalAPIService extends NamedCrudService<ExternalAPIDTOTypes> {
+  protected override readonly endpoint = '/masterdata/interface';
 }

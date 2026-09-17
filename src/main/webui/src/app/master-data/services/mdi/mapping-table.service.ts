@@ -1,77 +1,45 @@
-import { computed, inject, Signal } from '@angular/core';
+import { inject, ResourceParamsContext } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from '../../../services';
-import { HttpResourceRef } from '@angular/common/http';
-import { resolve } from '../../../utils/signalutils';
+import { httpResource, HttpResourceRef } from '@angular/common/http';
 
 export abstract class MappingTableService {
   protected abstract readonly endpoint1: string;
   protected abstract readonly endpoint2: string;
-  private readonly apiService = inject(ApiService);
+  protected readonly apiService = inject(ApiService);
 
-  getMappings(uuid: Signal<string | undefined> | string): HttpResourceRef<Record<string, string> | undefined> {
-    uuid = resolve(uuid);
-    return this.apiService.get<Record<string, string> | undefined>(computed(() => {
-      const uuidValue = uuid();
-      if(uuidValue === undefined) return undefined;
-      return `${this.endpoint1}/${uuidValue}/mapping/${this.endpoint2}`;
-    }));
+  getMappings(uuid: (ctx: ResourceParamsContext) => string | undefined) {
+    return httpResource<Record<string, string>>(ctx => {
+      const id = uuid(ctx);
+      if(id) return this.apiService.get(`${this.endpoint1}/${id}/mapping/${this.endpoint2}`);
+      return undefined;
+    }, {
+      defaultValue: {},
+    });
   }
 
-  // Translate inbound: remote ID -> local UUID
-  translateInbound(uuid: Signal<string | undefined> | string, remoteId: Signal<string | undefined> | string): HttpResourceRef<string | undefined> {
-    uuid = resolve(uuid);
-    remoteId = resolve(remoteId);
-    return this.apiService.get<string>(computed(() => {
-      const uuidValue = uuid();
-      const remoteIdValue = remoteId();
-      if(uuidValue === undefined || remoteIdValue === undefined) return undefined;
-      return `${this.endpoint1}/${uuidValue}/mapping/${this.endpoint2}/in/${remoteIdValue}`;
-    }));
+  translateInbound(ids: (ctx: ResourceParamsContext) => [string, string] | undefined) {
+    return httpResource<string>(ctx => {
+      const combined = ids(ctx);
+      if(!combined) return undefined;
+      const [uuid, remoteId] = combined;
+      return this.apiService.get(`${this.endpoint1}/${uuid}/mapping/${this.endpoint2}/in/${remoteId}`);
+    });
   }
 
-  massTranslateInbound(uuid: Signal<string | undefined> | string, remoteIds: Signal<string[] | undefined> | string[]): HttpResourceRef<Record<string, string> | undefined> {
-    uuid = resolve(uuid);
-    return this.apiService.query(
-      computed(() => {
-        const uuidValue = uuid();
-        if(uuidValue === undefined) return undefined;
-        return `${this.endpoint1}/${uuidValue}/mapping/${this.endpoint2}/in`;
-      }),
-      remoteIds
-    );
-  }
-
-  // Set inbound translation: remote ID -> local UUID
-  setInboundTranslation(uuid: string, remoteId: string, localId: string): Observable<string> {
+  setInboundTranslation(uuid: string, remoteId: string, localId: string) {
     return this.apiService.put<string>(`${this.endpoint1}/${uuid}/mapping/${this.endpoint2}/in`, remoteId, localId);
   }
 
-  // Translate outbound: local UUID -> remote ID
-  translateOutbound(uuid: Signal<string | undefined> | string, localId: Signal<string | undefined> | string): HttpResourceRef<string | undefined> {
-    uuid = resolve(uuid);
-    localId = resolve(localId);
-    return this.apiService.get<string>(computed(() => {
-      const uuidValue = uuid();
-      const localIdValue = localId();
-      if(uuidValue === undefined || localIdValue === undefined) return undefined;
-      return `${this.endpoint1}/${uuidValue}/mapping/${this.endpoint2}/in/${localIdValue}`;
-    }));
+  translateOutbound(ids: (ctx: ResourceParamsContext) => [string, string] | undefined): HttpResourceRef<string | undefined> {
+    return httpResource<string>(ctx => {
+      const combined = ids(ctx);
+      if(!combined) return undefined;
+      const [uuid, localId] = combined;
+      return this.apiService.get(`${this.endpoint1}/${uuid}/mapping/${this.endpoint2}/out/${localId}`);
+    });
   }
 
-  massTranslateOutbound(uuid: Signal<string | undefined> | string, localIds: Signal<string[] | undefined> | string[]): HttpResourceRef<Record<string, string> | undefined> {
-    uuid = resolve(uuid);
-    return this.apiService.query(
-      computed(() => {
-        const uuidValue = uuid();
-        if(uuidValue === undefined) return undefined;
-        return `${this.endpoint1}/${uuidValue}/mapping/${this.endpoint2}/in`;
-      }),
-      localIds
-    );
-  }
-
-  // Set outbound translation: local UUID -> remote ID
   setOutboundTranslation(uuid: string, localId: string, remoteId: string): Observable<string> {
     return this.apiService.put<string>(`${this.endpoint1}/${uuid}/mapping/${this.endpoint2}/out`, localId, remoteId);
   }

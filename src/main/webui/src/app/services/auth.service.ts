@@ -1,4 +1,4 @@
-import { computed, effect, inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { AuthConfig, OAuthService } from 'angular-oauth2-oidc';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
@@ -39,7 +39,6 @@ export class AuthService {
     return this.oauthService.getIdentityClaims();
   })
   readonly username = computed((): string | undefined => this.claims()?.['preferred_username'])
-  readonly eff = effect(() => console.log(this.roles(), this.claims()));
 
   constructor() {
     this.settle = this.setup();

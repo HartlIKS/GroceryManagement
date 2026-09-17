@@ -18,10 +18,10 @@
     <button mat-raised-button (click)="productGroupsResource.reload()">Search</button>
   </div>
 
-  @if (!loading()) {
-    <div class="content">
-      <div class="table-container">
-        <mat-table [dataSource]="dataSource()" class="table">
+  <div class="content">
+    <div class="table-container">
+      @if (dataSource.hasValue()) {
+        <mat-table [dataSource]="dataSource.value()" class="table">
           <!-- Name Column -->
           <ng-container matColumnDef="name">
             <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
@@ -54,23 +54,15 @@
           <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
           <mat-row *matRowDef="let _; columns: displayedColumns;"></mat-row>
         </mat-table>
-
-        @if (dataSource().data.length === 0) {
-          <div class="no-data">
-            <p>No product groups found.</p>
-          </div>
-        }
-      </div>
+      } @else if (dataSource.isLoading()) {
+        <mat-progress-spinner mode="indeterminate"/>
+      } @else if (dataSource.error()) {
+        <div class="error">
+          <p>{{ dataSource.error() }}</p>
+        </div>
+      }
+      <mat-paginator [pageIndex]="page()" [pageSize]="pageSize()"
+                     (page)="page.set($event.pageIndex); pageSize.set($event.pageSize)"/>
     </div>
-  } @else {
-    <div class="loading">
-      <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
-      <p>Loading product groups...</p>
-    </div>
-  }
-  @if (error()) {
-    <div class="error">
-      <p>Error loading product groups: {{ error() }}</p>
-    </div>
-  }
+  </div>
 </div>

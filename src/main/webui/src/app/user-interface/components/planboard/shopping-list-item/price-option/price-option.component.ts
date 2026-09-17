@@ -21,9 +21,7 @@ export class PriceOptionComponent {
     newTrip: boolean,
   }>();
 
-  private readonly storeResource = inject(StoreService).getStore(computed(() => this.priceEntry().price.store))
-
-  protected readonly store = computed(() => this.storeResource.value());
+  protected readonly storeResource = inject(StoreService).get(_ => this.priceEntry().price.store);
 
   formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString();

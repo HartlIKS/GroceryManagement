@@ -1,0 +1,9 @@
+<form [formRoot]="form" method="dialog">
+  <basic-paging-form-part [formInput]="form"/>
+
+  <div class="header-actions">
+    <button mat-raised-button color="primary" type="submit" [disabled]="form().invalid()">
+      Send Request
+    </button>
+  </div>
+</form>

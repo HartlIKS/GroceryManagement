@@ -1,8 +1,8 @@
 <div class="price-option">
   @let entry = priceEntry();
   @let price = entry.price;
-  @let store = this.store();
-  @if (store) {
+  @if (storeResource.hasValue()) {
+    @let store = storeResource.value();
     @if (entry.newTrip) {
       <span>New trip</span>
     } @else {
@@ -16,7 +16,11 @@
     <span class="validity-info">
       Valid: {{ formatDate(price.validFrom) }} - {{ formatDate(price.validTo) }}
     </span>
-  } @else {
+  } @else if(storeResource.isLoading()) {
     <mat-spinner type="indeterminate"/>
+  } @else if (storeResource.error(); as error) {
+    <div class="error">
+      <p>{{ error }}</p>
+    </div>
   }
 </div>

@@ -13,14 +13,18 @@
         </mat-card-header>
         <mat-card-content>
           <p>Create and manage your shopping lists for different stores</p>
-          @if (!loading()) {
+          @if (shoppingListsResource.hasValue()) {
             <div class="dashboard-stats">
-              <div class="stat-number">{{ totalShoppingLists() }}</div>
+              <div class="stat-number">{{ shoppingListsResource.value().page.totalElements }}</div>
               <p>shopping lists</p>
             </div>
-          } @else {
+          } @else if(shoppingListsResource.isLoading()) {
             <div class="loading">
               <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+            </div>
+          } @else if(shoppingListsResource.error()) {
+            <div class="error">
+              <p>{{ shoppingListsResource.error() }}</p>
             </div>
           }
         </mat-card-content>
@@ -36,16 +40,21 @@
         </mat-card-header>
         <mat-card-content>
           <p>Grouped products that can be substituted for one another</p>
-          @if (!loading()) {
+          @if (productGroupsResource.hasValue()) {
+            @let value = productGroupsResource.value();
             <div class="dashboard-stats">
-              <div class="stat-number">{{ totalGroups() }}</div>
+              <div class="stat-number">{{ value.page.totalElements }}</div>
               <p>groups containing</p>
-              <div class="stat-number">{{ totalProductsInGroups() }}</div>
+              <div class="stat-number">{{ totalProductsInGroups(value.content) }}</div>
               <p>products</p>
             </div>
-          } @else {
+          } @else if(productGroupsResource.isLoading()) {
             <div class="loading">
               <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+            </div>
+          } @else if (productGroupsResource.error()) {
+            <div class="error">
+              <p>{{ productGroupsResource.error() }}</p>
             </div>
           }
         </mat-card-content>
@@ -61,15 +70,20 @@
         </mat-card-header>
         <mat-card-content>
           <p>View and manage your past shopping trips and expenses</p>
-          @if (!loading()) {
+          @if (shoppingTripsResource.hasValue()) {
             <div class="dashboard-stats">
-              <div class="stat-number">{{ totalShoppingTrips() }}</div>
+              <div class="stat-number">{{ shoppingTripsResource.value().page.totalElements }}</div>
               <p>shopping trips</p>
             </div>
-          } @else {
+          } @else if(shoppingTripsResource.isLoading()) {
             <div class="loading">
               <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
             </div>
+          } @else if(shoppingTripsResource.error()) {
+            <div class="error">
+              <p>{{ shoppingTripsResource.error() }}</p>
+            </div>
+
           }
         </mat-card-content>
         <mat-card-actions>

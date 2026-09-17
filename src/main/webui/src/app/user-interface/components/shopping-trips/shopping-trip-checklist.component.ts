@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, resource, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -7,12 +7,11 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { CommonModule } from '@angular/common';
 import { ShoppingTripService } from '../../services';
-import { PriceService, ProductService, StoreService } from '../../../master-data/services';
+import { PriceService, StoreService } from '../../../master-data/services';
+import { ProductListingComponent } from '../product-listing/product-listing.component';
 
 interface ChecklistItem {
   productUuid: string;
-  productName: string;
-  productImage?: string;
   quantity: number;
   checked: boolean;
   price?: number;
@@ -28,6 +27,7 @@ interface ChecklistItem {
     MatCheckbox,
     MatProgressSpinner,
     MatProgressBar,
+    ProductListingComponent,
   ],
   templateUrl: './shopping-trip-checklist.component.html',
   styleUrls: ['./shopping-trip-checklist.component.css']
@@ -36,65 +36,48 @@ export class ShoppingTripChecklistComponent {
   shoppingTripUuid = signal<string>('');
 
   // Create HTTP resources
-  private readonly shoppingTripResource = inject(ShoppingTripService).getShoppingTrip(this.shoppingTripUuid);
-  private readonly storesResource = inject(StoreService).search('', 0, 1000);
-  private readonly productsResource = inject(ProductService).search('', 0, 1000);
+  private readonly shoppingTripResource = inject(ShoppingTripService).get(this.shoppingTripUuid);
+  protected readonly currentStore = inject(StoreService)
+    .get(({chain}) => chain(this.shoppingTripResource)?.store);
   private readonly priceService = inject(PriceService);
 
-  // Computed properties from resources
-  public readonly loading = computed(() => this.shoppingTripResource.status() === 'loading');
-  public readonly error = computed(() => {
-    const status = this.shoppingTripResource.status();
-    return status === 'error' ? 'Failed to load shopping trip' : null;
-  });
-  public readonly availableStores = computed(() => this.storesResource.value()?.content ?? []);
-  public readonly availableProducts = computed(() => this.productsResource.value()?.content ?? []);
-
-  // Current shopping trip
-  public readonly currentShoppingTrip = computed(() => {
-    return this.shoppingTripResource.value();
-  });
-
-  // Current store for the trip
-  public readonly currentStore = computed(() => {
-    const trip = this.currentShoppingTrip();
-    if (!trip) return null;
-    return this.availableStores().find(s => s.uuid === trip.store);
-  });
-
   // Prices for the current shopping trip (using the efficient nested structure)
-  public readonly currentTripPrices = this.priceService.searchPricesForProductsAndStores(
-    computed(() => Object.keys(this.currentShoppingTrip()?.products ?? {})),
-    computed(() => {
-      const store = this.currentShoppingTrip()?.store;
-      return store ? [store] : [];
-    }),
-    computed(() => new Date(this.currentShoppingTrip()?.time!)),
-  );
+  private readonly currentTripPrices = this.priceService.search(({chain}) => {
+    const trip = chain(this.shoppingTripResource);
+    if(!trip) return undefined;
+    return {
+      products: Object.keys(trip.products),
+      stores: [trip.store],
+      at: new Date(trip.time),
+    };
+  });
 
-  // Checklist items
-  public readonly checklistItems = computed(() => {
-    const trip = this.currentShoppingTrip();
-    const products = this.availableProducts();
-    const priceMap = this.currentTripPrices.value();
-
-    if (!trip || !products.length) return [];
-
-    return Object.entries(trip.products).map(([productUuid, quantity]) => {
-      const product = products.find(p => p.uuid === productUuid);
-
-      // Efficient lookup using the nested Record structure with optional chaining
-      const price = priceMap?.[productUuid]?.[trip.store]?.[0]?.price;
-
+  public readonly combinedResource = resource({
+    params: ({ chain }) => {
+      const trip = chain(this.shoppingTripResource);
+      if (!trip) return undefined;
+      const store = chain(this.currentStore);
+      if(!store) return undefined;
+      const priceMap = chain(this.currentTripPrices);
+      if (!priceMap) return undefined;
+      return { trip, store, priceMap };
+    },
+    async loader({ params }) {
+      const {trip, store, priceMap} = params;
       return {
-        productUuid,
-        productName: product?.name ?? 'Unknown Product',
-        productImage: product?.image,
-        quantity,
-        checked: false,
-        price
-      } as ChecklistItem;
-    });
+        trip,
+        store,
+        items: Object.entries(trip.products).map(([productUuid, quantity]) => {
+          const price = priceMap?.[productUuid]?.[trip.store]?.[0]?.price;
+          return {
+            productUuid,
+            quantity,
+            checked: false,
+            price
+          } as ChecklistItem;
+        }),
+      };
+    }
   });
 
   constructor(
@@ -111,28 +94,24 @@ export class ShoppingTripChecklistComponent {
     item.checked = !item.checked;
   }
 
-  getCheckedCount(): number {
-    return this.checklistItems().filter(item => item.checked).length;
+  getCheckedItemCount(items: ChecklistItem[]): number {
+    return items.reduce((total, item) => total + (item.checked ? 1 : 0), 0);
   }
 
-  getTotalCount(): number {
-    return this.checklistItems().length;
-  }
-
-  getTotalPrice(): number {
-    return this.checklistItems().reduce((total, item) => {
+  getTotalPrice(items: ChecklistItem[]): number {
+    return items.reduce((total, item) => {
       return item.price ? total + (item.price * item.quantity) : total;
     }, 0);
   }
 
-  getHasUnknownPrices(): boolean {
-    return this.checklistItems().some(item => !item.price);
+  getHasUnknownPrices(items: ChecklistItem[]): boolean {
+    return items.some(item => !item.price);
   }
 
-  getCompletionPercentage(): number {
-    const total = this.getTotalCount();
+  getCompletionPercentage(items: ChecklistItem[]): number {
+    const total = items.length;
     if (total === 0) return 0;
-    return Math.round((this.getCheckedCount() / total) * 100);
+    return Math.round((this.getCheckedItemCount(items) / total) * 100);
   }
 
   formatDate(dateString: string): string {

@@ -1,0 +1,78 @@
+@if (isIgnored()) {
+  <button mat-raised-button (click)="isIgnored.set(false)">
+    <mat-icon>expand_more</mat-icon>
+    Show
+  </button>
+} @else if (mappedId.isLoading()) {
+  <mat-spinner/>
+} @else if (mappedId.error(); as error) {
+  <div class="error">
+    <p>{{ error }}</p>
+  </div>
+} @else if (status() !== "same") {
+  <form [formRoot]="form">
+    <mat-expansion-panel [(expanded)]="doReassignment" class="form-row">
+      <mat-expansion-panel-header>Assign existing product</mat-expansion-panel-header>
+      <ng-template matExpansionPanelContent>
+        <mat-form-field>
+          <mat-label>Search</mat-label>
+          <input matInput [(ngModel)]="searchText" [ngModelOptions]="{standalone: true}"/>
+        </mat-form-field>
+        <mat-select [(value)]="mappedId.value">
+          <mat-option>Create New Product</mat-option>
+          @if (searchedProducts.hasValue()) {
+            @for (product of searchedProducts.value(); track product) {
+              <mat-option [value]="product">
+                <app-product-listing [uuid]="product"/>
+              </mat-option>
+            }
+          } @else if (searchedProducts.isLoading()) {
+            <mat-spinner/>
+          } @else if (searchedProducts.error(); as error) {
+            <mat-error>{{ error }}</mat-error>
+          }
+        </mat-select>
+      </ng-template>
+    </mat-expansion-panel>
+    @if (combinedItems.hasValue()) {
+      @let comb = combinedItems.value();
+      @let n = comb.mapped;
+      @let o = comb.fetched;
+      <ng-template let-nf="nf" let-of="of" let-form="form" let-nf2="nf2" let-fieldName="fieldName" #diffField>
+        @if (form && (nf ?? nf2) !== of) {
+          <div class="full-width">
+            @if (o) {
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Old {{ fieldName }}</mat-label>
+                <input matInput disabled [value]="of"/>
+              </mat-form-field>
+            }
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>New {{ fieldName }}</mat-label>
+              <input matInput disabled [value]="nf"/>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label [textContent]="fieldName"/>
+              <input matInput [formField]="form"/>
+            </mat-form-field>
+          </div>
+          <hr>
+        }
+      </ng-template>
+      <ng-template [ngTemplateOutlet]="diffField"
+                   [ngTemplateOutletContext]="{nf: n.name, nf2: '', of: o?.name, form: form.name, fieldName: 'Name'}"/>
+      <ng-template [ngTemplateOutlet]="diffField"
+                   [ngTemplateOutletContext]="{nf: n.image, of: o?.image, form: form.image, fieldName: 'Image'}"/>
+      <ng-template [ngTemplateOutlet]="diffField"
+                   [ngTemplateOutletContext]="{nf: n.EAN, of: o?.EAN, form: form.EAN, fieldName: 'EAN'}"/>
+      <button type="button" mat-raised-button (click)="isIgnored.set(true)">Ignore</button>
+      <button type="submit" mat-raised-button color="primary">Accept</button>
+    } @else if (combinedItems.isLoading()) {
+      <mat-spinner/>
+    } @else if (combinedItems.error(); as error) {
+      <div class="error">
+        <p>{{ error }}</p>
+      </div>
+    }
+  </form>
+}

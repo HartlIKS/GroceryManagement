@@ -23,7 +23,8 @@
   </div>
 
   <div class="table-container">
-    <mat-table [dataSource]="dataSource()" class="table">
+    @if(dataSource.hasValue()) {
+    <mat-table [dataSource]="dataSource.value()" class="table">
       <ng-container matColumnDef="name">
         <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
         <mat-cell *matCellDef="let store">{{ store.name }}</mat-cell>
@@ -67,21 +68,13 @@
       <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
       <mat-row *matRowDef="let _; columns: displayedColumns;"></mat-row>
     </mat-table>
-
-    @if (loading()) {
-      <div class="loading">
-        <mat-spinner></mat-spinner>
-      </div>
-    } @else if (stores().length === 0) {
-      <div class="no-data">
-        <p>No stores found</p>
-      </div>
-    }
-
-    @if (error()) {
+    } @else if (dataSource.isLoading()) {
+      <mat-spinner mode="indeterminate"/>
+    } @else if (dataSource.error(); as error) {
       <div class="error">
-        <p>{{ error() }}</p>
+        <p>{{ error }}</p>
       </div>
     }
+    <mat-paginator [pageIndex]="page()" [pageSize]="pageSize()" (page)="page.set($event.pageIndex); pageSize.set($event.pageSize)"/>
   </div>
 </div>

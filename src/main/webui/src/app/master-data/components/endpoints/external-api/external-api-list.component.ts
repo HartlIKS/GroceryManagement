@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,7 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { FormsModule } from '@angular/forms';
 import { ExternalAPIService } from '../../../services';
-import { ExternalAPIDTO } from '../../../models';
+import { MatPaginator } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-external-api-list',
@@ -21,30 +21,32 @@ import { ExternalAPIDTO } from '../../../models';
     MatFormFieldModule,
     MatProgressSpinner,
     FormsModule,
-    RouterLink
+    RouterLink,
+    MatPaginator
   ],
   templateUrl: './external-api-list.component.html',
   styleUrls: ['./external-api-list.component.css']
 })
 export class ExternalAPIListComponent {
-  displayedColumns: string[] = ['name', 'actions'];
+  protected readonly displayedColumns: readonly string[] = ['name', 'actions'];
 
   protected readonly searchTerm = signal('');
+  protected readonly page = signal(0);
+  protected readonly size = signal(20);
 
   private readonly externalAPIService = inject(ExternalAPIService);
 
-  protected readonly externalAPIsResource = this.externalAPIService.getExternalAPIs(this.searchTerm());
+  protected readonly externalAPIsResource = this.externalAPIService.search(_ => ({
+    name: this.searchTerm(),
+    page: this.page(),
+    size: this.size(),
+  }));
 
-  public readonly externalAPIs = computed(() => this.externalAPIsResource.value()?.content ?? []);
-  public readonly loading = computed(() => this.externalAPIsResource.status() === 'loading');
-  public readonly error = computed(() => {
-    const status = this.externalAPIsResource.status();
-    return status === 'error' ? 'Failed to load external APIs' : null;
-  });
-
-  public readonly dataSource = computed(() => {
-    const externalAPIs = this.externalAPIs();
-    return new MatTableDataSource<ExternalAPIDTO>(externalAPIs);
+  public readonly dataSource = resource({
+    params: ({chain}) => chain(this.externalAPIsResource)?.content,
+    async loader({params}) {
+      return new MatTableDataSource(params);
+    }
   });
 
   onDeleteExternalAPI(uuid: string): void {

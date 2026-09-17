@@ -1,21 +1,22 @@
-@if (loading()) {
-  <mat-list-item>
-    <mat-spinner type="indeterminate"/>
-  </mat-list-item>
-} @else {
-  <mat-list-item>
-    @let logo = store()?.logo;
-    @if (logo) {
-      <img class="image-large" matListItemIcon [src]="logo" [alt]="store()?.name"/>
-    } @else {
-      <div class="image-large" matListItemIcon></div>
-    }
-    <div>
-      <div>{{ store()?.name ?? 'Unknown Store' }}</div>
-      <div class="address">{{ store()?.address?.streetAndNumber ?? '' }}{{ store()?.address?.streetAndNumber && store()?.address?.city ? ', ' : '' }}{{ store()?.address?.city ?? '' }}</div>
+@if (storeResource.hasValue()) {
+  @let store = storeResource.value();
+  @let logo = store.logo;
+  @if (logo) {
+    <img class="image-large" matListItemIcon [ngSrc]="logo" width="50" height="50" [alt]="store.name"/>
+  } @else {
+    <div class="image-large" matListItemIcon></div>
+  }
+  <div>
+    <div>{{ store.name }}</div>
+    <div
+      class="address">{{ store.address.streetAndNumber }}{{ store.address.streetAndNumber && store.address.city ? ', ' : '' }}{{ store.address.city }}
     </div>
-    <div matListItemMeta>
-      <span>{{ store()?.currency ?? '' }}</span>
-    </div>
-  </mat-list-item>
+  </div>
+  <div matListItemMeta>
+    <span>{{ store.currency }}</span>
+  </div>
+
+} @else if (storeResource.isLoading()) {
+  <mat-spinner type="indeterminate"/>
+
 }

@@ -35,15 +35,12 @@ export class StoreEndpointFormComponent implements OnInit {
 
   private readonly storeEndpointService = inject(StoreEndpointService);
 
-  private readonly storeEndpointResource = this.storeEndpointService.getEndpoint(this.parentUuid, this.storeEndpointId);
-
-  public readonly loading = computed(() => {
-    const endpointStatus = this.storeEndpointResource.status();
-    return endpointStatus === 'loading';
-  });
-  public readonly error = computed(() => {
-    const endpointStatus = this.storeEndpointResource.status();
-    return endpointStatus === 'error' ? 'Failed to load store endpoint' : null;
+  protected readonly storeEndpointResource = this.storeEndpointService.get(_ => {
+    const api = this.parentUuid();
+    if(!api) return undefined;
+    const uuid = this.storeEndpointId();
+    if(!uuid) return undefined;
+    return [api, uuid];
   });
 
   constructor(

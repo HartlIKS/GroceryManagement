@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,6 +9,7 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { FormsModule } from '@angular/forms';
 import { StoreService } from '../../services';
 import { ListStoreDTO } from '../../models';
+import { MatPaginator } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-store-list',
@@ -21,7 +22,8 @@ import { ListStoreDTO } from '../../models';
     MatFormFieldModule,
     MatProgressSpinner,
     FormsModule,
-    RouterLink
+    RouterLink,
+    MatPaginator
   ],
   templateUrl: './store-list.component.html',
   styleUrls: ['./store-list.component.css']
@@ -29,31 +31,29 @@ import { ListStoreDTO } from '../../models';
 export class StoreListComponent {
   displayedColumns: string[] = ['name', 'logo', 'address', 'currency', 'actions'];
 
-  // Search signal
   protected readonly searchTerm = signal('');
+  protected readonly page = signal(0);
+  protected readonly pageSize = signal(20);
 
   private readonly storeService = inject(StoreService);
 
-  // Create HTTP resource
-  protected readonly storesResource = this.storeService.search(this.searchTerm);
+  protected readonly storesResource = this.storeService.search(_ => ({
+    name: this.searchTerm(),
+    page: this.page(),
+    pageSize: this.pageSize(),
+  }));
 
-  // Computed properties from resource
-  public readonly stores = computed(() => this.storesResource.value()?.content ?? []);
-  public readonly loading = computed(() => this.storesResource.status() === 'loading');
-  public readonly error = computed(() => {
-    const status = this.storesResource.status();
-    return status === 'error' ? 'Failed to load stores' : null;
-  });
-
-  // Create MatTableDataSource from stores signal
-  public readonly dataSource = computed(() => {
-    const stores = this.stores();
-    return new MatTableDataSource<ListStoreDTO>(stores);
+  protected readonly dataSource = resource({
+    params: ({ chain }) => chain(this.storesResource)?.content,
+    async loader({ params }) {
+      return new MatTableDataSource<ListStoreDTO>(params);
+    }
   });
 
   onDeleteStore(uuid: string): void {
     if (confirm('Are you sure you want to delete this store?')) {
       this.storeService.delete(uuid).subscribe({
+        complete: this.storesResource.reload,
         error: (error) => {
           console.error('Error deleting store:', error);
         }

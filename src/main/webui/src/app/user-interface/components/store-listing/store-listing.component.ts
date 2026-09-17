@@ -1,16 +1,17 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { StoreService } from '../../../master-data/services';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
-import { MatListItem, MatListItemIcon, MatListItemMeta } from '@angular/material/list';
+import { MatListItemIcon, MatListItemMeta } from '@angular/material/list';
+import { NgOptimizedImage } from '@angular/common';
 
 @Component({
   selector: 'app-store-listing',
   standalone: true,
   imports: [
     MatProgressSpinner,
-    MatListItem,
     MatListItemIcon,
     MatListItemMeta,
+    NgOptimizedImage
   ],
   templateUrl: './store-listing.component.html',
   styleUrls: ['./store-listing.component.css'],
@@ -18,8 +19,5 @@ import { MatListItem, MatListItemIcon, MatListItemMeta } from '@angular/material
 export class StoreListingComponent {
   readonly uuid = input.required<string>();
 
-  private readonly storeResource = inject(StoreService).getStore(this.uuid);
-  readonly store = computed(() => this.storeResource.value());
-
-  readonly loading = computed(() => this.storeResource.status() === 'loading');
+  protected readonly storeResource = inject(StoreService).get(this.uuid);
 }

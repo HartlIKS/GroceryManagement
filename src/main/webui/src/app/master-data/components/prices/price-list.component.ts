@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,7 +11,9 @@ import { MatInput } from '@angular/material/input';
 import { PriceService, ProductService, StoreService } from '../../services';
 import { ListPriceDTO } from '../../models';
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { ProductListingComponent } from '../../../user-interface/components/product-listing/product-listing.component';
+import { StoreListingComponent } from '../../../user-interface/components/store-listing/store-listing.component';
 
 // Enhanced price item with validity status
 type PriceWithValidity = ListPriceDTO & {
@@ -33,7 +35,10 @@ type PriceWithValidity = ListPriceDTO & {
     MatFormFieldModule,
     MatInput,
     RouterLink,
-    FormsModule
+    FormsModule,
+    NgOptimizedImage,
+    ProductListingComponent,
+    StoreListingComponent
   ],
   templateUrl: './price-list.component.html',
   styleUrls: ['./price-list.component.css']
@@ -55,38 +60,44 @@ export class PriceListComponent {
   private readonly priceService = inject(PriceService);
 
   // Create HTTP resources
-  private readonly productsResource = this.productService.search('', 0, 1000);
-  private readonly storesResource = this.storeService.search('', 0, 1000);
-  protected readonly pricesResource = this.priceService.getPrices(
-    this.currentPage,
-    this.pageSize,
-    this.selectedStore,
-    this.selectedProduct,
-  );
+  protected readonly productsResource = this.productService.search(_ => ({
+    name: '',
+    page: 0,
+    size: Number.MAX_SAFE_INTEGER,
+  }));
+  protected readonly storesResource = this.storeService.search(_ => ({
+    name: '',
+    page: 0,
+    size: Number.MAX_SAFE_INTEGER,
+  }));
+  protected readonly pricesResource = this.priceService.search(_ => ({
+    page: this.currentPage(),
+    size: this.pageSize(),
+    store: this.selectedStore(),
+    product: this.selectedProduct(),
+  }));
 
-  // Computed properties from resources
-  public readonly products = computed(() => this.productsResource.value()?.content ?? []);
-  public readonly stores = computed(() => this.storesResource.value()?.content ?? []);
-  public readonly prices = computed(() => this.pricesResource.value()?.content ?? []);
-  public readonly totalElements = computed(() => this.pricesResource.value()?.page?.totalElements ?? 0);
-  public readonly loading = computed(() => this.pricesResource.status() === 'loading');
-  public readonly error = computed(() => {
-    const status = this.pricesResource.status();
-    return status === 'error' ? 'Failed to load prices' : null;
-  });
-
-  // Create MatTableDataSource from prices signal with validity status included
-  public readonly dataSource = computed(() => {
-    const prices = this.prices();
-    const pricesWithValidity = prices.map(price => {
-      const status = this.getPriceValidityStatus(price);
+  public readonly dataSource = resource({
+    params: ({ chain }) => {
+      const prices = chain(this.pricesResource)?.content;
+      if(!prices) return undefined;
       return {
-        ...price,
-        validityStatus: status,
-        validityClass: `price-${status}`
-      } as PriceWithValidity;
-    });
-    return new MatTableDataSource<PriceWithValidity>(pricesWithValidity);
+        prices,
+        referenceTimestamp: new Date(this.referenceTimestamp()),
+      }
+    },
+    loader: async ({ params }) => {
+      const {prices, referenceTimestamp} = params;
+      const pricesWithValidity = prices.map(price => {
+        const status = PriceListComponent.getPriceValidityStatus(price, referenceTimestamp);
+        return {
+          ...price,
+          validityStatus: status,
+          validityClass: `price-${status}`
+        } as PriceWithValidity;
+      });
+      return new MatTableDataSource<PriceWithValidity>(pricesWithValidity);
+    }
   });
 
   onPageChange(event: any): void {
@@ -120,25 +131,9 @@ export class PriceListComponent {
     }
   }
 
-  getProductName(productUuid: string): string {
-    return this.products().find(p => p.uuid === productUuid)?.name ?? 'Unknown Product';
-  }
-
-  getStoreName(storeUuid: string): string {
-    return this.stores().find(s => s.uuid === storeUuid)?.name ?? 'Unknown Store';
-  }
-
-  getProductImage(productUuid: string): string | null {
-    return this.products().find(p => p.uuid === productUuid)?.image ?? null;
-  }
-
-  getStoreLogo(storeUuid: string): string | null {
-    return this.stores().find(s => s.uuid === storeUuid)?.logo ?? null;
-  }
-
   // Price validity status methods
-  private getPriceValidityStatus(price: ListPriceDTO): 'past' | 'current' | 'future' {
-    const referenceTime = new Date(this.referenceTimestamp()).getTime();
+  private static getPriceValidityStatus(price: ListPriceDTO, referenceTimestamp: Date): 'past' | 'current' | 'future' {
+    const referenceTime = referenceTimestamp.getTime();
     const validFrom = new Date(price.validFrom).getTime();
     const validTo = price.validTo ? new Date(price.validTo).getTime() : null;
 

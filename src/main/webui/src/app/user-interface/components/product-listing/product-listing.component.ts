@@ -1,8 +1,8 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input, resource } from '@angular/core';
 import { PriceService, ProductService, StoreService } from '../../../master-data/services';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
-import { MatListItem, MatListItemIcon, MatListItemMeta } from '@angular/material/list';
-import { CurrencyPipe } from '@angular/common';
+import { MatListItemIcon, MatListItemMeta } from '@angular/material/list';
+import { CurrencyPipe, NgOptimizedImage } from '@angular/common';
 
 function isTrue(b: boolean | `${boolean}`): boolean {
   switch(typeof b) {
@@ -18,35 +18,41 @@ function isTrue(b: boolean | `${boolean}`): boolean {
   standalone: true,
   imports: [
     MatProgressSpinner,
-    MatListItem,
     MatListItemIcon,
     CurrencyPipe,
     MatListItemMeta,
+    NgOptimizedImage,
   ],
   templateUrl: './product-listing.component.html',
   styleUrls: ['./product-listing.component.css'],
 })
 export class ProductListingComponent {
   readonly uuid = input.required<string | undefined>();
-  readonly isPrice = input<boolean | `${boolean}`>(false);
-  readonly isPriceBool = computed(() => isTrue(this.isPrice()));
+  readonly isPriceUuid = input<boolean | `${boolean}`>(false);
+  readonly isPriceBool = computed(() => isTrue(this.isPriceUuid()));
   readonly quantity = input<number>();
+  readonly price = input<number>();
+  readonly currency = input<string>();
 
-  private readonly priceUuid = computed(() => this.isPriceBool() ? this.uuid() : undefined);
-  private readonly priceResource = inject(PriceService).getPrice(this.priceUuid);
-  readonly price = computed(() => this.priceResource.value());
+  private readonly priceUuid = computed(() => this.isPriceBool() && this.price() === undefined ? this.uuid() : undefined);
+  private readonly fetchedPriceResource = inject(PriceService).get(this.priceUuid);
 
-  private readonly productUuid = computed(() => this.isPriceBool() ? this.price()?.product : this.uuid());
-  private readonly productResource = inject(ProductService).getProduct(this.productUuid);
-  readonly product = computed(() => this.productResource.value());
+  protected readonly productResource = inject(ProductService).get(({chain}) => {
+    if(this.isPriceBool()) return chain(this.fetchedPriceResource)?.product;
+    else return this.uuid();
+  });
 
-  private readonly storeUuid = computed(() => this.price()?.store);
-  private readonly storeResource = inject(StoreService).getStore(this.storeUuid);
-  readonly currency = computed(() => this.storeResource.value()?.currency);
-
-  readonly loading = computed(() =>
-    this.productResource.status() === 'loading' ||
-    this.priceResource.status() === 'loading' ||
-    this.storeResource.status() === 'loading'
-  );
+  private readonly storeResource = inject(StoreService).get(({chain}) => chain(this.fetchedPriceResource)?.store);
+  protected readonly priceCurrencyResource = resource({
+    params: ({chain}) => {
+      const price = this.price() ?? chain(this.fetchedPriceResource)?.price;
+      if(price === undefined) return undefined;
+      const currency = this.currency() ?? chain(this.storeResource)?.currency;
+      if(currency === undefined) return undefined;
+      return {price, currency};
+    },
+    async loader({params}) {
+      return params;
+    }
+  });
 }

@@ -15,23 +15,18 @@ import { PriceService, ProductService, StoreService } from '../../services';
 })
 export class DashboardComponent {
   // Create HTTP resources for dashboard data
-  private readonly productsResource = inject(ProductService).search('', 0, 1);
-  private readonly storesResource = inject(StoreService).search('', 0, 1);
-  private readonly pricesResource = inject(PriceService).getPrices(0, 1);
-
-  // Computed properties from resources
-  public readonly products = computed(() => this.productsResource.value()?.content ?? []);
-  public readonly stores = computed(() => this.storesResource.value()?.content ?? []);
-  public readonly prices = computed(() => this.pricesResource.value()?.content ?? []);
-  public readonly loading = computed(() =>
-    this.productsResource.status() === 'loading' ||
-    this.storesResource.status() === 'loading' ||
-    this.pricesResource.status() === 'loading'
-  );
-
-  // Computed values for dashboard
-  public readonly totalProducts = computed(() => this.productsResource.value()?.page?.totalElements ?? 0);
-  public readonly totalStores = computed(() => this.storesResource.value()?.page?.totalElements ?? 0);
-  public readonly totalPrices = computed(() => this.pricesResource.value()?.page?.totalElements ?? 0);
-
+  protected readonly productsResource = inject(ProductService).search(_ => ({
+    name: '',
+    page: 0,
+    size: 1,
+  }));
+  protected readonly storesResource = inject(StoreService).search(_ => ({
+    name: '',
+    page: 0,
+    size: 1,
+  }));
+  protected readonly pricesResource = inject(PriceService).search(_ => ({
+    page: 0,
+    size: 1,
+  }));
 }

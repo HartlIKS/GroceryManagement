@@ -1,13 +1,15 @@
 <div class="search-section">
-  @if (availableEntities().length > 0) {
+  @if (availableEntitiesResource.hasValue()) {
     <mat-form-field appearance="outline" class="half-width">
       <mat-label>Local ID</mat-label>
       <mat-select [(ngModel)]="newLocalId" placeholder="Select local ID">
-        @for (entity of availableEntities(); track entity.uuid) {
+        @for (entity of availableEntitiesResource.value().content; track entity.uuid) {
           <mat-option [value]="entity.uuid">{{ entity.name }} ({{ entity.uuid }})</mat-option>
         }
       </mat-select>
     </mat-form-field>
+  } @else if(availableEntitiesResource.isLoading()) {
+    <mat-spinner mode="indeterminate"/>
   } @else {
     <mat-form-field appearance="outline" class="half-width">
       <mat-label>Local ID</mat-label>
@@ -58,10 +60,4 @@
     <mat-row *matRowDef="let _; columns: displayedColumns;"></mat-row>
   </mat-table>
   <mat-paginator showFirstLastButtons/>
-
-  @if (dataSource().data.length === 0) {
-    <div class="no-data">
-      <p>No mappings found</p>
-    </div>
-  }
 </div>

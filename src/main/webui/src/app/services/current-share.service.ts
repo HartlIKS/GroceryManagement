@@ -1,8 +1,9 @@
-import { inject, Injectable } from '@angular/core';
+import { computed, inject, Injectable } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { CreateShareDTO, Share } from '../models';
 import { ApiService } from './api.service';
 import { ShareService } from './share.service';
+import { httpResource } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +12,7 @@ export class CurrentShareService {
   private readonly apiService = inject(ApiService);
   private readonly shareService = inject(ShareService);
 
-  public readonly currentShareResource = this.apiService.getShareOnly<Share>('/share/current');
+  public readonly currentShareResource = httpResource<Share>(() => this.apiService.getShareOnly('/share/current'));
 
   updateCurrentShare(shareData: CreateShareDTO): Observable<Share> {
     return this.apiService.put<Share>('/share', 'current', shareData)

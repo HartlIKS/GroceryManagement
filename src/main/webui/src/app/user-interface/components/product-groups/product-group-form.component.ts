@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, resource, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -9,7 +9,7 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatIcon } from '@angular/material/icon';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSelectModule } from '@angular/material/select';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ProductGroupService } from '../../services';
 import { ProductGroupTypes } from '../../models';
 import { ProductService } from '../../../master-data/services';
@@ -32,7 +32,8 @@ import { UPDATE } from '../../../models/base.model';
     MatTableModule,
     MatSelectModule,
     MatTooltip,
-    RouterLink
+    RouterLink,
+    NgOptimizedImage
   ],
   templateUrl: './product-group-form.component.html',
   styleUrls: ['./product-group-form.component.css']
@@ -44,37 +45,37 @@ export class ProductGroupFormComponent implements OnInit {
 
   private readonly productGroupService = inject(ProductGroupService);
   // Create HTTP resources
-  private readonly productsResource = inject(ProductService).search('', 0, 1000);
-  private readonly productGroupResource = this.productGroupService.getProductGroup(this.productGroupUuid);
+  protected readonly productsResource = inject(ProductService).search(_ => ({
+    name: '',
+    page: 0,
+    pageSize: Number.MAX_SAFE_INTEGER,
+  }));
+  private readonly productGroupResource = this.productGroupService.get(this.productGroupUuid);
 
   // Product management properties
   selectedProductUuid: string | null = null;
-  availableProducts = computed(() => this.productsResource.value()?.content ?? []);
   productGroupProducts = signal<Record<string, number>>({});
   productAmountControls = signal<Record<string, FormControl>>({});
 
-  currentProducts = computed(() => {
-    const allProducts = this.availableProducts();
-    const groupProducts = this.productGroupProducts();
+  productsDataSource = resource({
+    params: ({chain}) => {
+      const allProducts = chain(this.productsResource)?.content ?? [];
+      const groupProducts = this.productGroupProducts();
 
-    if (!groupProducts || Object.keys(groupProducts).length === 0) {
-      return [];
+      if (!groupProducts || Object.keys(groupProducts).length === 0) {
+        return [];
+      }
+
+      return Object.entries(groupProducts)
+        .map(([uuid, amount]) => {
+          const product = allProducts.find(p => p.uuid === uuid);
+          return product ? { ...product, amount } : null;
+        })
+        .filter(product => product !== undefined) as (ListProductDTO & { amount: number })[];
+    },
+    async loader({params}) {
+      return new MatTableDataSource<ListProductDTO>(params)
     }
-
-    return Object.entries(groupProducts)
-      .map(([uuid, amount]) => {
-        const product = allProducts.find(p => p.uuid === uuid);
-        return product ? { ...product, amount } : null;
-      })
-      .filter(product => product !== undefined) as (ListProductDTO & { amount: number })[];
-  });
-  productsDataSource = computed(() => new MatTableDataSource<ListProductDTO>(this.currentProducts()));
-
-  // Use computed signals from resource
-  public readonly loading = computed(() => this.productGroupResource.status() === 'loading');
-  public readonly error = computed(() => {
-    const status = this.productGroupResource.status();
-    return status === 'error' ? 'Failed to load product group' : null;
   });
 
   constructor(
@@ -182,7 +183,7 @@ export class ProductGroupFormComponent implements OnInit {
         }
       });
     } else {
-      this.productGroupService.createProductGroup(formData).subscribe({
+      this.productGroupService.create(formData).subscribe({
         next: () => {
           this.router.navigate(['/product-groups']);
         },

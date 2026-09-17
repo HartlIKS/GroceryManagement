@@ -35,15 +35,12 @@ export class ProductEndpointFormComponent implements OnInit {
 
   private readonly productEndpointService = inject(ProductEndpointService);
 
-  private readonly productEndpointResource = this.productEndpointService.getEndpoint(this.parentUuid, this.productEndpointId);
-
-  public readonly loading = computed(() => {
-    const endpointStatus = this.productEndpointResource.status();
-    return endpointStatus === 'loading';
-  });
-  public readonly error = computed(() => {
-    const endpointStatus = this.productEndpointResource.status();
-    return endpointStatus === 'error' ? 'Failed to load product endpoint' : null;
+  protected readonly productEndpointResource = this.productEndpointService.get(_ => {
+    const api = this.parentUuid();
+    if(!api) return undefined;
+    const uuid = this.productEndpointId();
+    if(!uuid) return undefined;
+    return [api, uuid];
   });
 
   constructor(

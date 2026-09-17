@@ -15,12 +15,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.List;
 import java.util.regex.Pattern;
 
 import static de.iks.grocery_manager.server.UUIDMatcher.isUuid;
 import static io.restassured.RestAssured.expect;
-import static io.restassured.RestAssured.withArgs;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesRegex;
 import static org.junit.jupiter.api.Assertions.*;
@@ -63,34 +61,6 @@ class StoreControllerTest {
                 .statusCode(404)
                 .when()
                 .get("{uuid}", Testdata.BAD_UUID);
-        }
-    }
-
-    @Nested
-    @TestHTTPEndpoint(StoreController.class)
-    @WithTestUser
-    @UsesResource(Data.Store.class)
-    class GetManyStores {
-        @Test
-        void shouldReturnExistingStoresWhenFound() {
-            expect()
-                .statusCode(200)
-                .contentType(ContentType.JSON)
-                .body("size()", is(2))
-                .body("%s.uuid", withArgs(Testdata.STORE_1_UUID), isUuid(Testdata.STORE_1_UUID))
-                .body("%s.name", withArgs(Testdata.STORE_1_UUID), is("Store 1"))
-                .body("%s.address.country", withArgs(Testdata.STORE_1_UUID), is("DE"))
-                .body("%s.address.city", withArgs(Testdata.STORE_1_UUID), is("Düsseldorf"))
-                .body("%s.currency", withArgs(Testdata.STORE_1_UUID), is("EUR"))
-                .body("%s.uuid", withArgs(Testdata.STORE_2_UUID), isUuid(Testdata.STORE_2_UUID))
-                .body("%s.name", withArgs(Testdata.STORE_2_UUID), is("Store 2"))
-                .body("%s.address.country", withArgs(Testdata.STORE_2_UUID), is("DE"))
-                .body("%s.address.city", withArgs(Testdata.STORE_2_UUID), is("Hilden"))
-                .body("%s.currency", withArgs(Testdata.STORE_2_UUID), is("USD"))
-                .given()
-                .body(List.of(Testdata.STORE_1_UUID, Testdata.STORE_2_UUID, Testdata.BAD_UUID))
-                .contentType(ContentType.JSON)
-                .request("QUERY");
         }
     }
 

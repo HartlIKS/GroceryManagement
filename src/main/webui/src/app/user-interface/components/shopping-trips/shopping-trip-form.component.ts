@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, resource, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -43,39 +43,45 @@ export class ShoppingTripFormComponent implements OnInit {
 
   private readonly shoppingTripService = inject(ShoppingTripService);
 
-  // Create HTTP resources
-  private readonly productsResource = inject(ProductService).search('', 0, 1000);
-  private readonly storesResource = inject(StoreService).search('', 0, 1000);
-  private readonly shoppingTripResource = this.shoppingTripService.getShoppingTrip(this.shoppingTripUuid);
+  protected readonly productsResource = inject(ProductService).search(_ => ({
+    name: '',
+    page: 0,
+    size: Number.MAX_SAFE_INTEGER,
+  }));
+  protected readonly storesResource = inject(StoreService).search(_ => ({
+    name: '',
+    page: 0,
+    size: Number.MAX_SAFE_INTEGER,
+  }));
+  protected readonly shoppingTripResource = this.shoppingTripService.get(this.shoppingTripUuid);
 
-  // Product management properties
-  availableProducts = computed(() => this.productsResource.value()?.content ?? []);
   shoppingTripProducts = signal<Record<string, number>>({});
   productAmountControls = signal<Record<string, FormControl>>({});
 
-  // Store management
-  availableStores = computed(() => this.storesResource.value()?.content ?? []);
-
   // Table properties
   displayedColumns: string[] = ['productName', 'image', 'amount', 'actions'];
-  productsDataSource = computed(() => new MatTableDataSource(
-    Object.entries(this.shoppingTripProducts()).map(([uuid, amount]) => {
-      const product = this.availableProducts().find(p => p.uuid === uuid);
-      return {
-        uuid,
-        amount,
-        name: product?.name ?? 'Unknown Product',
-        image: product?.image,
-        type: 'product' as const
-      };
-    })
-  ));
-
-  // Loading and error states
-  loading = computed(() => this.shoppingTripResource.status() === 'loading');
-  error = computed(() => {
-    const status = this.shoppingTripResource.status();
-    return status === 'error' ? 'Failed to load shopping trip' : null;
+  productsDataSource = resource({
+    params: ({chain}) => {
+      const selected = this.shoppingTripProducts();
+      const products = Object.keys(selected).length ? chain(this.productsResource) : {content: []};
+      if(!products) return undefined;
+      return {allProducts: products.content, selected: this.shoppingTripProducts()};
+    },
+    async loader({params}) {
+      const {allProducts, selected} = params;
+    return new MatTableDataSource(
+        Object.entries(selected).map(([uuid, amount]) => {
+          const product = allProducts.find(p => p.uuid === uuid);
+          return {
+            uuid,
+            amount,
+            name: product?.name ?? 'Unknown Product',
+            image: product?.image,
+            type: 'product' as const
+          };
+        })
+      )
+    }
   });
 
   constructor(
@@ -171,7 +177,7 @@ export class ShoppingTripFormComponent implements OnInit {
       const shoppingTripUuid = this.shoppingTripUuid();
       const operation = shoppingTripUuid
         ? this.shoppingTripService.update(shoppingTripUuid, shoppingTripData)
-        : this.shoppingTripService.createShoppingTrip(shoppingTripData);
+        : this.shoppingTripService.create(shoppingTripData);
 
       operation.subscribe({
         next: () => {

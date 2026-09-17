@@ -33,17 +33,7 @@ export class ProductFormComponent implements OnInit {
   private readonly productService = inject(ProductService);
 
   // Create HTTP resource for product
-  private readonly productResource = this.productService.getProduct(this.productId);
-
-  // Computed properties from resource
-  public readonly loading = computed(() => {
-    const productStatus = this.productResource.status();
-    return productStatus === 'loading';
-  });
-  public readonly error = computed(() => {
-    const productStatus = this.productResource.status();
-    return productStatus === 'error' ? 'Failed to load product' : null;
-  });
+  protected readonly productResource = this.productService.get(this.productId);
 
   constructor(
     private fb: FormBuilder,
@@ -58,9 +48,8 @@ export class ProductFormComponent implements OnInit {
     });
     // Watch for changes in the product resource
     effect(() => {
-      const product = this.productResource.value();
-      if (product) {
-        this.productForm.patchValue(product);
+      if (this.productResource.hasValue()) {
+        this.productForm.patchValue(this.productResource.value());
       }
     });
   }
@@ -89,7 +78,7 @@ export class ProductFormComponent implements OnInit {
         }
       });
     } else {
-      this.productService.createProduct(productData).subscribe({
+      this.productService.create(productData).subscribe({
         next: () => {
           this.router.navigate(['/master-data/products']);
         },

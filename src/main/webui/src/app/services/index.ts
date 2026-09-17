@@ -1,2 +1,2 @@
 export * from './api.service';
-export * from './cache.service';
+export * from './crud.service';

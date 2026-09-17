@@ -7,8 +7,4 @@ import { PriceEndpointDTOTypes } from '../../models';
 })
 export class PriceEndpointService extends EndpointService<PriceEndpointDTOTypes> {
   protected readonly endpointType = 'price';
-
-  constructor() {
-    super();
-  }
 }

@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, output, resource, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInput } from '@angular/material/input';
@@ -9,6 +9,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { CommonModule } from '@angular/common';
 import { PlannedTrip, ShoppingTripService } from '../../../services';
 import { ProductListComponent } from '../product-list';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 export interface TripPlanningState {
   tripId: number;
@@ -16,8 +17,8 @@ export interface TripPlanningState {
 }
 
 export type selectionEvent =
-  {tripUuid: string, date?: never} |
-  {tripUuid?: never, date: Date | undefined};
+  { tripUuid: string, date?: never } |
+  { tripUuid?: never, date: Date | undefined };
 
 @Component({
   selector: 'app-trip-planning-card',
@@ -32,6 +33,7 @@ export type selectionEvent =
     MatCardModule,
     MatDatepickerModule,
     ProductListComponent,
+    MatProgressSpinner,
   ],
   templateUrl: './trip-planning-card.component.html',
   styleUrls: ['./trip-planning-card.component.css']
@@ -42,10 +44,10 @@ export class TripPlanningCardComponent {
   readonly date = signal<string | undefined>(undefined);
   private readonly sel = computed((): selectionEvent => {
     const tripUuid = this.tripUuid();
-    if(tripUuid !== undefined) return {tripUuid};
+    if (tripUuid !== undefined) return { tripUuid };
     const dateStr = this.date();
     const date = dateStr === undefined ? undefined : new Date(dateStr);
-    return {date};
+    return { date };
   });
   readonly selection = output<selectionEvent>();
 
@@ -53,22 +55,30 @@ export class TripPlanningCardComponent {
     effect(() => this.selection.emit(this.sel()));
   }
 
-  // Services
   private readonly shoppingTripService = inject(ShoppingTripService);
 
-  // Get existing trips for this specific trip's store and timespan
-  readonly existingTripsResource = this.shoppingTripService.getShoppingTrips(
-    computed(() => this.trip().validFrom),
-    computed(() => this.trip().validTo),
-    0,
-    1000
-  );
+  private readonly existingTripsResource = this.shoppingTripService.search(_ => {
+    const trip = this.trip();
+    return {
+      from: trip.validFrom,
+      to: trip.validTo,
+      page: 0,
+      pageSize: Number.MAX_SAFE_INTEGER,
+    };
+  });
 
-  readonly existingTrips = computed(() => {
-    const trips = this.existingTripsResource.value()?.content ?? [];
-    return trips.filter(trip =>
-      trip.store === this.trip().storeUuid
-    );
+  protected readonly existingTrips = resource({
+    params: ({ chain }) => {
+      const trips = chain(this.existingTripsResource)?.content ?? [];
+      return {
+        trips,
+        store: this.trip().storeUuid
+      };
+    },
+    async loader({ params }) {
+      const { trips, store } = params;
+      return trips.filter(trip => trip.store === store);
+    }
   });
 
   objectKeys(o: any): string[] {

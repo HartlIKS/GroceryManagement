@@ -28,6 +28,9 @@
               "src/material-theme.scss",
               "src/styles.scss"
             ],
+            "allowedCommonJsDependencies": [
+              "jsonpath"
+            ],
             "statsJson": true
           },
           "configurations": {

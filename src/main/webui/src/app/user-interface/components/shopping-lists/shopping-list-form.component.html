@@ -10,7 +10,6 @@
     </mat-card-header>
 
     <mat-card-content>
-      @if (!loading()) {
         <form [formGroup]="shoppingListForm" (ngSubmit)="onSave()">
           <div class="form-row">
             <mat-form-field appearance="outline" class="full-width">
@@ -40,7 +39,8 @@
               <mat-label>Add Items to List</mat-label>
               <mat-select [(value)]="selectedItemUuid" (selectionChange)="onSelectionChange()"
                           placeholder="Select products or groups">
-                @for (item of availableItems(); track item.uuid) {
+                @if(availableItems.hasValue()) {
+                @for (item of availableItems.value(); track item.uuid) {
                   <mat-option [value]="item.uuid">
                     <div class="filter-option item-type" [ngClass]="item.type">
                       @if (item.type === 'product' && item.image) {
@@ -57,6 +57,13 @@
                     </div>
                   </mat-option>
                 }
+                } @else if (availableItems.isLoading()) {
+                  <mat-progress-spinner mode="indeterminate"/>
+                } @else if (availableItems.error()) {
+                  <div class="error">
+                    <p>{{ availableItems.error() }}</p>
+                  </div>
+                }
               </mat-select>
             </mat-form-field>
             <button mat-raised-button
@@ -70,8 +77,8 @@
           </div>
 
           <div class="table-container">
-            @if (combinedItems().length > 0) {
-              <mat-table [dataSource]="combinedDataSource()" class="table">
+            @if (combinedDataSource.hasValue()) {
+              <mat-table [dataSource]="combinedDataSource.value()" class="table">
                 <ng-container matColumnDef="name">
                   <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
                   <mat-cell *matCellDef="let item">
@@ -136,26 +143,21 @@
                 <mat-header-row *matHeaderRowDef="['name', 'image', 'amount', 'actions']"></mat-header-row>
                 <mat-row *matRowDef="let _; columns: ['name', 'image', 'amount', 'actions'];"></mat-row>
               </mat-table>
-            } @else {
-              <div class="no-data">
-                <p>No items added yet. Add products or product groups to your shopping list above.</p>
+            } @else if(combinedDataSource.isLoading()) {
+            } @else if(combinedDataSource.error()) {
+              <div class="error">
+                <p>{{ combinedDataSource.error() }}</p>
               </div>
             }
           </div>
         </form>
-      } @else {
-        <div class="loading">
-          <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
-          <p>Loading shopping list...</p>
-        </div>
-      }
     </mat-card-content>
 
     <mat-card-actions>
       <div class="header-actions">
         <button mat-raised-button color="primary"
                 (click)="onSave()"
-                [disabled]="shoppingListForm.invalid || loading()">
+                [disabled]="shoppingListForm.invalid || !availableItems.hasValue() || !combinedDataSource.hasValue()">
           <mat-icon>save</mat-icon>
           {{ isEditMode() ? 'Update' : 'Create' }} Shopping List
         </button>
@@ -166,10 +168,4 @@
       </div>
     </mat-card-actions>
   </mat-card>
-
-  @if (error()) {
-    <div class="error">
-      <p>Error: {{ error() }}</p>
-    </div>
-  }
 </div>

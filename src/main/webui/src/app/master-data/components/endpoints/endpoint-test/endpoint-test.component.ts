@@ -3,64 +3,37 @@ import {
   computed,
   inject,
   InjectionToken,
-  InputSignal,
-  linkedSignal,
   OnInit,
-  Signal,
   signal,
   Type,
+  viewChild,
   viewChildren
 } from '@angular/core';
-import { CommonModule, NgComponentOutlet } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
 import { EndpointService, MappingTableService } from '../../../services';
-import { EndpointDTOTypes, ParameterDTO } from '../../../models';
-import { form, FormField, FormRoot, schema } from '@angular/forms/signals';
+import { EndpointDTOTypes } from '../../../models';
 import { MatIcon } from '@angular/material/icon';
-import { httpResource, HttpResourceRef } from '@angular/common/http';
+import { httpResource, HttpResourceRequest } from '@angular/common/http';
 import { ApiService } from '../../../../services';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { LIST } from '../../../../models/base.model';
+import { EndpointFormComponent } from './arg/endpoint-form';
+import { DiffAdapter, DiffComponent, DiffStatus } from './diff-adapter';
+import { ExecFormAdapter } from './arg/exec-form-adapter';
 
-export type DiffStatus = 'loading' | 'ignored' | 'create' | 'same' | 'different';
-
-export interface DiffComponent<T> {
-  readonly api: InputSignal<string>;
-  readonly item: InputSignal<Partial<T> & {uuid:string, version: never}>;
-  readonly fetchedItem: InputSignal<T | undefined>;
-  readonly status: Signal<DiffStatus>;
-  readonly afterChange: InputSignal<() => void>;
-  accept(status?: {
-    create?: boolean,
-    different?: boolean,
-  }): any;
-}
-
-export type EndpointConfig<E extends EndpointDTOTypes, T extends {uuid: string, name: string}> = {
-  endpointService: EndpointService<E>;
-  mappingService: MappingTableService;
-  massQuery(uuids: Signal<string[] | undefined> | string[]): HttpResourceRef<Record<string, T> | undefined>;
-  toPartials(endpoint: E[LIST], requestResult: string): (Partial<T> & {uuid: string})[];
-  diffComponent: Type<DiffComponent<T>>;
+export type EndpointConfig<E extends EndpointDTOTypes, T extends {} = {}, D extends {} = {}> = {
+  formComponent: Type<EndpointFormComponent<E[LIST], D>>,
+  endpointService: EndpointService<E>,
+  mappingService: MappingTableService,
+  toPartials(endpoint: E[LIST], requestResult: string): (Partial<T> & {uuid: string, name: string})[],
+  diffComponent: Type<DiffComponent<T>>,
 };
 
-export const ENDPOINT_TOKEN = new InjectionToken<EndpointConfig<EndpointDTOTypes, {uuid: string, name: string}>>('EndpointConfig');
-
-function writeParameter(value: string | number, param: ParameterDTO | undefined, headers: Record<string, string[]>, params: Record<string, string[]>) {
-  if(param?.queryParameter) {
-    params[param.queryParameter] ??= [];
-    params[param.queryParameter].push(value.toString());
-  }
-  if(param?.header) {
-    headers[param.header] ??= [];
-    headers[param.header].push(value.toString());
-  }
-}
+export const ENDPOINT_TOKEN = new InjectionToken<EndpointConfig<EndpointDTOTypes>>('EndpointConfig');
 
 @Component({
   selector: 'app-endpoint-test',
@@ -70,12 +43,10 @@ function writeParameter(value: string | number, param: ParameterDTO | undefined,
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
-    MatInput,
-    MatProgressSpinner,
-    FormRoot,
-    FormField,
     MatIcon,
-    MatCheckbox
+    MatCheckbox,
+    DiffAdapter,
+    ExecFormAdapter,
   ],
   templateUrl: './endpoint-test.component.html',
   styleUrls: ['./endpoint-test.component.css']
@@ -84,90 +55,55 @@ export class EndpointTestComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly apiService = inject(ApiService);
   private readonly endpointConfig = inject(ENDPOINT_TOKEN);
-  protected readonly diffComponent = this.endpointConfig.diffComponent;
 
   endpointId = signal<string | undefined>(undefined);
   parentUuid = signal<string | undefined>(undefined);
 
-  private readonly endpointResource = this.endpointConfig.endpointService.getEndpoint(this.parentUuid, this.endpointId);
+  private readonly endpointResource = this.endpointConfig.endpointService.get(_ => {
+    const api = this.parentUuid();
+    if(!api) return undefined;
+    const uuid = this.endpointId();
+    if(!uuid) return undefined;
+    return [api, uuid];
+  });
   protected readonly endpoint = computed(() => this.endpointResource.value());
 
-  private readonly pagingInfo = signal({
-    page: 0,
-    pageSize: 20,
-    itemCount: 0,
-    direct: false,
-  });
-  protected readonly pagingForm = form(
-    this.pagingInfo,
-    schema(() => ({
-      page: {type: 'number'},
-      pageSize: {type: 'number'},
-      itemCount: {type: 'number'},
-      direct: {type: 'boolean'},
-    })),
-    {
-      submission: {
-        action: async () => {
-          this.requestInfo.update(p => ({...p, send: true}));
-        },
-      }
-    }
-  );
-  protected readonly requestInfo = linkedSignal(() => ({...this.pagingInfo(), send: false}));
-  protected readonly requestResource = httpResource.text(() => {
+  private readonly form = viewChild.required(ExecFormAdapter);
+  protected readonly requestInfo = signal<{
+    headers?: Record<string, string[]>;
+    params?: Record<string, string[]>;
+  } | undefined>(undefined);
+  protected readonly direct = signal(true);
+  protected readonly requestResource = httpResource.text(({chain}): HttpResourceRequest | undefined => {
     const parentUuid = this.parentUuid();
-    const endpoint = this.endpoint();
+    const endpoint = chain(this.endpointResource);
     if(parentUuid === undefined || endpoint === undefined) return undefined;
     const reqInfo = this.requestInfo();
-    if(!reqInfo.send) return undefined;
-    if(!reqInfo.direct) {
-      const ret = {
-        queryParams: {},
-        headers: {}
-      };
-      writeParameter(reqInfo.page, endpoint?.page, ret.headers, ret.queryParams);
-      writeParameter(reqInfo.pageSize, endpoint?.pageSize, ret.headers, ret.queryParams);
-      writeParameter(reqInfo.itemCount, endpoint?.itemCount, ret.headers, ret.queryParams);
+    if(!reqInfo) return undefined;
+    if(!this.direct()) {
       return {
         url: this.endpointConfig.endpointService.execUrl(parentUuid, endpoint.uuid),
         method: 'POST',
         headers: this.apiService.headers(),
-        body: ret,
+        body: reqInfo,
       };
     }
-    const ret = {
+    return {
       url: endpoint.baseUrl,
-      headers: {},
-      params: {},
+      ...reqInfo,
     };
-    writeParameter(reqInfo.page, endpoint?.page, ret.headers, ret.params);
-    writeParameter(reqInfo.pageSize, endpoint?.pageSize, ret.headers, ret.params);
-    writeParameter(reqInfo.itemCount, endpoint?.itemCount, ret.headers, ret.params);
-    return ret;
-  })
-  protected readonly parsedResponse = linkedSignal(() => {
-    const response = this.requestResource.value();
-    if(response === undefined) return undefined;
-    const endpoint = this.endpoint();
-    if(endpoint === undefined) return undefined;
-    return this.endpointConfig.toPartials(endpoint, response);
-  })
-  private readonly blocked = signal(false);
-  protected readonly idMap = this.endpointConfig.mappingService.massTranslateInbound(
-    this.parentUuid,
-    computed(() => this.blocked() ? undefined : this.parsedResponse()?.map(e => e.uuid))
-  )
-  protected readonly foundCounterparts = this.endpointConfig.massQuery(computed(() => {
-    return Object.values(this.idMap.value() ?? {});
-  }));
+  }, {
+    parse: v => {
+      return this.endpointConfig.toPartials(this.endpoint()!, v);
+    }
+  });
 
-  private readonly diffs = viewChildren<NgComponentOutlet<DiffComponent<any>>>(NgComponentOutlet);
+  private readonly diffs = viewChildren(DiffAdapter);
   protected readonly diffCounts = computed(() => this.diffs()
     .reduce<Record<DiffStatus | 'total', number>>(
       (a, v) => {
         a.total++;
-        a[(this.idMap.isLoading() ? null : v.componentInstance?.status()) ?? 'loading']++;
+        a[v.instance()?.status?.() ?? 'loading']++;
         return a;
       },
       {loading: 0, ignored: 0, create: 0, same: 0, different: 0, total: 0}
@@ -182,39 +118,19 @@ export class EndpointTestComponent implements OnInit {
   }
 
   nextPage() {
-    const send = this.requestInfo().send;
-    this.pagingInfo.update(p => ({
-      ...p,
-      page: p.page + 1,
-      itemCount: p.itemCount + p.pageSize,
-    }));
-    this.requestInfo.update(p => ({...p, send}));
+    this.form().nextPage();
   }
 
   resetPages() {
-    this.pagingInfo.update(p => ({
-      ...p,
-      page: 0,
-      pageSize: p.pageSize,
-      itemCount: 0
-    }));
+    this.form().resetPages();
   }
-
-  private afterChange(): void {
-    if(this.blocked()) return;
-    this.idMap.reload();
-  }
-
-  protected readonly boundAfterChange = this.afterChange.bind(this);
 
   acceptAll(status?: {
     create?: boolean,
     different?: boolean,
   }) {
-    this.blocked.set(true);
     for(const c of this.diffs()) {
-      c.componentInstance?.accept(status);
+      c.instance()?.accept?.(status);
     }
-    this.blocked.set(false);
   }
 }

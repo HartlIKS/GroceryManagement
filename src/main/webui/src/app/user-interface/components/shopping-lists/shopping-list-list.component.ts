@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,7 +9,7 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ShoppingListService } from '../../services';
-import { ShoppingList } from '../../models';
+import { MatPaginator } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-shopping-list-list',
@@ -23,7 +23,8 @@ import { ShoppingList } from '../../models';
     MatFormFieldModule,
     MatProgressSpinner,
     FormsModule,
-    RouterLink
+    RouterLink,
+    MatPaginator
   ],
   templateUrl: './shopping-list-list.component.html',
   styleUrls: ['./shopping-list-list.component.css']
@@ -33,23 +34,22 @@ export class ShoppingListListComponent {
 
   // Search signal
   protected readonly searchTerm = signal('');
+  protected readonly page = signal(0);
+  protected readonly pageSize = signal(20);
 
   // Create HTTP resource
   private readonly shoppingListService = inject(ShoppingListService);
-  protected readonly shoppingListsResource = this.shoppingListService.getShoppingLists(this.searchTerm);
+  protected readonly shoppingListsResource = this.shoppingListService.search(_ => ({
+    name: this.searchTerm(),
+    page: this.page(),
+    pageSize: this.pageSize(),
+  }));
 
-  // Computed properties from resource
-  public readonly shoppingLists = computed(() => this.shoppingListsResource.value()?.content ?? []);
-  public readonly loading = computed(() => this.shoppingListsResource.status() === 'loading');
-  public readonly error = computed(() => {
-    const status = this.shoppingListsResource.status();
-    return status === 'error' ? 'Failed to load shopping lists' : null;
-  });
-
-  // Create MatTableDataSource from shopping lists signal
-  public readonly dataSource = computed(() => {
-    const shoppingLists = this.shoppingLists();
-    return new MatTableDataSource<ShoppingList>(shoppingLists);
+  public readonly dataSource = resource({
+    params: ({chain}) => chain(this.shoppingListsResource)?.content,
+    async loader({params}) {
+      return new MatTableDataSource(params);
+    }
   });
 
   onDeleteShoppingList(uuid: string): void {

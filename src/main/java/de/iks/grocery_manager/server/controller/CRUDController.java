@@ -1,7 +1,6 @@
 package de.iks.grocery_manager.server.controller;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import de.iks.grocery_manager.server.extra_http.QUERY;
 import de.iks.grocery_manager.server.jpa.BaseRepository;
 import de.iks.grocery_manager.server.mapping.DTOViews;
 import de.iks.grocery_manager.server.mapping.EntityMapper;
@@ -18,11 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.jboss.resteasy.reactive.RestResponse;
 
 import java.net.URI;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Transactional
@@ -53,15 +48,6 @@ public abstract class CRUDController<Entity extends HasUUID, DTO extends HasUUID
                 .build()
             )
             .orElseGet(RestResponse::notFound);
-    }
-
-    @QUERY
-    @JsonView(DTOViews.List.class)
-    public Map<UUID, DTO> getMany(List<UUID> uuids) {
-        return repository
-            .streamByIds(uuids)
-            .map(dtoMapper.map())
-            .collect(Collectors.toUnmodifiableMap(DTO::uuid, Function.identity()));
     }
 
     @PUT

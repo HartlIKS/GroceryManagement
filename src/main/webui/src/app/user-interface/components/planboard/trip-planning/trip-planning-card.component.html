@@ -17,10 +17,18 @@
           [(ngModel)]="tripUuid"
           placeholder="Select existing trip or create new">
           <mat-option [value]="undefined">Create New Trip</mat-option>
-          @for (existingTrip of existingTrips(); track existingTrip.uuid) {
+          @if(existingTrips.hasValue()) {
+          @for (existingTrip of existingTrips.value(); track existingTrip.uuid) {
             <mat-option [value]="existingTrip.uuid">
               {{ existingTrip.time | date:'medium' }}
             </mat-option>
+          }
+          } @else if (existingTrips.isLoading()) {
+            <mat-progress-spinner mode="indeterminate"/>
+          } @else if (existingTrips.error()) {
+            <div class="error">
+              <p>{{ existingTrips.error() }}</p>
+            </div>
           }
         </mat-select>
       </mat-form-field>

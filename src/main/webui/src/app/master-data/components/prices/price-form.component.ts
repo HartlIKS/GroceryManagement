@@ -36,21 +36,17 @@ export class PriceFormComponent implements OnInit {
   private readonly priceService = inject(PriceService);
 
   // Create HTTP resources
-  private readonly productsResource = this.productService.search('', 0, 1000);
-  private readonly storesResource = this.storeService.search('', 0, 1000);
-  private readonly priceResource = this.priceService.getPrice(this.priceId);
-
-  // Computed properties from resources
-  public readonly products = computed(() => this.productsResource.value()?.content ?? []);
-  public readonly stores = computed(() => this.storesResource.value()?.content ?? []);
-  public readonly loading = computed(() => {
-    const priceStatus = this.priceResource.status();
-    return priceStatus === 'loading';
-  });
-  public readonly error = computed(() => {
-    const priceStatus = this.priceResource.status();
-    return priceStatus === 'error' ? 'Failed to load price' : null;
-  });
+  protected readonly productsResource = this.productService.search(_ => ({
+    name: '',
+    page: 0,
+    size: Number.MAX_SAFE_INTEGER,
+  }));
+  protected readonly storesResource = this.storeService.search(_ => ({
+    name: '',
+    page: 0,
+    size: Number.MAX_SAFE_INTEGER,
+  }));
+  protected readonly priceResource = this.priceService.get(this.priceId);
 
   constructor(
     private fb: FormBuilder,
@@ -66,12 +62,12 @@ export class PriceFormComponent implements OnInit {
       validTo: ['']
     });
     effect(() => {
-      const price = this.priceResource.value();
-      if (price) {
+      if (this.priceResource.hasValue()) {
+        const price = this.priceResource.value();
         this.priceForm.patchValue({
           ...price,
-          validFrom: this.convertToDateTimeLocal(price.validFrom),
-          validTo: this.convertToDateTimeLocal(price.validTo) || ''
+          validFrom: PriceFormComponent.convertToDateTimeLocal(price.validFrom),
+          validTo: PriceFormComponent.convertToDateTimeLocal(price.validTo) ?? ''
         });
       }
     });
@@ -95,8 +91,8 @@ export class PriceFormComponent implements OnInit {
       const updateData: UpdatePriceDTO = {
         price: this.priceForm.value.price,
         version: this.priceForm.value.version,
-        validFrom: this.convertToIsoDateTime(this.priceForm.value.validFrom) ?? '',
-        validTo: this.convertToIsoDateTime(this.priceForm.value.validTo) ?? '',
+        validFrom: PriceFormComponent.convertToIsoDateTime(this.priceForm.value.validFrom) ?? '',
+        validTo: PriceFormComponent.convertToIsoDateTime(this.priceForm.value.validTo) ?? '',
       };
 
       this.priceService.update(priceId, updateData).subscribe({
@@ -112,12 +108,12 @@ export class PriceFormComponent implements OnInit {
         product: this.priceForm.value.product,
         store: this.priceForm.value.store,
         price: this.priceForm.value.price,
-        validFrom: this.convertToIsoDateTime(this.priceForm.value.validFrom) ?? '',
-        validTo: this.convertToIsoDateTime(this.priceForm.value.validTo) ?? ''
+        validFrom: PriceFormComponent.convertToIsoDateTime(this.priceForm.value.validFrom) ?? '',
+        validTo: PriceFormComponent.convertToIsoDateTime(this.priceForm.value.validTo) ?? ''
       };
 
-      this.priceService.createPrice(createData).subscribe({
-        next: () => {
+      this.priceService.create(createData).subscribe({
+        complete: () => {
           this.router.navigate(['/master-data/prices']);
         },
         error: (error: any) => {
@@ -128,7 +124,7 @@ export class PriceFormComponent implements OnInit {
   }
 
 
-  private convertToIsoDateTime(dateString: string | undefined): string | undefined {
+  private static convertToIsoDateTime(dateString: string | undefined): string | undefined {
     if (!dateString) return dateString;
     // datetime-local gives us YYYY-MM-DDTHH:mm in local timezone
     // We need to treat this as local time and convert to ISO properly
@@ -136,7 +132,7 @@ export class PriceFormComponent implements OnInit {
     return date.toISOString();
   }
 
-  private convertToDateTimeLocal(isoString: string | undefined): string | undefined {
+  private static convertToDateTimeLocal(isoString: string | undefined): string | undefined {
     if (!isoString) return isoString;
     // Convert ISO string to YYYY-MM-DDTHH:mm format for datetime-local input
     // Preserve the local time representation

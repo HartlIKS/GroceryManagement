@@ -3,7 +3,7 @@
     <h1>{{ isEditing() ? 'Edit Product Endpoint' : 'Add New Product Endpoint' }}</h1>
   </div>
 
-  @if (!loading()) {
+  @if (!productEndpointResource.isLoading()) {
     <div>
       <form [formGroup]="productEndpointForm" (ngSubmit)="onSave()">
         <mat-card>
@@ -132,15 +132,15 @@
         </mat-card>
       </form>
 
-      @if (error()) {
+      @if (productEndpointResource.error(); as error) {
         <div class="error">
-          <p>{{ error() }}</p>
+          <p>{{ error }}</p>
         </div>
       }
     </div>
   } @else {
     <div class="loading">
-      <mat-spinner></mat-spinner>
+      <mat-spinner/>
     </div>
   }
 </div>

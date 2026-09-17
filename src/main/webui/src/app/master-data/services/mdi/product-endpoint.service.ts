@@ -7,8 +7,4 @@ import { ProductEndpointDTOTypes } from '../../models';
 })
 export class ProductEndpointService extends EndpointService<ProductEndpointDTOTypes> {
   protected readonly endpointType = 'product';
-
-  constructor() {
-    super();
-  }
 }

@@ -3,7 +3,7 @@
     <h1>{{ isEditing() ? 'Edit Store Endpoint' : 'Add New Store Endpoint' }}</h1>
   </div>
 
-  @if (!loading()) {
+  @if (!storeEndpointResource.isLoading()) {
     <div>
       <form [formGroup]="storeEndpointForm" (ngSubmit)="onSave()">
         <mat-card>
@@ -169,9 +169,9 @@
         </mat-card>
       </form>
 
-      @if (error()) {
+      @if (storeEndpointResource.error(); as error) {
         <div class="error">
-          <p>{{ error() }}</p>
+          <p>{{ error }}</p>
         </div>
       }
     </div>
