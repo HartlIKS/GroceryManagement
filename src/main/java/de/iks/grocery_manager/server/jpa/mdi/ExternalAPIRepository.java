@@ -39,6 +39,17 @@ public class ExternalAPIRepository implements BaseRepository<ExternalAPI> {
             )
         );
     }
+    public Map<String, UUID> searchMappedProducts(UUID table, String search) {
+        return find(
+            "FROM ExternalAPI as api JOIN api.productMappings as m WHERE api.uuid = :table and key(m).name LIKE '%' || :search || '%'",
+            Map.of("table", table, "search", search)
+        ).project(KeyValue.class).stream().collect(
+            Collectors.toUnmodifiableMap(
+                KeyValue::value,
+                KeyValue::uuid
+            )
+        );
+    }
     public Optional<UUID> translateInboundProducts(UUID table, String remoteId) {
         return find(
             "FROM ExternalAPI as api JOIN api.productMappings as m WHERE api.uuid = :table and value(m) = :remoteId",

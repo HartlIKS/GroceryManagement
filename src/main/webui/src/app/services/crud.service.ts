@@ -35,15 +35,21 @@ export abstract class CrudService<T extends BaseDTOTypes> {
   }
 }
 
-export abstract class NamedCrudService<T extends BaseDTOTypes> extends CrudService<T> {
-  public search(q: (ctx: ResourceParamsContext) => {
-    name: string,
+export abstract class NamedCrudService<T extends BaseDTOTypes, Q extends {} = {name: string}> extends CrudService<T> {
+  public rawSearch(query: Q & {
     page?: number,
     size?: number,
-  } | undefined): HttpResourceRef<Page<T[LIST]> | undefined> {
+  }): httpRequest | undefined {
+    return this.apiService.get(this.endpoint, query);
+  }
+
+  public search(q: (ctx: ResourceParamsContext) => {
+    page?: number,
+    size?: number,
+  } & Q | undefined): HttpResourceRef<Page<T[LIST]> | undefined> {
     return httpResource<Page<ListStoreDTO>>(ctx => {
       const query = q(ctx);
-      if(query) return this.apiService.get(this.endpoint, query);
+      if(query) return this.rawSearch(query);
       return undefined;
     });
   }

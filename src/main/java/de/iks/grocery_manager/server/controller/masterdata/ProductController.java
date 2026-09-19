@@ -32,11 +32,12 @@ public class ProductController extends CRUDController<Product, ProductDTO, Produ
     public PageDTO<ProductDTO> search(
         @QueryParam("name") @DefaultValue("") String name,
         @QueryParam("page") @DefaultValue("0") int page,
-        @QueryParam("size") @DefaultValue("10") int size
+        @QueryParam("size") @DefaultValue("10") int size,
+        @QueryParam("hasEAN") @DefaultValue("false") boolean hasEAN
     ) {
         return dtoMapper.map(
             repository
-                .find("name LIKE '%' || ?1 || '%'", name)
+                .find("name LIKE '%' || ?1 || '%'" + (hasEAN ? "AND ean IS NOT NULL" : ""), name)
                 .page(page, size),
             dtoMapper::map
         );
